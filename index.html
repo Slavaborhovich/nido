@@ -892,8 +892,13 @@ const Cloud = {
     if ((await F.getDoc(F.doc(this.db, "logins", username))).exists()) throw { code:"taken" };
     const sec = this.secApp || (this.secApp = this.A.initializeApp(FIREBASE_CONFIG, "creator"));
     const sa = F.getAuth(sec); await F.setPersistence(sa, F.inMemoryPersistence);
-    const email = `${username}@${EMAIL_DOMAIN}`;
-    const cred = await F.createUserWithEmailAndPassword(sa, email, password);
+    let email = `${username}@${EMAIL_DOMAIN}`, cred;
+    try { cred = await F.createUserWithEmailAndPassword(sa, email, password); }
+    catch(e){
+      if (!String(e.code).includes("email-already-in-use")) throw e;
+      email = `${username}.${Date.now().toString(36)}@${EMAIL_DOMAIN}`;      // name was used by a deleted user
+      cred = await F.createUserWithEmailAndPassword(sa, email, password);
+    }
     const uid = cred.user.uid; await F.signOut(sa);
     const b = F.writeBatch(this.db);
     b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", created:Date.now() });
@@ -903,6 +908,12 @@ const Cloud = {
   async updateUser(username, patch){
     const u = USERS[username]; if (!u || !u.uid) throw { code:"missing" };
     await this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), patch);
+  },
+  async deleteUser(username){
+    const u = USERS[username]; if (!u || !u.uid) throw { code:"missing" };
+    const F = this.fb, b = F.writeBatch(this.db);
+    b.delete(F.doc(this.db, "users", u.uid)); b.delete(F.doc(this.db, "logins", username));
+    await b.commit();
   },
   async changePassword(current, next){
     const F = this.fb, user = this.auth.currentUser;
@@ -2226,6 +2237,10 @@ const UsersAPI = {
     USERS[d.username] = { name:d.name, color:d.color, role:d.role, photo:"", active:true, password:d.password };
     storeUsers(); afterUsersChange();
   },
+  async remove(username){
+    if (CLOUD) return Cloud.deleteUser(username);
+    delete USERS[username]; storeUsers(); afterUsersChange();
+  },
   async password(cur, next){
     if (CLOUD) return Cloud.changePassword(cur, next);
     if (USERS[me].password !== cur) throw { code:"auth/wrong-password" };
@@ -2354,10 +2369,16 @@ function openUserEdit(key){
       <span class="lbl">צבע</span>${swatches(u.color)}
       ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
       <p class="error" id="ueErr" role="alert"></p>
+      ${!isNew && !self && USERS[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
       <div class="actions"><button type="button" class="secondary" id="ueBack">חזרה</button><button class="primary" type="submit" id="ueSave">${isNew ? "יצירת משתמש" : "שמירה"}</button></div>
     </form>`);
   bindSwatches(sh, st);
   sh.querySelector("#ueBack").onclick = () => openAdmin();
+  sh.querySelector("#ueDel")?.addEventListener("click", async () => {
+    if (!await askConfirm(`למחוק את ${u.name}?`, "המשתמש לא יוכל להיכנס יותר לאפליקציה. משימות וקניות שלו נשארות, בלי שיוך אליו.", "מחיקה")) return;
+    try { await UsersAPI.remove(key); toast(`${u.name} נמחק/ה`); openAdmin(); }
+    catch(x){ sh.querySelector("#ueErr").textContent = errText(x); }
+  });
   sh.querySelectorAll('input[name=role]').forEach(r => r.addEventListener("change", () => { sh.querySelector("#roleDesc").textContent = ROLES[r.value].desc; }));
   sh.querySelector("#ue").addEventListener("submit", async e => {
     e.preventDefault();
