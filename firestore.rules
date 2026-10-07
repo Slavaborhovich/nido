@@ -1,14 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // only the family's accounts (Firebase Auth UIDs)
-    function family() {
-      return request.auth != null && request.auth.uid in [
-        'K2TaGlPsCJQ7W4HPdaOwQqvRKGS2'  // slava
-      ];
-    }
+    function signedIn()  { return request.auth != null; }
+    // the first admin (slava) — can always get in, so the system can never lock itself out
+    function boot()      { return signedIn() && request.auth.uid == 'K2TaGlPsCJQ7W4HPdaOwQqvRKGS2'; }
+    function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function member()    { return signedIn() && exists(profilePath()) && get(profilePath()).data.active == true; }
+    function role()      { return get(profilePath()).data.role; }
+    function isAdmin()   { return boot() || (member() && role() == 'admin'); }
+    function canEdit()   { return isAdmin() || (member() && role() == 'editor'); }
+
+    // app content: envs/{prod|test}/{collection}/{item}
     match /envs/{env}/{col}/{id} {
-      allow read, write: if family() && env in ['prod', 'test'];
+      allow read:  if env in ['prod', 'test'] && (member() || boot());
+      allow write: if env in ['prod', 'test'] && canEdit();
+    }
+
+    // people: admins manage everyone; each person may change only their own name, colour and photo
+    match /users/{uid} {
+      allow read: if member() || boot();
+      allow create, update: if isAdmin() && request.resource.data.role in ['admin', 'editor', 'viewer'];
+      allow delete: if isAdmin();
+      allow update: if member() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo']);
+    }
+
+    // username -> e-mail lookup, needed before signing in
+    match /logins/{username} {
+      allow get: if true;
+      allow create, update, delete: if isAdmin();
     }
   }
 }

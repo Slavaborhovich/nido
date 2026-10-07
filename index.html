@@ -583,6 +583,39 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 #splash .bg2{background:#1A120C}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* profile & admin */
+button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
+.ro-pill{font-size:11px;padding:4px 9px;border-radius:99px;background:rgba(255,214,170,.12);color:var(--muted,#C9B8A6);border:1px solid rgba(255,214,170,.16)}
+.ro .fab,.ro .add-btn,.ro #takeBtn,.ro .addrow,.ro .addmore,.ro #addOffer{display:none!important}
+.pf-top{display:flex;flex-direction:column;align-items:center;gap:8px;margin:2px 0 18px}
+.pf-ava{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;font-size:36px;font-weight:600;color:#1E140C;position:relative;box-shadow:0 0 0 4px rgba(23,15,9,.6),0 0 0 5px rgba(255,214,170,.22)}
+.pf-ava .cam{position:absolute;bottom:-2px;left:-2px;width:32px;height:32px;border-radius:50%;background:#2C2016;border:1px solid rgba(255,214,170,.2);display:grid;place-items:center;color:var(--ink-2,#EADBC8)}
+.pf-ava .cam .i{width:16px;height:16px}
+.pf-ava input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:200px;border-radius:50%}
+.pf-name{font-size:20px;font-weight:500;margin:0}
+.role-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:99px;background:rgba(242,182,107,.14);color:#F2C48A;border:1px solid rgba(242,182,107,.25)}
+.role-badge.viewer{background:rgba(255,255,255,.06);color:#CDBFAF;border-color:rgba(255,255,255,.12)}
+.role-badge.admin{background:rgba(232,112,90,.16);color:#F3A493;border-color:rgba(232,112,90,.3)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px}
+.swatches button{width:32px;height:32px;border-radius:50%;border:0;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);cursor:pointer}
+.swatches button.on{box-shadow:0 0 0 2px #17110C,0 0 0 4px #F2D2A8}
+.pf-form .lbl{display:block;margin:0 0 6px}
+.pf-form .input{margin-bottom:14px}
+.pf-links{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.pf-links .secondary{width:100%;justify-content:flex-start;height:50px}
+.pf-links .secondary .go{margin-inline-start:auto;opacity:.5}
+.pf-links .danger{justify-content:center;margin-top:4px}
+.role-desc{font-size:13px;color:#BCA996;margin:8px 0 16px;min-height:18px}
+.ulist{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px}
+.ulist button{width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#2C2016;border:1px solid rgba(255,214,170,.12);text-align:start;color:inherit;font-family:inherit;cursor:pointer}
+.ulist .u-ava{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:600;color:#1E140C;flex:none}
+.ulist .u-txt{flex:1;min-width:0}
+.ulist .u-txt b{display:block;font-weight:500;font-size:15px}
+.ulist .u-txt small{color:#A8957F;font-size:12px;direction:ltr;display:inline-block}
+.ulist .off{opacity:.5}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:#2C2016;border:1px solid rgba(255,214,170,.12);margin-bottom:16px}
+.toggle-row input{width:22px;height:22px;accent-color:#D99A55}
+.note{font-size:13px;color:#BCA996;margin:0 0 14px}
 .env-badge{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:8px;z-index:9999;font:700 10px/1 Heebo,sans-serif;letter-spacing:.06em;padding:5px 8px;border-radius:99px;background:#E8705A;color:#fff;opacity:.9;pointer-events:none}
 .cloud .demo,.cloud #phaseDemo{display:none!important}
 #loginBtn[disabled]{opacity:.65}
@@ -648,10 +681,20 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 <script>
 /* ================= Config ================= */
 const UPCOMING_COUNT = 5;           // Admin will be able to change this later
-const USERS = {
-  slava:  { name:"סלבה",  password:"1234", color:"#7FB0FF" },
-  tehila: { name:"תהילה", password:"1234", color:"#C3B1FF" },
+/* People. In the cloud app they come from Firestore (users/{uid}); locally they live in localStorage.
+   Keys are login names (what tasks/likes store); values: { name, color, role, photo, active, uid } */
+const DEFAULT_USERS = {
+  slava:  { name:"סלבה",  password:"1234", color:"#7FB0FF", role:"admin",  photo:"", active:true },
+  tehila: { name:"תהילה", password:"1234", color:"#C3B1FF", role:"editor", photo:"", active:true },
 };
+const USERS = {};
+const ROLES = {
+  admin:  { label:"מנהל מערכת",    short:"מנהל",  desc:"רואה ועורך הכול, ומנהל משתמשים" },
+  editor: { label:"צפייה ועריכה",  short:"עורך",  desc:"רואה ועורך את כל התוכן" },
+  viewer: { label:"צפייה בלבד",    short:"צופה",  desc:"רואה הכול, לא יכול לשנות" },
+};
+const PALETTE = ["#7FB0FF","#C3B1FF","#F2B66B","#8FD3A8","#F59AB0","#6FD0D9","#E8C46A","#E8705A"];
+const BOOT_ADMIN_UID = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
 const ENV = /\/test(\/|$)/.test(location.pathname) ? "test" : "prod";
@@ -659,11 +702,22 @@ const STORE = CLOUD ? "nido.cache." + ENV : "nido.data.v2";
 /* login name -> the e-mail of that person's Firebase account */
 const EMAILS = { slava:"slava6195@gmail.com", tehila:"tehila@nido.family" };
 const emailOf = u => EMAILS[u] || `${u}@nido.family`;
-const userOfEmail = e => Object.keys(USERS).find(k => emailOf(k).toLowerCase() === String(e||"").toLowerCase());
+const USERS_CACHE = CLOUD ? "nido.users.cache" : "nido.users.v1";
+function setUsers(map){ Object.keys(USERS).forEach(k => delete USERS[k]); Object.assign(USERS, map); }
+try { setUsers(JSON.parse(localStorage.getItem(USERS_CACHE)) || DEFAULT_USERS); } catch(e){ setUsers(DEFAULT_USERS); }
+function storeUsers(){ try { localStorage.setItem(USERS_CACHE, JSON.stringify(USERS)); } catch(e){} }
+const people = () => Object.keys(USERS).filter(k => USERS[k].active !== false);
+const meU = () => USERS[me] || { name: me || "", color:"#F2B66B", role:"editor", photo:"" };
+const roleOf = () => meU().role || "editor";
+const isAdmin = () => roleOf() === "admin";
+const canEdit = () => roleOf() !== "viewer";
+const initial = u => esc((u.name || "?").trim()[0] || "?");
+const avaStyle = u => u.photo ? `background-image:url(${u.photo});background-size:cover;background-position:center;color:transparent` : "";
 const FIREBASE_CONFIG = { /* public web config — access is protected by login + Firestore rules */
   apiKey:"AIzaSyAJAKpXPS_g6yUC7EMw-YwAAsWgXM1HJrY", authDomain:"nido-family-72346.firebaseapp.com", projectId:"nido-family-72346",
   storageBucket:"nido-family-72346.firebasestorage.app", messagingSenderId:"811741213614", appId:"1:811741213614:web:9d62867a1b934ba7648e3f" };
 const COLS = ["tasks","shop","events","ideas","survey","coupons"];
+const EMAIL_DOMAIN = "nido.family";
 if (CLOUD) document.documentElement.classList.add("cloud");
 
 /* ================= Utils ================= */
@@ -691,7 +745,7 @@ function dayLabel(ds){
 function who(id){
   if (!id || !USERS[id]) return `<span class="who none">${icon("user")}ללא אחראי</span>`;
   const u = USERS[id];
-  return `<span class="who" style="--c:${u.color}"><i>${esc(u.name[0])}</i>${esc(u.name)}</span>`;
+  return `<span class="who" style="--c:${u.color}"><i style="${avaStyle(u)}">${initial(u)}</i>${esc(u.name)}</span>`;
 }
 
 /* ================= Data ================= */
@@ -730,6 +784,7 @@ COLS.forEach(c => { if (!Array.isArray(DB[c])) DB[c] = CLOUD ? [] : DB[c]; });
 DB.shop.forEach(i => { if (!i.list) i.list = "super"; });
 if (!DB.survey) DB.survey = seedSurvey();
 if (!DB.coupons) DB.coupons = seedCoupons();
+let LAST_LOCAL = JSON.stringify(DB);
 function seedCoupons(){
   const d = n => iso(addDays(new Date(), n));
   return [
@@ -746,8 +801,18 @@ function seedSurvey(){
   ]}];
 }
 function save(){
+  if (me && !canEdit()){ toast("יש לך הרשאת צפייה בלבד"); revertDB(); return; }
   if (CLOUD){ cacheLocal(); Cloud.push(); return; }
-  try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){ toast("האחסון מלא — נסה תמונה קטנה יותר"); }
+  LAST_LOCAL = JSON.stringify(DB);
+  try { localStorage.setItem(STORE, LAST_LOCAL); } catch(e){ toast("האחסון מלא — נסה תמונה קטנה יותר"); }
+}
+/* undo an edit a viewer made in memory: go back to the last saved state */
+function revertDB(){
+  if (CLOUD){
+    COLS.forEach(c => { const snap = Cloud.snap[c], ord = Cloud.order[c]; if (!snap) return;
+      DB[c] = [...snap.entries()].sort((a,b) => (ord.get(a[0])||0) - (ord.get(b[0])||0)).map(([,j]) => JSON.parse(j)); });
+  } else { try { const d = JSON.parse(LAST_LOCAL); COLS.forEach(c => DB[c] = d[c] || []); } catch(e){} }
+  closeSheet(); setTimeout(render, 0);
 }
 function cacheLocal(){ try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){ /* cache only — the cloud has the data */ } }
 
@@ -762,7 +827,7 @@ const Cloud = {
   async start(){
     const B = "https://www.gstatic.com/firebasejs/10.12.2/";
     const [A, AU, F] = await Promise.all([import(B+"firebase-app.js"), import(B+"firebase-auth.js"), import(B+"firebase-firestore.js")]);
-    this.fb = { ...AU, ...F };
+    this.fb = { ...AU, ...F }; this.A = A;
     const app = A.initializeApp(FIREBASE_CONFIG);
     this.auth = AU.getAuth(app);
     try { this.db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
@@ -772,14 +837,77 @@ const Cloud = {
   onUser(user){
     this.user = user;
     if (!user){ this.stop(); if (me) logout(true); return; }
-    const u = userOfEmail(user.email);
-    if (!u){ this.fb.signOut(this.auth); return; }
-    if (!me && !this.loggingIn && getSession() !== u){ setSession(u); enter(u); try { playSplash(null); } catch(_){ document.getElementById("splash")?.remove(); } }
+    this.listenUsers();
+  },
+  /* the people list is shared by both environments: users/{uid} */
+  listenUsers(){
+    if (this.usersUnsub) return;
+    this.usersReady = new Promise(r => this._usersReady = r);
+    this.usersUnsub = this.fb.onSnapshot(this.fb.collection(this.db, "users"), qs => this.applyUsers(qs), err => {
+      console.error("[nido users]", err);
+      if (String(err.code).includes("permission")){ this.deny("אין לך הרשאה לאפליקציה. פנה למנהל."); }
+    });
+  },
+  applyUsers(qs){
+    const uid = this.user && this.user.uid; if (!uid) return;
+    const list = qs.docs.map(d => ({ uid:d.id, ...d.data() }));
+    const mine = list.find(x => x.uid === uid);
+    if (!mine){
+      if (qs.metadata.fromCache) return;
+      if (uid === BOOT_ADMIN_UID) return this.bootstrap();
+      return this.deny("אין לך הרשאה לאפליקציה. פנה למנהל.");
+    }
+    const map = {};
+    list.forEach(x => { if (x.username) map[x.username] = { name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid }; });
+    setUsers(map); storeUsers();
+    if (mine.active === false) return this.deny("המשתמש שלך הושבת. פנה למנהל.");
+    const u = mine.username;
+    this._usersReady && this._usersReady();
+    if (!me && !this.loggingIn){ setSession(u); enter(u); try { playSplash(null); } catch(_){ document.getElementById("splash")?.remove(); } }
+    else if (me && me !== u){ me = u; setSession(u); }
     this.listen();
+    document.documentElement.classList.toggle("ro", !canEdit());
+    refreshOpenPanels(); softRender();
+  },
+  deny(msg){ this.user = null; this.signOut(); this.stop(); if (me) logout(true); $("#err") && ($("#err").textContent = msg); toast(msg); },
+  async bootstrap(){
+    const F = this.fb, uid = this.user.uid, b = F.writeBatch(this.db);
+    b.set(F.doc(this.db, "users", uid), { username:"slava", name:"סלבה", color:"#7FB0FF", role:"admin", active:true, photo:"", created:Date.now() });
+    b.set(F.doc(this.db, "logins", "slava"), { email:this.user.email, uid });
+    await b.commit().catch(e => this.fail(e));
+  },
+  async emailFor(u){
+    await this.ready;
+    try { const d = await this.fb.getDoc(this.fb.doc(this.db, "logins", u)); if (d.exists()) return d.data().email; } catch(e){}
+    return emailOf(u);
   },
   async signIn(u, p){
     await this.ready;
-    return this.fb.signInWithEmailAndPassword(this.auth, emailOf(u), p);
+    const email = u.includes("@") ? u : await this.emailFor(u);
+    return this.fb.signInWithEmailAndPassword(this.auth, email, p);
+  },
+  /* admin: create a new person. A second Firebase app makes the account so the admin stays signed in. */
+  async createUser({ username, name, password, role, color }){
+    const F = this.fb;
+    if ((await F.getDoc(F.doc(this.db, "logins", username))).exists()) throw { code:"taken" };
+    const sec = this.secApp || (this.secApp = this.A.initializeApp(FIREBASE_CONFIG, "creator"));
+    const sa = F.getAuth(sec); await F.setPersistence(sa, F.inMemoryPersistence);
+    const email = `${username}@${EMAIL_DOMAIN}`;
+    const cred = await F.createUserWithEmailAndPassword(sa, email, password);
+    const uid = cred.user.uid; await F.signOut(sa);
+    const b = F.writeBatch(this.db);
+    b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", created:Date.now() });
+    b.set(F.doc(this.db, "logins", username), { email, uid });
+    await b.commit();
+  },
+  async updateUser(username, patch){
+    const u = USERS[username]; if (!u || !u.uid) throw { code:"missing" };
+    await this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), patch);
+  },
+  async changePassword(current, next){
+    const F = this.fb, user = this.auth.currentUser;
+    await F.reauthenticateWithCredential(user, F.EmailAuthProvider.credential(user.email, current));
+    await F.updatePassword(user, next);
   },
   signOut(){ try { this.fb && this.fb.signOut(this.auth); } catch(e){} },
   ref(c, id){ return this.fb.doc(this.db, "envs", ENV, c, id); },
@@ -792,7 +920,7 @@ const Cloud = {
       this.unsubs.push(this.fb.onSnapshot(q, qs => this.apply(c, qs), err => this.fail(err)));
     }
   },
-  stop(){ this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  stop(){ if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -937,9 +1065,9 @@ function renderToday(){
   $("#screen").innerHTML = `
     <header class="t-head">
       <div class="t-date"><span>יום ${DAYS[now.getDay()]}</span><span class="pill">${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)}</span></div>
-      <div class="t-me"><button class="icon-btn" id="logout" aria-label="יציאה">${icon("out")}</button><div class="ava" style="background:linear-gradient(140deg,${USERS[me].color},#C98540)">${esc(USERS[me].name[0])}</div></div>
+      <div class="t-me">${roleOf()==="viewer"?`<span class="ro-pill">צפייה בלבד</span>`:""}<button class="ava" id="meBtn" aria-label="הפרופיל שלי" style="background:linear-gradient(140deg,${meU().color},#C98540);${avaStyle(meU())}">${initial(meU())}</button></div>
     </header>
-    <section class="t-greet"><h2>${greeting(now.getHours())}, <b>${esc(USERS[me].name)}</b></h2><p>${sub}</p></section>
+    <section class="t-greet"><h2>${greeting(now.getHours())}, <b>${esc(meU().name)}</b></h2><p>${sub}</p></section>
     <div class="t-sec"><h3>בקרוב<span>${items.length}</span></h3><button id="allCal">יומן</button></div>
     ${ items.length ? hero + (rest.length ? `<div class="tgrid">${rest.map((x,i)=>`
       <button class="ttile" data-i="${i+1}">
@@ -947,7 +1075,7 @@ function renderToday(){
         <div class="bot"><div class="w">${esc(x.title)}</div><div class="k">${whoLine(x)}</div></div>
       </button>`).join("")}</div>` : "")
       : `<div class="t-empty">אין שום דבר קרוב. הבית רגוע.</div>` }`;
-  $("#logout").onclick = logout;
+  $("#meBtn").onclick = openProfile;
   $("#allCal").onclick = () => go("cal");
   $("#screen").querySelectorAll("[data-i]").forEach(b => b.onclick = () => {
     const x = items[+b.dataset.i];
@@ -1027,6 +1155,7 @@ function completeTask(t){
 
 /* ================= Sheets ================= */
 function openSheet(html){
+  S.panel = null;
   const root = $("#sheetRoot");
   root.innerHTML = `<div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"><div class="inner"><div class="grab"></div>${html}</div></div>`;
   requestAnimationFrame(()=>{ root.querySelector(".scrim").classList.add("show"); root.querySelector(".sheet").classList.add("show"); });
@@ -1037,6 +1166,7 @@ function openSheet(html){
 }
 function escClose(e){ if (e.key==="Escape") closeSheet(); }
 function closeSheet(){
+  S.panel = null;
   const root=$("#sheetRoot"), sh=root.querySelector(".sheet"); if(!sh) return;
   sh.classList.remove("show"); root.querySelector(".scrim").classList.remove("show");
   document.removeEventListener("keydown", escClose);
@@ -1062,7 +1192,7 @@ function taskSheet(t){
         <button type="button" class="chip ${has.rep?"on":""}" data-r="rep">${icon("repeat")}חזרתיות</button>
       </div>
       <div class="opt" data-f="who" ${has.who?"":"hidden"}><span class="lbl">אחראי</span>
-        ${radios("assignee", [["","ללא"], ...Object.entries(USERS).map(([k,u])=>[k,u.name])], t.assignee||"")}</div>
+        ${radios("assignee", [["","ללא"], ...people().map(k=>[k,USERS[k].name])], t.assignee||"")}</div>
       <div class="opt" data-f="date" ${has.date?"":"hidden"}><span class="lbl">תאריך</span><input class="input" type="date" name="date" value="${t.date||""}"></div>
       <div class="opt" data-f="time" ${has.time?"":"hidden"}><span class="lbl">שעה</span><input class="input" type="time" name="time" value="${t.time||""}"></div>
       <div class="opt" data-f="rep" ${has.rep?"":"hidden"}><span class="lbl">חזרתיות</span>
@@ -1139,7 +1269,7 @@ function renderShop(){
       return `<li><button class="item" data-id="${i.id}" ${S.take && other ? "disabled" : ""}>
         <span class="box ${on && !(other) ? "on" : other ? "other" : ""}">${icon("tick")}</span>
         <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}</span>
-        ${i.takenBy ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i>${esc(USERS[i.takenBy].name[0])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
+        ${i.takenBy && USERS[i.takenBy] ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i style="${avaStyle(USERS[i.takenBy])}">${initial(USERS[i.takenBy])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
       </button></li>`;
     }).join("") : `<li class="empty">הרשימה ריקה. ראית שחסר משהו? הוסף אותו כאן.</li>` }</ul>
     ${S.take ? `<div class="takebar"><div class="row">
@@ -1532,7 +1662,7 @@ const FB = [
 const ideaTasks = i => DB.tasks.filter(t => t.ideaId===i.id);
 function fbBadges(i){ return ""; }
 function renderIdeas(){
-  const all = Object.keys(USERS).length;
+  const all = people().length;
   const list = [...DB.ideas].sort((a,b) => b.likes.length - a.likes.length || b.created - a.created);
   $("#screen").innerHTML = `
     <header class="top"><h1>רעיונות</h1><button class="add-btn" id="addIdea">${icon("plus")}רעיון</button></header>
@@ -1560,10 +1690,10 @@ function renderIdeas(){
 function toggleLike(i){ i.likes = i.likes.includes(me) ? i.likes.filter(x=>x!==me) : [...i.likes, me]; save(); }
 
 /* shared pieces */
-const PEOPLE = [null, ...Object.keys(USERS)];
+const peopleCycle = () => [null, ...people()];
 function whoChip(id){
   if (!id || !USERS[id]) return `<span class="st-who none"><i>${icon("user")}</i>ללא אחראי</span>`;
-  return `<span class="st-who" style="--c:${USERS[id].color}"><i>${esc(USERS[id].name[0])}</i>${esc(USERS[id].name)}</span>`;
+  return `<span class="st-who" style="--c:${USERS[id].color}"><i style="${avaStyle(USERS[id])}">${initial(USERS[id])}</i>${esc(USERS[id].name)}</span>`;
 }
 function feedbackHTML(rating, review){
   return `<div class="fb-stars">${[1,2,3,4,5].map(n=>`<button type="button" data-n="${n}" class="${n<=rating?"on":""}" aria-label="${n} כוכבים">★</button>`).join("")}</div>
@@ -1682,7 +1812,7 @@ function ideaForm(idea){
   $r.addEventListener("click", e => {
     const row = e.target.closest("[data-k]"); if (!row) return; const r = rows[+row.dataset.k];
     if (e.target.closest(".st-x")){ rows.splice(+row.dataset.k, 1); redraw(); return; }
-    if (e.target.closest(".st-whob") && !r.done){ r.assignee = PEOPLE[(PEOPLE.indexOf(r.assignee) + 1) % PEOPLE.length]; redraw(); }
+    if (e.target.closest(".st-whob") && !r.done){ { const P = peopleCycle(); r.assignee = P[(P.indexOf(r.assignee) + 1) % P.length]; } redraw(); }
   });
 
   f.onsubmit = e => {
@@ -2084,16 +2214,185 @@ function playSplash(onCovered){
   setTimeout(finish, reduce ? 1400 : 4300);
 }
 
+/* ================= Profile & users admin ================= */
+const UsersAPI = {
+  async update(username, patch){
+    if (CLOUD) return Cloud.updateUser(username, patch);
+    Object.assign(USERS[username], patch); storeUsers(); afterUsersChange();
+  },
+  async create(d){
+    if (CLOUD) return Cloud.createUser(d);
+    if (USERS[d.username]) throw { code:"taken" };
+    USERS[d.username] = { name:d.name, color:d.color, role:d.role, photo:"", active:true, password:d.password };
+    storeUsers(); afterUsersChange();
+  },
+  async password(cur, next){
+    if (CLOUD) return Cloud.changePassword(cur, next);
+    if (USERS[me].password !== cur) throw { code:"auth/wrong-password" };
+    USERS[me].password = next; storeUsers();
+  },
+};
+function afterUsersChange(){ document.documentElement.classList.toggle("ro", !canEdit()); refreshOpenPanels(); softRender(); }
+function refreshOpenPanels(){
+  if (S.panel === "admin" && $("#sheetRoot .sheet") && !$("#sheetRoot").contains(document.activeElement)) openAdmin(true);
+}
+const errText = e => {
+  const c = String(e && e.code || "");
+  if (c === "taken" || c.includes("email-already-in-use")) return "שם המשתמש הזה כבר תפוס.";
+  if (c.includes("wrong-password") || c.includes("invalid-credential")) return "הסיסמה הנוכחית שגויה.";
+  if (c.includes("weak-password")) return "הסיסמה חלשה מדי — לפחות 6 תווים.";
+  if (c.includes("operation-not-allowed") || c.includes("admin-restricted")) return "יצירת משתמשים חסומה בהגדרות Firebase.";
+  if (c.includes("permission")) return "אין לך הרשאה לפעולה הזו.";
+  if (c.includes("too-many")) return "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.";
+  if (c.includes("network") || !navigator.onLine) return "אין חיבור לאינטרנט.";
+  return "משהו השתבש. נסה שוב.";
+};
+const roleBadge = r => `<span class="role-badge ${r}">${esc(ROLES[r]?.label || r)}</span>`;
+const swatches = sel => `<div class="swatches" role="radiogroup" aria-label="צבע">${PALETTE.map(c => `<button type="button" data-c="${c}" class="${c===sel?"on":""}" style="background:${c}" aria-label="צבע"></button>`).join("")}</div>`;
+function bindSwatches(root, state){
+  root.querySelector(".swatches").addEventListener("click", e => {
+    const b = e.target.closest("[data-c]"); if (!b) return;
+    state.color = b.dataset.c; root.querySelectorAll(".swatches button").forEach(x => x.classList.toggle("on", x === b));
+    const av = root.querySelector(".pf-ava"); if (av && !state.photo) av.style.background = state.color;
+  });
+}
+function pickAvatar(input, done){
+  const file = input.files[0]; if (!file) return;
+  const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => {
+    const s = Math.min(im.width, im.height), c = document.createElement("canvas"); c.width = c.height = 256;
+    c.getContext("2d").drawImage(im, (im.width-s)/2, (im.height-s)/2, s, s, 0, 0, 256, 256);
+    done(c.toDataURL("image/jpeg", .8)); }; im.src = r.result; }; r.readAsDataURL(file);
+}
+const busyBtn = (b, on, label) => { b.disabled = on; if (label) b.textContent = label; };
+
+function openProfile(){
+  const u = meU(), st = { name:u.name, color:u.color, photo:u.photo||"" };
+  const ava = () => `background:${st.color};${st.photo?`background-image:url(${st.photo});background-size:cover;background-position:center;color:transparent`:""}`;
+  const sh = openSheet(`${head("הפרופיל שלי")}
+    <div class="pf-top">
+      <div class="pf-ava" id="pfAva" style="${ava()}">${initial(u)}<span class="cam">${icon("image")}</span><input type="file" accept="image/*" id="pfFile" aria-label="תמונת פרופיל"></div>
+      <p class="pf-name">${esc(u.name)}</p>${roleBadge(roleOf())}
+    </div>
+    <form id="pf" class="pf-form">
+      <span class="lbl">שם תצוגה</span><input class="input" name="name" value="${esc(u.name)}" maxlength="24" autocomplete="off">
+      <span class="lbl">הצבע שלי</span>${swatches(u.color)}
+      ${st.photo?`<button type="button" class="danger" id="rmPhoto" style="padding:0 0 12px">${icon("trash")}הסרת התמונה</button>`:""}
+      <button class="primary" type="submit" id="pfSave">שמירה</button>
+    </form>
+    <div class="pf-links">
+      <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
+      ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}ניהול משתמשים<span class="go">${icon("next")}</span></button>`:""}
+      <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
+    </div>`);
+  bindSwatches(sh, st);
+  sh.querySelector("#pfFile").onchange = e => pickAvatar(e.target, d => { st.photo = d; sh.querySelector("#pfAva").setAttribute("style", ava()); });
+  sh.querySelector("#rmPhoto")?.addEventListener("click", () => { st.photo = ""; sh.querySelector("#pfAva").setAttribute("style", ava()); sh.querySelector("#rmPhoto").remove(); });
+  sh.querySelector("#pf").addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = e.target.name.value.trim(); if (!name){ toast("צריך שם"); return; }
+    const b = sh.querySelector("#pfSave"); busyBtn(b, true, "שומר…");
+    try { await UsersAPI.update(me, { name, color:st.color, photo:st.photo }); toast("הפרופיל עודכן"); closeSheet(); S.panel = null; setTimeout(render, 230); }
+    catch(err){ toast(errText(err)); busyBtn(b, false, "שמירה"); }
+  });
+  sh.querySelector("#pwBtn").onclick = openPassword;
+  sh.querySelector("#adminBtn")?.addEventListener("click", () => openAdmin());
+  sh.querySelector("#outBtn").onclick = async () => { if (await askConfirm("יציאה מהחשבון", "תצטרך להתחבר שוב עם שם משתמש וסיסמה.", "יציאה")) { S.panel = null; logout(); } };
+}
+
+function openPassword(){
+  const sh = openSheet(`${head("החלפת סיסמה")}
+    <form id="pw" class="pf-form">
+      <span class="lbl">סיסמה נוכחית</span><input class="input" type="password" name="cur" autocomplete="current-password">
+      <span class="lbl">סיסמה חדשה</span><input class="input" type="password" name="next" autocomplete="new-password" placeholder="לפחות 6 תווים">
+      <span class="lbl">שוב את הסיסמה החדשה</span><input class="input" type="password" name="again" autocomplete="new-password">
+      <p class="error" id="pwErr" role="alert"></p>
+      <button class="primary" type="submit" id="pwSave">עדכון סיסמה</button>
+    </form>`);
+  sh.querySelector("#pw").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target, err = sh.querySelector("#pwErr"), b = sh.querySelector("#pwSave");
+    if (!f.cur.value || !f.next.value){ err.textContent = "יש למלא את כל השדות."; return; }
+    if (f.next.value.length < 6){ err.textContent = "הסיסמה החדשה קצרה מדי — לפחות 6 תווים."; return; }
+    if (f.next.value !== f.again.value){ err.textContent = "הסיסמאות החדשות לא זהות."; return; }
+    err.textContent = ""; busyBtn(b, true, "מעדכן…");
+    try { await UsersAPI.password(f.cur.value, f.next.value); toast("הסיסמה עודכנה"); closeSheet(); S.panel = null; }
+    catch(x){ err.textContent = errText(x); busyBtn(b, false, "עדכון סיסמה"); }
+  });
+}
+
+function openAdmin(refresh){
+  if (!isAdmin()) return;
+  const keys = Object.keys(USERS).sort((a,b) => (USERS[b].active!==false) - (USERS[a].active!==false) || (a===me?-1:b===me?1:0) || USERS[a].name.localeCompare(USERS[b].name, "he"));
+  const html = `${head("ניהול משתמשים")}
+    <p class="note">${keys.length} משתמשים · רק מנהל רואה את המסך הזה.</p>
+    <ul class="ulist">${keys.map(k => { const u = USERS[k]; return `<li><button type="button" data-u="${esc(k)}" class="${u.active===false?"off":""}">
+      <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
+      <span class="u-txt"><b>${esc(u.name)}${k===me?" (אני)":""}</b><small>@${esc(k)}</small></span>
+      ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor")}</button></li>`; }).join("")}</ul>
+    <button type="button" class="primary" id="newUser">${icon("plus")} משתמש חדש</button>`;
+  let sh;
+  if (refresh && $("#sheetRoot .sheet .inner")){ sh = $("#sheetRoot .sheet"); sh.querySelector(".inner").innerHTML = `<div class="grab"></div>${html}`; sh.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheet); }
+  else sh = openSheet(html);
+  S.panel = "admin";
+  sh.querySelector(".ulist").onclick = e => { const b = e.target.closest("[data-u]"); if (b) openUserEdit(b.dataset.u); };
+  sh.querySelector("#newUser").onclick = () => openUserEdit(null);
+}
+
+function openUserEdit(key){
+  const isNew = !key, u = isNew ? { name:"", color:PALETTE[Object.keys(USERS).length % PALETTE.length], role:"editor", active:true } : USERS[key];
+  const self = key === me, st = { color:u.color };
+  const roleOpts = Object.entries(ROLES).map(([k,r]) => [k, r.label]);
+  const sh = openSheet(`${head(isNew ? "משתמש חדש" : "עריכת משתמש")}
+    <form id="ue" class="pf-form" autocomplete="off">
+      <span class="lbl">שם תצוגה</span><input class="input" name="name" value="${esc(u.name)}" maxlength="24" placeholder="למשל: תהילה">
+      ${isNew ? `<span class="lbl">שם משתמש לכניסה</span><input class="input" name="username" dir="ltr" autocapitalize="none" spellcheck="false" placeholder="english letters, e.g. tehila">
+        <span class="lbl">סיסמה ראשונית</span><input class="input" name="password" type="text" dir="ltr" autocomplete="new-password" placeholder="לפחות 6 תווים">
+        <p class="note">המשתמש יוכל להחליף את הסיסמה בעצמו מהפרופיל.</p>`
+        : `<p class="note">שם משתמש: <b dir="ltr">@${esc(key)}</b></p>`}
+      <span class="lbl">הרשאה</span>
+      ${self ? `<p class="note">${roleBadge(u.role)} — אי אפשר לשנות את ההרשאה של עצמך.</p>` : `${radios("role", roleOpts, u.role || "editor")}<p class="role-desc" id="roleDesc">${esc(ROLES[u.role||"editor"].desc)}</p>`}
+      <span class="lbl">צבע</span>${swatches(u.color)}
+      ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
+      <p class="error" id="ueErr" role="alert"></p>
+      <div class="actions"><button type="button" class="secondary" id="ueBack">חזרה</button><button class="primary" type="submit" id="ueSave">${isNew ? "יצירת משתמש" : "שמירה"}</button></div>
+    </form>`);
+  bindSwatches(sh, st);
+  sh.querySelector("#ueBack").onclick = () => openAdmin();
+  sh.querySelectorAll('input[name=role]').forEach(r => r.addEventListener("change", () => { sh.querySelector("#roleDesc").textContent = ROLES[r.value].desc; }));
+  sh.querySelector("#ue").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target, err = sh.querySelector("#ueErr"), b = sh.querySelector("#ueSave");
+    const name = f.name.value.trim(), role = self ? u.role : (f.querySelector('input[name=role]:checked')?.value || "editor");
+    if (!name){ err.textContent = "צריך שם תצוגה."; return; }
+    err.textContent = ""; busyBtn(b, true, isNew ? "יוצר…" : "שומר…");
+    try {
+      if (isNew){
+        const username = f.username.value.trim().toLowerCase(), password = f.password.value;
+        if (!/^[a-z][a-z0-9._-]{2,19}$/.test(username)){ throw { msg:"שם משתמש: 3–20 תווים באנגלית, מתחיל באות." }; }
+        if (password.length < 6) throw { msg:"הסיסמה קצרה מדי — לפחות 6 תווים." };
+        await UsersAPI.create({ username, name, password, role, color:st.color });
+        toast(`${name} נוסף/ה ✓`);
+      } else {
+        const patch = { name, color:st.color };
+        if (!self){ patch.role = role; patch.active = f.active.checked; }
+        await UsersAPI.update(key, patch);
+        toast("נשמר");
+      }
+      openAdmin();
+    } catch(x){ err.textContent = x.msg || errText(x); busyBtn(b, false, isNew ? "יצירת משתמש" : "שמירה"); }
+  });
+}
+
 /* ================= Session ================= */
 function getSession(){ try{ return localStorage.getItem("nido.user"); }catch(e){ return null; } }
 function setSession(u){ try{ u?localStorage.setItem("nido.user",u):localStorage.removeItem("nido.user"); }catch(e){} }
-function enter(u){ me=u; Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false; S.tab="today"; render(); }
-function logout(fromCloud){ if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } hideAmbient(); setSession(null); me=null; $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
+function enter(u){ me=u; document.documentElement.classList.toggle("ro", !canEdit()); Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false; S.tab="today"; render(); }
+function logout(fromCloud){ if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } closeSheet(); document.documentElement.classList.remove("ro"); hideAmbient(); setSession(null); me=null; $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
 function doLogin(){
   const u=$("#user").value.trim().toLowerCase(), p=$("#pass").value, err=$("#err");
   if (!u||!p){ err.textContent="יש למלא שם משתמש וסיסמה."; return; }
   if (CLOUD) return cloudLogin(u, p);
-  if (!USERS[u]||USERS[u].password!==p){ err.textContent="שם המשתמש או הסיסמה שגויים."; return; }
+  if (!USERS[u]||USERS[u].password!==p||USERS[u].active===false){ err.textContent="שם המשתמש או הסיסמה שגויים."; return; }
   err.textContent=""; setSession(u);
   let entered = false; const go = () => { if (entered) return; entered = true; enter(u); };
   try { playSplash(go); setTimeout(go, 1500); }           // safety net: always end up in the app
@@ -2101,11 +2400,12 @@ function doLogin(){
 }
 async function cloudLogin(u, p){
   const err=$("#err"), btn=$("#loginBtn");
-  if (u.includes("@")) u = userOfEmail(u) || u;
-  if (!USERS[u]){ err.textContent="שם המשתמש או הסיסמה שגויים."; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="מתחבר…"; Cloud.loggingIn=true;
   try {
     await Cloud.signIn(u, p);
+    await Promise.race([new Promise(r => setTimeout(r, 4000)), (async () => { while (!Cloud.usersReady) await new Promise(r => setTimeout(r, 50)); await Cloud.usersReady; })()]);
+    if (!Cloud.user) return;                          // access denied while loading
+    u = Object.keys(USERS).find(k => USERS[k].uid === Cloud.user.uid) || u;
     setSession(u); $("#pass").value="";
     let entered = false; const go = () => { if (entered) return; entered = true; enter(u); };
     try { playSplash(go); setTimeout(go, 1500); }
