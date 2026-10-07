@@ -955,16 +955,18 @@ const Cloud = {
     if (first) this.loaded.add(c);
     if (first && this.loaded.size === COLS.length && ENV === "test" && COLS.every(k => !DB[k].length)) return this.seedTest();
     if (changed){ cacheLocal(); softRender(); }
+    if (first && this.loaded.size === COLS.length) Notify.schedule();
   },
   seedTest(){
     const s = seed(); s.shop.forEach(i => { if (!i.list) i.list = "super"; });
     Object.assign(DB, s, { survey: seedSurvey(), coupons: seedCoupons() });
-    save(); softRender();
+    this.seeding = true; save(); this.seeding = false; softRender();
   },
   push(force){
     if (!this.fb || !this.user){ this.dirty = true; return; }
     const F = this.fb; let batch = F.writeBatch(this.db), n = 0; const commits = [];
     const add = fn => { fn(batch); if (++n >= 400){ commits.push(batch.commit()); batch = F.writeBatch(this.db); n = 0; } };
+    const changes = [];
     for (const c of COLS){
       const snap = this.snap[c] || (this.snap[c] = new Map()), ord = this.order[c] || (this.order[c] = new Map());
       let max = 0; ord.forEach(v => { if (v > max) max = v; });
@@ -975,8 +977,9 @@ const Cloud = {
         if (!ord.has(it.id)) ord.set(it.id, ++max);
         const j = stable(it);
         if (force || snap.get(it.id) !== j){
+          const prev = snap.get(it.id); changes.push({ c, before: prev ? JSON.parse(prev) : null, after: it });
           snap.set(it.id, j);
-          const data = JSON.parse(j); data._o = ord.get(it.id); data._by = this.user.uid;
+          const data = JSON.parse(j); data._o = ord.get(it.id);
           add(b => b.set(this.ref(c, it.id), data));
         }
       }
@@ -984,6 +987,8 @@ const Cloud = {
     }
     if (n) commits.push(batch.commit());
     Promise.all(commits).catch(err => this.fail(err));
+    if (!force && !this.seeding) Notify.changes(changes);
+    if (changes.length) Notify.schedule();
   },
   fail(err){
     console.error("[nido cloud]", err);
@@ -993,48 +998,132 @@ const Cloud = {
   },
 };
 /* ================= Push notifications ================= */
-/* Each phone/browser registers a token in devices/{token}; a Cloud Function sends to the family's devices. */
-const VAPID_KEY = "BN9RSCqd50xsTsPbBFtQVEnrXsz9NsmBhJLx1MwwWZu3mCN9vPNfUrXaPqF_bde5rf4M5_cgYUW7yKYp4ZUhE_o";   // public Web Push key
+/* Standard Web Push. The Nido push server (a free Cloudflare Worker) keeps each phone's subscription,
+   sends a notification when someone changes something, and fires scheduled reminders. */
+const PUSH_URL = "__PUSH_URL__";
 const NOTIF_KINDS = [
   ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון"],
   ["assigned", "שובצה לי משימה",              "כשמישהו מעביר אליך משימה"],
   ["done",     "בוצע / יצאו לקניות",          "משימה הושלמה או שמישהו לקח את הקניות"],
-  ["remind",   "תזכורות",                     "שעה לפני אירוע או משימה, וסיכום בוקר ב־8:00"],
+  ["remind",   "תזכורות",                     "שעה לפני אירוע או משימה עם שעה, וסיכום בוקר ב־8:00"],
 ];
+async function pushApi(path, body){
+  const token = await Cloud.auth.currentUser.getIdToken();
+  const r = await fetch(PUSH_URL + path, { method:"POST", headers:{ "content-type":"application/json", authorization:"Bearer " + token }, body: JSON.stringify({ env: ENV, ...body }) });
+  if (!r.ok) throw { code: "push-" + r.status };
+  return r.json();
+}
 const Push = {
   KEY: "nido.push." + ENV,
   supported(){ return CLOUD && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window; },
   on(){ try { return this.supported() && Notification.permission === "granted" && !!localStorage.getItem(this.KEY); } catch(e){ return false; } },
-  async messaging(){
-    const M = this.M || (this.M = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js"));
-    return { M, msg: M.getMessaging(Cloud.app) };
-  },
-  async token(){
-    const { M, msg } = await this.messaging();
+  async subscription(){
     const reg = await navigator.serviceWorker.ready;
-    return M.getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-  },
-  async save(token){
-    const F = Cloud.fb;
-    await F.setDoc(F.doc(Cloud.db, "devices", token), { uid: Cloud.user.uid, env: ENV, ua: navigator.userAgent.slice(0, 140), updated: Date.now() });
-    localStorage.setItem(this.KEY, token);
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub){
+      const { key } = await (await fetch(PUSH_URL + "/vapid")).json();
+      const raw = Uint8Array.from(atob(key.replace(/-/g,"+").replace(/_/g,"/") + "===".slice((key.length+3)%4)), c => c.charCodeAt(0));
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: raw });
+    }
+    return sub;
   },
   async enable(){
     if (!this.supported()) throw { code:"unsupported" };
     const perm = await Notification.requestPermission();
     if (perm !== "granted") throw { code: perm === "denied" ? "denied" : "dismissed" };
-    await this.save(await this.token());
+    const sub = await this.subscription();
+    await pushApi("/subscribe", { sub: sub.toJSON() });
+    localStorage.setItem(this.KEY, sub.endpoint);
   },
   async disable(){
-    const t = localStorage.getItem(this.KEY); localStorage.removeItem(this.KEY);
-    if (!t) return;
-    try { await Cloud.fb.deleteDoc(Cloud.fb.doc(Cloud.db, "devices", t)); } catch(e){}
-    try { const { M, msg } = await this.messaging(); await M.deleteToken(msg); } catch(e){}
+    const ep = localStorage.getItem(this.KEY); localStorage.removeItem(this.KEY);
+    try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch(e){}
+    if (ep) try { await pushApi("/unsubscribe", { endpoint: ep }); } catch(e){}
   },
-  /* tokens rotate — re-register quietly on every start */
+  test(){ return pushApi("/test", {}); },
+  /* subscriptions can change — re-register quietly on every start */
   async refresh(){
     if (!this.on() || this._refreshed) return; this._refreshed = true;
-    try { const t = await this.token(); if (t) await this.save(t); } catch(e){ console.warn("[push]", e); }
+    try { const sub = await this.subscription(); await pushApi("/subscribe", { sub: sub.toJSON() }); localStorage.setItem(this.KEY, sub.endpoint); }
+    catch(e){ console.warn("[push]", e); }
+  },
+};
+
+/* What to tell whom. Runs on the phone that made the change; never notifies the person who did it. */
+const Notify = {
+  ADDED: { tasks:"משימה חדשה", ideas:"רעיון חדש", events:"אירוע חדש ביומן", shop:"נוסף לקניות", coupons:"קופון חדש", survey:"מוצר חדש בסקר שוק" },
+  TAB:   { tasks:"tasks", ideas:"ideas", events:"cal", shop:"shop", coupons:"shop", survey:"shop" },
+  wants: (k, kind) => !(USERS[k] && USERS[k].notif && USERS[k].notif[kind] === false),
+  others(kind){ return people().filter(k => k !== me && USERS[k].uid && this.wants(k, kind)); },
+  send(keys, msg){
+    const uids = keys.map(k => USERS[k] && USERS[k].uid).filter(Boolean);
+    if (!uids.length || !navigator.onLine) return;
+    pushApi("/send", { uids, ...msg }).catch(e => console.warn("[notify]", e));
+  },
+  changes(list){
+    if (!CLOUD || !me || !list.length || list.length > 12) return;      // bulk changes (imports, seeding) stay quiet
+    const who = meU().name;
+    for (const { c, before, after } of list){
+      const label = after.title || after.name || "";
+      if (!before){
+        if (c === "tasks" && (after.spawned || after.kind === "idea" || after.kind === "survey")) continue;
+        if (c === "tasks" && after.kind === "shop"){
+          this.send(this.others("done"), { title:"יוצאים לקניות 🛒", body:`${who} לוקח/ת את הקניות`, tag:"shop-take", tab:"shop" }); continue;
+        }
+        let skip = null;
+        if (c === "tasks" && after.assignee && after.assignee !== me && USERS[after.assignee]){
+          skip = after.assignee;
+          if (this.wants(skip, "assigned")) this.send([skip], { title:"שובצה לך משימה", body:`${label} · מ${who}`, tag:`t-${after.id}`, tab:"tasks" });
+        }
+        this.send(this.others("added").filter(k => k !== skip), { title: this.ADDED[c] || "נוסף משהו חדש", body:`${who}: ${label}`, tag: c === "shop" ? "shop-add" : `n-${after.id}`, tab: this.TAB[c] });
+        continue;
+      }
+      if (c === "tasks"){
+        if (after.assignee && after.assignee !== before.assignee && after.assignee !== me && USERS[after.assignee] && this.wants(after.assignee, "assigned"))
+          this.send([after.assignee], { title:"שובצה לך משימה", body:`${label} · מ${who}`, tag:`t-${after.id}`, tab:"tasks" });
+        if (after.done && !before.done){
+          const shop = after.kind === "shop";
+          this.send(this.others("done"), { title: shop ? "הקניות הושלמו ✓" : "משימה הושלמה ✓", body: shop ? `${who} סיים/ה את הקניות` : `${who}: ${label}`, tag:`d-${after.id}`, tab:"tasks" });
+        }
+      }
+    }
+  },
+  /* the whole reminder plan for the next 7 days, sent to the server whenever it changes */
+  schedule(){
+    if (!CLOUD || !me || !Cloud.user) return;
+    clearTimeout(this._t); this._t = setTimeout(() => this._schedule(), 2500);
+  },
+  _schedule(){
+    const now = Date.now(), until = now + 7*864e5, jobs = [];
+    const at = (d, t) => { const [h, m] = (t || "08:00").split(":").map(Number); const x = parse(d); x.setHours(h, m, 0, 0); return x.getTime(); };
+    const remind = people().filter(k => USERS[k].uid && this.wants(k, "remind"));
+    const uidsOf = ks => ks.map(k => USERS[k].uid);
+    for (const e of DB.events) if (e.date && e.time){
+      const t = at(e.date, e.time) - 60*60e3;
+      if (t > now && t < until) jobs.push({ id:`e_${e.id}_${e.date}_${e.time}`, at:t, uids: uidsOf(remind), title:`בעוד שעה: ${e.title}`, body:`${e.time}${e.place ? " · " + e.place : ""}`, tag:`r-${e.id}`, tab:"cal" });
+    }
+    for (const k of DB.tasks) if (!k.done && k.date && k.time){
+      const t = at(k.date, k.time) - 60*60e3;
+      const to = k.assignee && USERS[k.assignee] ? remind.filter(x => x === k.assignee) : remind;
+      if (t > now && t < until && to.length) jobs.push({ id:`k_${k.id}_${k.date}_${k.time}`, at:t, uids: uidsOf(to), title:`תזכורת: ${k.title}`, body:`בעוד שעה · ${k.time}`, tag:`r-${k.id}`, tab:"tasks" });
+    }
+    for (let i = 0; i < 7; i++){
+      const day = iso(addDays(new Date(), i)), t = at(day, "08:00");
+      if (t <= now) continue;
+      for (const u of remind){
+        const items = [
+          ...DB.events.filter(e => e.date === day).sort((a,b) => (a.time||"").localeCompare(b.time||"")).map(e => (e.time ? e.time + " " : "") + e.title),
+          ...DB.tasks.filter(k => !k.done && k.date === day && (!k.assignee || k.assignee === u)).map(k => (k.time ? k.time + " " : "") + k.title),
+        ];
+        if (!items.length) continue;
+        jobs.push({ id:`d_${day}_${USERS[u].uid}`, at:t, uids:[USERS[u].uid], title:`בוקר טוב ${USERS[u].name} ☀️ ${items.length === 1 ? "דבר אחד היום" : items.length + " דברים היום"}`,
+          body: items.slice(0, 4).join(" · ") + (items.length > 4 ? " …" : ""), tag:"digest", tab:"today" });
+      }
+    }
+    jobs.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+    const sig = JSON.stringify(jobs), key = "nido.jobs." + ENV;
+    try { if (localStorage.getItem(key) === sig) return; } catch(e){}
+    pushApi("/jobs", { jobs }).then(() => { try { localStorage.setItem(key, sig); } catch(e){} }).catch(e => console.warn("[jobs]", e));
   },
 };
 /* a tap on a notification opens the right tab */
@@ -2381,13 +2470,15 @@ function openNotifications(){
       <input type="checkbox" id="ntDev" ${Push.on()?"checked":""} ${!Push.supported()||blocked?"disabled":""}></label>
     <span class="lbl">על מה לקבל התראה</span>
     <div class="nt-list">${NOTIF_KINDS.map(([k,l,d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-k="${k}" ${prefs[k]!==false?"checked":""}></label>`).join("")}</div>
-    <p class="note">ההעדפות שלך נשמרות לכל המכשירים. התראה לא נשלחת על משהו שעשית בעצמך.</p>`);
-  const dev = sh.querySelector("#ntDev"), stateEl = sh.querySelector("#ntState");
+    <p class="note">ההעדפות שלך נשמרות לכל המכשירים. התראה לא נשלחת על משהו שעשית בעצמך.</p>
+    <button type="button" class="secondary" id="ntTest" style="width:100%;justify-content:center" ${Push.on()?"":"hidden"}>${icon("bell")}שלח לי התראת בדיקה</button>`);
+  const dev = sh.querySelector("#ntDev"), stateEl = sh.querySelector("#ntState"), testBtn = sh.querySelector("#ntTest");
+  testBtn.onclick = async () => { testBtn.disabled = true; try { const r = await Push.test(); toast(r.sent ? "נשלחה — היא תופיע עוד רגע" : "לא נמצא מכשיר פעיל"); } catch(e){ toast("השליחה נכשלה"); } testBtn.disabled = false; };
   dev.addEventListener("change", async () => {
     dev.disabled = true;
     try {
-      if (dev.checked){ stateEl.textContent = "מפעיל…"; await Push.enable(); stateEl.textContent = "פועל — ההתראות יגיעו גם כשהאפליקציה סגורה"; toast("ההתראות הופעלו 🔔"); }
-      else { await Push.disable(); stateEl.textContent = "כבוי"; toast("ההתראות כובו במכשיר הזה"); }
+      if (dev.checked){ stateEl.textContent = "מפעיל…"; await Push.enable(); stateEl.textContent = "פועל — ההתראות יגיעו גם כשהאפליקציה סגורה"; testBtn.hidden = false; toast("ההתראות הופעלו 🔔"); }
+      else { await Push.disable(); stateEl.textContent = "כבוי"; testBtn.hidden = true; toast("ההתראות כובו במכשיר הזה"); }
     } catch(e){
       dev.checked = false;
       stateEl.textContent = e.code === "denied" ? "ההתראות חסומות. פתח את הגדרות האפליקציה בטלפון ← התראות ← אפשר."
@@ -2398,7 +2489,7 @@ function openNotifications(){
   });
   sh.querySelectorAll("[data-k]").forEach(c => c.addEventListener("change", async () => {
     prefs[c.dataset.k] = c.checked;
-    try { await UsersAPI.update(me, { notif: { ...prefs } }); } catch(e){ c.checked = !c.checked; prefs[c.dataset.k] = c.checked; toast(errText(e)); }
+    try { await UsersAPI.update(me, { notif: { ...prefs } }); Notify.schedule(); } catch(e){ c.checked = !c.checked; prefs[c.dataset.k] = c.checked; toast(errText(e)); }
   }));
 }
 
