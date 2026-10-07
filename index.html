@@ -1932,9 +1932,13 @@ function ideaDetail(i){
   sh.querySelector("#plan").onclick = () => { closeSheet(); setTimeout(()=>eventSheet(null, { title:i.title, ideaId:i.id, date:iso(new Date()) }), 230); };
   sh.querySelector("#edit").onclick = () => { closeSheet(); setTimeout(()=>ideaForm(i), 230); };
   sh.querySelector("#del").onclick = async () => {
-    const open = ts.filter(t=>!t.done).length;
-    if (!await askConfirm(`למחוק את "${i.title}"?`, `הרעיון יוסר מהמאגר${open?` יחד עם ${open===1?"משימה פתוחה אחת":open+" משימות פתוחות"}`:""}. אירועים שכבר נקבעו נשארים ביומן.`)) return;
-    DB.tasks = DB.tasks.filter(t => !(t.ideaId===i.id && !t.done));
+    const evs = DB.events.filter(e => e.ideaId===i.id), parts = [];
+    if (ts.length) parts.push(ts.length===1 ? "משימה אחת" : ts.length+" משימות");
+    if (evs.length) parts.push(evs.length===1 ? "אירוע אחד ביומן" : evs.length+" אירועים ביומן");
+    if (!await askConfirm(`למחוק את "${i.title}"?`, `הרעיון יימחק${parts.length?` יחד עם ${parts.join(" ו")}`:""}.`)) return;
+    ts.forEach(t => { if (t.buy){ t.buy = false; syncBuy(t); } });          // its items leave the shopping list too
+    DB.tasks = DB.tasks.filter(t => t.ideaId!==i.id);
+    DB.events = DB.events.filter(e => e.ideaId!==i.id);
     DB.ideas = DB.ideas.filter(x=>x.id!==i.id); save(); closeSheet(); renderIdeas(); toast("הרעיון נמחק");
   };
 }
