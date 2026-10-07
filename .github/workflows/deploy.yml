@@ -1,0 +1,48 @@
+name: Deploy Nido
+
+# main  -> https://slavaborhovich.github.io/nido/        (the real app)
+# test  -> https://slavaborhovich.github.io/nido/test/   (test environment, separate data)
+on:
+  push:
+    branches: [main, test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with: { ref: main, path: main }
+      - name: Checkout test
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with: { ref: test, path: test }
+      - name: Build site
+        run: |
+          mkdir -p _site/test
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' main/ _site/
+          if [ -f test/index.html ]; then
+            rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' test/ _site/test/
+          else
+            cp -r _site/index.html _site/manifest.webmanifest _site/sw.js _site/icons _site/test/
+          fi
+          touch _site/.nojekyll
+          ls -la _site _site/test
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

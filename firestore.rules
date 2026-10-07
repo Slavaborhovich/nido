@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // only the family's accounts (Firebase Auth UIDs)
+    function family() {
+      return request.auth != null && request.auth.uid in [
+        'K2TaGlPsCJQ7W4HPdaOwQqvRKGS2'  // slava
+      ];
+    }
+    match /envs/{env}/{col}/{id} {
+      allow read, write: if family() && env in ['prod', 'test'];
+    }
+  }
+}
