@@ -480,6 +480,11 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .st-row input::placeholder{color:var(--faint)}
 .st-row.done input,.st-row.done .t{color:var(--faint);text-decoration:line-through}
 .st-row .t{flex:1;min-width:0;font-size:15px}
+.st-cart{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,214,170,.14);background:rgba(30,20,12,.4);color:var(--faint);display:grid;place-items:center;padding:0;flex:none;cursor:pointer}
+.st-cart svg{width:15px;height:15px}
+.st-cart.on{background:rgba(242,182,107,.2);border-color:rgba(242,182,107,.5);color:#F2C48A}
+.st-cart[disabled]{opacity:.4}
+span.st-cart{cursor:default}
 .st-who{height:30px;padding:0 10px 0 6px;border-radius:999px;border:1px solid rgba(255,214,170,.14);background:rgba(30,20,12,.4);display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);flex:none}
 .st-who i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700;color:#1E140C;background:var(--c,#6E5C4A)}
 .st-who.none i{background:rgba(255,226,190,.12);color:var(--faint)}
@@ -1001,6 +1006,7 @@ const Cloud = {
 /* Standard Web Push. The Nido push server (a free Cloudflare Worker) keeps each phone's subscription,
    sends a notification when someone changes something, and fires scheduled reminders. */
 const PUSH_URL = "__PUSH_URL__";
+const PUSH_READY = !PUSH_URL.startsWith("__");                 // until the push server is set up, notifications stay off
 const NOTIF_KINDS = [
   ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון"],
   ["assigned", "שובצה לי משימה",              "כשמישהו מעביר אליך משימה"],
@@ -1015,7 +1021,7 @@ async function pushApi(path, body){
 }
 const Push = {
   KEY: "nido.push." + ENV,
-  supported(){ return CLOUD && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window; },
+  supported(){ return CLOUD && PUSH_READY && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window; },
   on(){ try { return this.supported() && Notification.permission === "granted" && !!localStorage.getItem(this.KEY); } catch(e){ return false; } },
   async subscription(){
     const reg = await navigator.serviceWorker.ready;
@@ -1061,7 +1067,7 @@ const Notify = {
     pushApi("/send", { uids, ...msg }).catch(e => console.warn("[notify]", e));
   },
   changes(list){
-    if (!CLOUD || !me || !list.length || list.length > 12) return;      // bulk changes (imports, seeding) stay quiet
+    if (!CLOUD || !PUSH_READY || !me || !list.length || list.length > 12) return;      // bulk changes (imports, seeding) stay quiet
     const who = meU().name;
     for (const { c, before, after } of list){
       const label = after.title || after.name || "";
@@ -1090,7 +1096,7 @@ const Notify = {
   },
   /* the whole reminder plan for the next 7 days, sent to the server whenever it changes */
   schedule(){
-    if (!CLOUD || !me || !Cloud.user) return;
+    if (!CLOUD || !PUSH_READY || !me || !Cloud.user) return;
     clearTimeout(this._t); this._t = setTimeout(() => this._schedule(), 2500);
   },
   _schedule(){
@@ -1288,7 +1294,7 @@ function renderTasks(){
     if (btn.dataset.act==="toggle"){
       if (!t.done){ btn.classList.add("on"); row.classList.add("leaving"); setTimeout(()=>{ completeTask(t); renderTasks(); }, 320); }
       else if (t.kind==="shop"){ toast("משימת קניות שהושלמה לא חוזרת לפעילות"); }
-      else { t.done=false; delete t.doneAt; delete t.doneBy; save(); renderTasks(); }
+      else { t.done=false; delete t.doneAt; delete t.doneBy; if (t.buy) syncBuy(t); save(); renderTasks(); }
     } else if (t.kind==="shop"){ go("shop"); } else taskSheet(t);
   };
 }
@@ -1296,8 +1302,12 @@ function completeTask(t){
   t.done = true; t.doneAt = Date.now(); t.doneBy = me;
   if (t.kind==="shop"){
     t.items = DB.shop.filter(i=>i.taskId===t.id).map(i=>i.name);
+    DB.shop.filter(i => i.taskId===t.id && i.fromTask).forEach(i => {        // bought → the idea's sub-task is done
+      const st = DB.tasks.find(x => x.id===i.fromTask); if (st && !st.done){ st.done = true; st.doneAt = Date.now(); st.doneBy = me; delete st.shopItemId; }
+    });
     DB.shop = DB.shop.filter(i=>i.taskId!==t.id);
     toast(`הקניות הושלמו · ${t.items.length} פריטים ירדו מהרשימה`);
+  } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הסופר");
   } else if (t.repeat && t.repeat!=="none"){
     const base = t.date ? parse(t.date) : new Date();
     const next = t.repeat==="daily" ? addDays(base,1) : t.repeat==="weekly" ? addDays(base,7) : new Date(base.getFullYear(), base.getMonth()+1, base.getDate());
@@ -1485,7 +1495,9 @@ function itemSheet(i){
   f.onsubmit = e => { e.preventDefault(); if(!f.name.value.trim()) return;
     Object.assign(i,{ name:f.name.value.trim(), qty:f.qty.value.trim(), note:f.note.value.trim() }); save(); closeSheet(); renderShop(); };
   const rel = sh.querySelector("#rel"); if (rel) rel.onclick = () => { releaseItem(i); save(); closeSheet(); renderShop(); };
-  sh.querySelector("#del").onclick = () => { releaseItem(i); DB.shop = DB.shop.filter(x=>x.id!==i.id); save(); closeSheet(); renderShop(); };
+  sh.querySelector("#del").onclick = () => { releaseItem(i); DB.shop = DB.shop.filter(x=>x.id!==i.id);
+    const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st){ st.buy = false; delete st.shopItemId; }
+    save(); closeSheet(); renderShop(); };
 }
 
 
@@ -1814,6 +1826,19 @@ const FB = [
   { k:"kids",    label:"הילדים",        yes:"אהבו",               no:"פחות",        yv:true,   nv:false,  good:"הילדים אהבו", bad:"הילדים פחות" },
 ];
 const ideaTasks = i => DB.tasks.filter(t => t.ideaId===i.id);
+/* a sub-task marked 🛒 lives in the supermarket list too; buying it completes the sub-task */
+function syncBuy(t){
+  const it = t.shopItemId && DB.shop.find(i => i.id===t.shopItemId);
+  if (t.buy && !t.done){
+    if (it){ if (!it.takenBy) it.name = t.title; return; }
+    const idea = DB.ideas.find(x => x.id===t.ideaId);
+    const n = { id:uid(), name:t.title, qty:"", note: idea ? `ל${idea.title}` : "", takenBy:null, taskId:null, list:"super", fromTask:t.id };
+    DB.shop.push(n); t.shopItemId = n.id;
+  } else {
+    if (it && !it.takenBy) DB.shop = DB.shop.filter(x => x !== it);
+    if (!it || !it.takenBy) delete t.shopItemId;
+  }
+}
 function fbBadges(i){ return ""; }
 function renderIdeas(){
   const all = people().length;
@@ -1879,7 +1904,7 @@ function ideaDetail(i){
       </div>
       ${ts.length ? `<section class="if-sec"><header><h4>${icon("chk")}משימות</h4><small>${ts.filter(t=>t.done).length}/${ts.length} בוצעו</small></header>
         <div id="dTasks">${ts.map(t => `<div class="st-row ${t.done?"done":""}" data-t="${t.id}">
-          <button type="button" class="dot ${t.done?"on":""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${whoChip(t.assignee)}</div>`).join("")}</div></section>` : ""}
+          <button type="button" class="dot ${t.done?"on":""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy?`<span class="st-cart on" aria-label="ברשימת הסופר">${icon("cart")}</span>`:""}${whoChip(t.assignee)}</div>`).join("")}</div></section>` : ""}
       <section class="if-sec"><header><h4>★ איך היה?</h4>${times?`<small>נקבע ביומן ${times===1?"פעם אחת":times+" פעמים"}</small>`:""}</header>
         <div id="dFb">${feedbackHTML(i.rating||0, i.review)}</div></section>
       <div class="row-btns"><button class="primary" id="plan">${icon("cal")} קובעים</button></div>
@@ -1890,6 +1915,7 @@ function ideaDetail(i){
   const dt = sh.querySelector("#dTasks"); if (dt) dt.onclick = e => {
     const b = e.target.closest(".dot"); if (!b) return; const t = DB.tasks.find(x => x.id===b.closest("[data-t]").dataset.t);
     if (t.done){ t.done=false; delete t.doneAt; delete t.doneBy; } else { t.done=true; t.doneAt=Date.now(); t.doneBy=me; }
+    if (t.buy) syncBuy(t);
     save(); renderIdeas(); ideaDetail(i);
   };
   sh.querySelector("#want").onclick = () => { toggleLike(i); renderIdeas(); ideaDetail(i); };
@@ -1907,13 +1933,14 @@ function ideaForm(idea){
   const edit = !!idea; const i = idea || { title:"", desc:"", link:"", image:"", rating:0, review:"" };
   let img = i.image;
   const state = { rating:i.rating||0, review:i.review||"" };
-  let rows = edit ? ideaTasks(i).map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done })) : [];
+  let rows = edit ? ideaTasks(i).map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done, buy:!!t.buy })) : [];
   const cover = () => img
     ? `<img src="${img}" alt=""><div class="tools"><button type="button" data-rm>הסרה</button></div>`
     : `<div class="ph">${icon("image")}<span>הוספת תמונה</span><small style="color:var(--faint)">מהגלריה או מהמצלמה</small></div>`;
   const rowsHTML = () => rows.map((r, k) => `<div class="st-row ${r.done?"done":""}" data-k="${k}">
       <span class="dot ${r.done?"on":""}">${icon("tick")}</span>
       <input value="${esc(r.title)}" aria-label="משימה" ${r.done?"disabled":""}>
+      <button type="button" class="st-cart ${r.buy?"on":""}" aria-pressed="${r.buy}" aria-label="להוסיף לרשימת הסופר" ${r.done?"disabled":""}>${icon("cart")}</button>
       <button type="button" class="st-whob" style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(r.assignee)}</button>
       <button type="button" class="st-x" aria-label="הסרה">${icon("close")}</button></div>`).join("");
   const sh = openSheet(`${head(edit?"עריכת רעיון":"רעיון חדש")}
@@ -1966,6 +1993,7 @@ function ideaForm(idea){
   $r.addEventListener("click", e => {
     const row = e.target.closest("[data-k]"); if (!row) return; const r = rows[+row.dataset.k];
     if (e.target.closest(".st-x")){ rows.splice(+row.dataset.k, 1); redraw(); return; }
+    if (e.target.closest(".st-cart") && !r.done){ r.buy = !r.buy; redraw(); if (r.buy) toast("ייכנס לרשימת הסופר בשמירה"); return; }
     if (e.target.closest(".st-whob") && !r.done){ { const P = peopleCycle(); r.assignee = P[(P.indexOf(r.assignee) + 1) % P.length]; } redraw(); }
   });
 
@@ -1976,14 +2004,15 @@ function ideaForm(idea){
     let target = idea;
     if (edit) Object.assign(idea, data); else { target = { id:uid(), ...data, likes:[me], created:Date.now() }; DB.ideas.push(target); }
     // sync sub-tasks into the Tasks screen
-    const keep = new Set(); let added = 0;
+    const keep = new Set(); let added = 0, bought = 0;
     rows.filter(r => r.title.trim()).forEach(r => {
-      if (r.id){ const t = DB.tasks.find(x => x.id===r.id); if (t){ keep.add(t.id); if (!t.done){ t.title = r.title.trim(); t.assignee = r.assignee; } } }
-      else { const t = { id:uid(), kind:"idea", ideaId:target.id, title:r.title.trim(), assignee:r.assignee, date:null, time:null, repeat:"none", done:false, created:Date.now() }; DB.tasks.push(t); keep.add(t.id); added++; }
+      if (r.id){ const t = DB.tasks.find(x => x.id===r.id); if (t){ keep.add(t.id); if (!t.done){ t.title = r.title.trim(); t.assignee = r.assignee; t.buy = !!r.buy; syncBuy(t); } } }
+      else { const t = { id:uid(), kind:"idea", ideaId:target.id, title:r.title.trim(), assignee:r.assignee, date:null, time:null, repeat:"none", done:false, buy:!!r.buy, created:Date.now() }; DB.tasks.push(t); syncBuy(t); keep.add(t.id); added++; if (t.buy) bought++; }
     });
+    DB.tasks.filter(t => t.ideaId===target.id && !keep.has(t.id) && !t.done).forEach(t => { t.buy = false; syncBuy(t); });
     DB.tasks = DB.tasks.filter(t => t.ideaId!==target.id || keep.has(t.id) || t.done);
     save(); closeSheet(); renderIdeas();
-    toast(added ? `${edit?"נשמר":"הרעיון נוסף"} · ${added===1?"משימה אחת נוספה":added+" משימות נוספו"} למסך המשימות` : (edit?"נשמר":"הרעיון נוסף למאגר"));
+    toast(added ? `${edit?"נשמר":"הרעיון נוסף"} · ${added===1?"משימה אחת נוספה":added+" משימות נוספו"}${bought?` · ${bought} לסופר 🛒`:""}` : (edit?"נשמר":"הרעיון נוסף למאגר"));
   };
 }
 
@@ -2438,7 +2467,7 @@ function openProfile(){
       <button class="primary" type="submit" id="pfSave">שמירה</button>
     </form>
     <div class="pf-links">
-      ${CLOUD?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
+      ${CLOUD && PUSH_READY?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
       <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
       ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}ניהול משתמשים<span class="go">${icon("next")}</span></button>`:""}
       <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
