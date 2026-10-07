@@ -634,6 +634,16 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:#2C2016;border:1px solid rgba(255,214,170,.12);margin-bottom:16px}
 .toggle-row input{width:22px;height:22px;accent-color:#D99A55}
 .note{font-size:13px;color:#BCA996;margin:0 0 14px}
+.fam{margin-bottom:18px;padding:12px;border-radius:18px;background:rgba(255,226,190,.04);border:1px solid rgba(255,214,170,.1)}
+.fam header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.fam header small{color:#93806C;font-size:12px}
+.fam-name{display:inline-flex;align-items:center;gap:7px;border:0;background:none;padding:0;color:var(--text);font:inherit}
+.fam-name b{font-size:16px;font-weight:600}
+.fam-name svg{width:17px;height:17px;color:#F2C48A}
+.fam-name svg:last-child:not(:first-child){width:14px;height:14px;color:#93806C}
+.fam .ulist{margin-bottom:10px}
+.fam-add{width:100%;justify-content:center;height:42px;font-size:14px}
+.note svg{width:15px;height:15px;vertical-align:-3px}
 .nt-list .toggle-row{margin-bottom:8px}
 .pf-links .secondary .go{display:inline-flex;align-items:center;gap:4px;font-size:13px}
 /* ---------- Calendar: week board + rich month ---------- */
@@ -815,7 +825,10 @@ const ROLES = {
   viewer: { label:"צפייה בלבד",    short:"צופה",  desc:"רואה הכול, לא יכול לשנות" },
 };
 const PALETTE = ["#7FB0FF","#C3B1FF","#F2B66B","#8FD3A8","#F59AB0","#6FD0D9","#E8C46A","#E8705A"];
-const BOOT_ADMIN_UID = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";   // first admin (slava) — can always get in to set things up
+const BOOT_ADMIN_UID = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
+const HOME_FAMILY = "home";            // the first family (ours). Other families get their own id.
+const ALLUSERS = {};                   // every family's people — only the system admin sees this
+const FAMILIES = {};                   // id → { name }   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
 const ENV = /\/test(\/|$)/.test(location.pathname) ? "test" : "prod";
@@ -955,31 +968,58 @@ const Cloud = {
     catch(e){ this.db = F.getFirestore(app); }
     AU.onAuthStateChanged(this.auth, user => this.onUser(user));
   },
+  fam: HOME_FAMILY, isSuper: false,
   onUser(user){
     this.user = user;
     if (!user){ this.stop(); if (me) logout(true); return; }
     this.listenUsers();
   },
-  /* the people list is shared by both environments: users/{uid} */
-  listenUsers(){
-    if (this.usersUnsub) return;
+  /* people: users/{uid} with a family field. The system admin sees everyone; others only their own family. */
+  async listenUsers(){
+    if (this.usersUnsub || this._lu) return; this._lu = true;
     this.usersReady = new Promise(r => this._usersReady = r);
-    this.usersUnsub = this.fb.onSnapshot(this.fb.collection(this.db, "users"), qs => this.applyUsers(qs), err => {
+    const F = this.fb, uid = this.user.uid; this.isSuper = uid === BOOT_ADMIN_UID;
+    let q;
+    if (this.isSuper){
+      q = F.collection(this.db, "users");
+      this.famUnsub = F.onSnapshot(F.collection(this.db, "families"), qs => {
+        Object.keys(FAMILIES).forEach(k => delete FAMILIES[k]);
+        qs.docs.forEach(d => FAMILIES[d.id] = { name: d.data().name || d.id });
+        refreshOpenPanels();
+      }, () => {});
+    } else {
+      let fam = null;
+      try { const d = await F.getDoc(F.doc(this.db, "users", uid)); if (d.exists()) fam = d.data().family || HOME_FAMILY; else if (!d.metadata.fromCache){ this._lu = false; return this.deny("אין לך הרשאה לאפליקציה. פנה למנהל."); } }
+      catch(e){ if (String(e.code).includes("permission")){ this._lu = false; return this.deny("אין לך הרשאה לאפליקציה. פנה למנהל."); } }
+      if (!fam){ try { fam = localStorage.getItem("nido.family"); } catch(e){} }
+      this.fam = fam || HOME_FAMILY;
+      q = F.query(F.collection(this.db, "users"), F.where("family", "==", this.fam));
+      // until the admin's app tags old profiles with a family, keep our own profile in view
+      this.myDocUnsub = F.onSnapshot(F.doc(this.db, "users", uid), d => { this.myDoc = d.exists() ? { uid, ...d.data() } : null; if (this._lastQs) this.applyUsers(this._lastQs); }, () => {});
+    }
+    this.usersUnsub = F.onSnapshot(q, qs => { this._lastQs = qs; this.applyUsers(qs); }, err => {
       console.error("[nido users]", err);
       if (String(err.code).includes("permission")){ this.deny("אין לך הרשאה לאפליקציה. פנה למנהל."); }
     });
+    this._lu = false;
   },
   applyUsers(qs){
     const uid = this.user && this.user.uid; if (!uid) return;
     const list = qs.docs.map(d => ({ uid:d.id, ...d.data() }));
+    if (!this.isSuper && this.myDoc && !list.some(x => x.uid === uid)) list.push(this.myDoc);
     const mine = list.find(x => x.uid === uid);
     if (!mine){
-      if (qs.metadata.fromCache) return;
+      if (qs.metadata.fromCache || (!this.isSuper && this.myDoc === undefined)) return;
       if (uid === BOOT_ADMIN_UID) return this.bootstrap();
       return this.deny("אין לך הרשאה לאפליקציה. פנה למנהל.");
     }
-    const map = {};
-    list.forEach(x => { if (x.username) map[x.username] = { name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{} }; });
+    if (this.isSuper && !qs.metadata.fromCache) this.tagFamilies(list);
+    this.fam = mine.family || HOME_FAMILY;
+    try { localStorage.setItem("nido.family", this.fam); } catch(e){}
+    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY });
+    const map = {}, all = {};
+    list.forEach(x => { if (!x.username) return; all[x.username] = toUser(x); if ((x.family || HOME_FAMILY) === this.fam) map[x.username] = all[x.username]; });
+    Object.keys(ALLUSERS).forEach(k => delete ALLUSERS[k]); Object.assign(ALLUSERS, all);
     setUsers(map); storeUsers();
     if (mine.active === false) return this.deny("המשתמש שלך הושבת. פנה למנהל.");
     const u = mine.username;
@@ -992,9 +1032,23 @@ const Cloud = {
     refreshOpenPanels(); softRender();
   },
   deny(msg){ this.user = null; this.signOut(); this.stop(); if (me) logout(true); $("#err") && ($("#err").textContent = msg); toast(msg); },
+  /* one-time: profiles made before families existed belong to the first family */
+  tagFamilies(list){
+    if (this._tagged) return; this._tagged = true;
+    const F = this.fb, b = F.writeBatch(this.db); let n = 0;
+    list.filter(x => !x.family).forEach(x => { b.update(F.doc(this.db, "users", x.uid), { family: HOME_FAMILY }); n++; });
+    if (!FAMILIES[HOME_FAMILY]){ b.set(F.doc(this.db, "families", HOME_FAMILY), { name:"בורחוביץ'", created:Date.now() }, { merge:true }); n++; }
+    if (n) b.commit().catch(e => console.warn("[families]", e));
+  },
+  async createFamily(name){
+    const id = "f" + Math.random().toString(36).slice(2, 8);
+    await this.fb.setDoc(this.fb.doc(this.db, "families", id), { name, created:Date.now() });
+    return id;
+  },
+  async renameFamily(id, name){ await this.fb.setDoc(this.fb.doc(this.db, "families", id), { name }, { merge:true }); },
   async bootstrap(){
     const F = this.fb, uid = this.user.uid, b = F.writeBatch(this.db);
-    b.set(F.doc(this.db, "users", uid), { username:"slava", name:"סלבה", color:"#7FB0FF", role:"admin", active:true, photo:"", created:Date.now() });
+    b.set(F.doc(this.db, "users", uid), { username:"slava", name:"סלבה", color:"#7FB0FF", role:"admin", active:true, photo:"", family:HOME_FAMILY, created:Date.now() });
     b.set(F.doc(this.db, "logins", "slava"), { email:this.user.email, uid });
     await b.commit().catch(e => this.fail(e));
   },
@@ -1009,7 +1063,7 @@ const Cloud = {
     return this.fb.signInWithEmailAndPassword(this.auth, email, p);
   },
   /* admin: create a new person. A second Firebase app makes the account so the admin stays signed in. */
-  async createUser({ username, name, password, role, color }){
+  async createUser({ username, name, password, role, color, family }){
     const F = this.fb;
     if ((await F.getDoc(F.doc(this.db, "logins", username))).exists()) throw { code:"taken" };
     const sec = this.secApp || (this.secApp = this.A.initializeApp(FIREBASE_CONFIG, "creator"));
@@ -1023,16 +1077,16 @@ const Cloud = {
     }
     const uid = cred.user.uid; await F.signOut(sa);
     const b = F.writeBatch(this.db);
-    b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", created:Date.now() });
+    b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", family: family || this.fam, created:Date.now() });
     b.set(F.doc(this.db, "logins", username), { email, uid });
     await b.commit();
   },
   async updateUser(username, patch){
-    const u = USERS[username]; if (!u || !u.uid) throw { code:"missing" };
+    const u = ALLUSERS[username] || USERS[username]; if (!u || !u.uid) throw { code:"missing" };
     await this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), patch);
   },
   async deleteUser(username){
-    const u = USERS[username]; if (!u || !u.uid) throw { code:"missing" };
+    const u = ALLUSERS[username] || USERS[username]; if (!u || !u.uid) throw { code:"missing" };
     const F = this.fb, b = F.writeBatch(this.db);
     b.delete(F.doc(this.db, "users", u.uid)); b.delete(F.doc(this.db, "logins", username));
     await b.commit();
@@ -1043,17 +1097,36 @@ const Cloud = {
     await F.updatePassword(user, next);
   },
   signOut(){ try { this.fb && this.fb.signOut(this.auth); } catch(e){} },
-  ref(c, id){ return this.fb.doc(this.db, "envs", ENV, c, id); },
-  listen(){
-    if (this.unsubs.length) return;
+  ref(c, id){ return this.fb.doc(this.db, "families", this.fam, "envs", ENV, c, id); },
+  async listen(){
+    if (this.unsubs.length || this._listening) return;
+    if (ENV === "test" && this.fam !== HOME_FAMILY){ return this.deny("סביבת הבדיקה פתוחה רק למשפחה הראשית."); }
+    this._listening = true;
+    if (this.fam === HOME_FAMILY) await this.migrate();
+    this._listening = false; if (!this.user || this.unsubs.length) return;
     if (this.dirty){ this.dirty = false; this.push(true); }
     this.loaded = new Set();
     for (const c of COLS){
-      const q = this.fb.collection(this.db, "envs", ENV, c);
+      const q = this.fb.collection(this.db, "families", this.fam, "envs", ENV, c);
       this.unsubs.push(this.fb.onSnapshot(q, qs => this.apply(c, qs), err => this.fail(err)));
     }
   },
-  stop(){ if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  /* one-time move of our data from the old place (envs/…) into families/home/envs/… — the old copy stays as a backup */
+  async migrate(){
+    const F = this.fb, flag = F.doc(this.db, "families", HOME_FAMILY, "meta", "migrated-" + ENV);
+    try { if ((await F.getDoc(flag)).exists()) return; } catch(e){ return; }
+    if (!canEdit()) return;
+    try {
+      let b = F.writeBatch(this.db), n = 0; const commits = [];
+      for (const c of COLS){
+        const qs = await F.getDocs(F.collection(this.db, "envs", ENV, c));
+        for (const d of qs.docs){ b.set(F.doc(this.db, "families", HOME_FAMILY, "envs", ENV, c, d.id), d.data()); if (++n >= 400){ commits.push(b.commit()); b = F.writeBatch(this.db); n = 0; } }
+      }
+      b.set(flag, { at: Date.now(), by: this.user.uid }); commits.push(b.commit());
+      await Promise.all(commits);
+    } catch(e){ console.error("[migrate]", e); }
+  },
+  stop(){ if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -2773,6 +2846,7 @@ const UsersAPI = {
   async create(d){
     if (CLOUD) return Cloud.createUser(d);
     if (USERS[d.username]) throw { code:"taken" };
+    delete d.family;
     USERS[d.username] = { name:d.name, color:d.color, role:d.role, photo:"", active:true, password:d.password };
     storeUsers(); afterUsersChange();
   },
@@ -2910,8 +2984,10 @@ function openPassword(){
   });
 }
 
+const isSuperAdmin = () => CLOUD ? !!Cloud.isSuper : roleOf() === "admin";
 function openAdmin(refresh){
   if (!isAdmin()) return;
+  if (CLOUD && Cloud.isSuper) return openFamilies(refresh);
   const keys = Object.keys(USERS).sort((a,b) => (USERS[b].active!==false) - (USERS[a].active!==false) || (a===me?-1:b===me?1:0) || USERS[a].name.localeCompare(USERS[b].name, "he"));
   const html = `${head("ניהול משתמשים")}
     <p class="note">${keys.length} משתמשים · רק מנהל רואה את המסך הזה.</p>
@@ -2928,11 +3004,66 @@ function openAdmin(refresh){
   sh.querySelector("#newUser").onclick = () => openUserEdit(null);
 }
 
-function openUserEdit(key){
-  const isNew = !key, u = isNew ? { name:"", color:PALETTE[Object.keys(USERS).length % PALETTE.length], role:"editor", active:true } : USERS[key];
+/* system admin: every family, its people, and new families */
+function openFamilies(refresh){
+  const fams = { ...FAMILIES }; Object.values(ALLUSERS).forEach(u => { if (!fams[u.family]) fams[u.family] = { name: u.family === HOME_FAMILY ? "בורחוביץ'" : u.family }; });
+  const ids = Object.keys(fams).sort((a, b) => (a === HOME_FAMILY ? -1 : b === HOME_FAMILY ? 1 : fams[a].name.localeCompare(fams[b].name, "he")));
+  const people = id => Object.keys(ALLUSERS).filter(k => ALLUSERS[k].family === id).sort((a, b) => (ALLUSERS[b].active!==false) - (ALLUSERS[a].active!==false) || (a===me?-1:b===me?1:0) || ALLUSERS[a].name.localeCompare(ALLUSERS[b].name, "he"));
+  const html = `${head("משפחות ומשתמשים")}
+    <p class="note">${ids.length} משפחות · ${Object.keys(ALLUSERS).length} משתמשים. כל משפחה רואה רק את עצמה — גם אתה לא רואה את התוכן של משפחות אחרות.</p>
+    ${ids.map(id => { const ks = people(id); return `<section class="fam">
+      <header><button type="button" class="fam-name" data-fren="${esc(id)}">${icon("home")}<b>${id === HOME_FAMILY ? "המשפחה שלנו" : "משפחת " + esc(fams[id].name)}</b>${id !== HOME_FAMILY ? icon("edit") : ""}</button><small>${ks.length} ${ks.length === 1 ? "משתמש" : "משתמשים"}</small></header>
+      <ul class="ulist">${ks.map(k => { const u = ALLUSERS[k]; return `<li><button type="button" data-u="${esc(k)}" class="${u.active===false?"off":""}">
+        <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
+        <span class="u-txt"><b>${esc(u.name)}${k===me?" (אני)":""}</b><small>@${esc(k)}</small></span>
+        ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor")}</button></li>`; }).join("")}</ul>
+      <button type="button" class="secondary fam-add" data-fnew="${esc(id)}">${icon("plus")} משתמש ל${id === HOME_FAMILY ? "משפחה שלנו" : "משפחת " + esc(fams[id].name)}</button>
+    </section>`; }).join("")}
+    <button type="button" class="primary" id="newFam">${icon("plus")} משפחה חדשה</button>`;
+  let sh;
+  if (refresh && $("#sheetRoot .sheet .inner")){ sh = $("#sheetRoot .sheet"); sh.querySelector(".inner").innerHTML = `<div class="grab"></div>${html}`; sh.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheet); }
+  else sh = openSheet(html);
+  S.panel = "admin";
+  sh.querySelector(".inner").onclick = async e => {
+    const u = e.target.closest("[data-u]"); if (u) return openUserEdit(u.dataset.u);
+    const nw = e.target.closest("[data-fnew]"); if (nw) return openUserEdit(null, nw.dataset.fnew);
+    const rn = e.target.closest("[data-fren]"); if (rn && rn.dataset.fren !== HOME_FAMILY) return openFamilyForm(rn.dataset.fren);
+    if (e.target.closest("#newFam")) return openFamilyForm(null);
+  };
+}
+function openFamilyForm(id){
+  const isNew = !id, cur = id ? (FAMILIES[id]?.name || "") : "";
+  const sh = openSheet(`${head(isNew ? "משפחה חדשה" : "שם המשפחה")}
+    <form id="ff" class="pf-form" autocomplete="off">
+      <span class="lbl">שם המשפחה</span><input class="input" name="name" value="${esc(cur)}" maxlength="30" placeholder="למשל: כהן">
+      ${isNew ? `<p class="note">אחרי היצירה מוסיפים לה משתמשים. הנתונים של כל משפחה נפרדים לגמרי.</p>` : ""}
+      <p class="error" id="ffErr" role="alert"></p>
+      <div class="actions"><button type="button" class="secondary" id="ffBack">חזרה</button><button class="primary" type="submit" id="ffSave">${isNew ? "יצירת משפחה" : "שמירה"}</button></div>
+    </form>`);
+  setTimeout(() => sh.querySelector("input[name=name]").focus(), 250);
+  sh.querySelector("#ffBack").onclick = () => openAdmin();
+  sh.querySelector("#ff").addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = e.target.name.value.trim().replace(/^משפחת\s+/, ""), b = sh.querySelector("#ffSave");
+    if (!name){ sh.querySelector("#ffErr").textContent = "צריך שם."; return; }
+    busyBtn(b, true, "שומר…");
+    try {
+      if (isNew){ const nid = await Cloud.createFamily(name); FAMILIES[nid] = { name }; toast(`משפחת ${name} נוצרה ✓`); openUserEdit(null, nid); }
+      else { await Cloud.renameFamily(id, name); toast("נשמר"); openAdmin(); }
+    } catch(x){ sh.querySelector("#ffErr").textContent = errText(x); busyBtn(b, false, isNew ? "יצירת משפחה" : "שמירה"); }
+  });
+}
+
+function openUserEdit(key, forFamily){
+  const pool = CLOUD && Cloud.isSuper ? ALLUSERS : USERS;
+  const family = key ? (pool[key]?.family || HOME_FAMILY) : (forFamily || (CLOUD ? Cloud.fam : HOME_FAMILY));
+  const famCount = Object.values(pool).filter(x => (x.family || HOME_FAMILY) === family).length;
+  const isNew = !key, u = isNew ? { name:"", color:PALETTE[famCount % PALETTE.length], role:"editor", active:true } : pool[key];
   const self = key === me, st = { color:u.color };
-  const roleOpts = Object.entries(ROLES).map(([k,r]) => [k, r.label]);
+  const roleOpts = Object.entries(ROLES).filter(([k]) => k !== "admin" || family === HOME_FAMILY).map(([k,r]) => [k, r.label]);
+  const famLabel = CLOUD && Cloud.isSuper && family !== HOME_FAMILY ? `<p class="note">${icon("home")} משפחת ${esc(FAMILIES[family]?.name || family)}</p>` : "";
   const sh = openSheet(`${head(isNew ? "משתמש חדש" : "עריכת משתמש")}
+    ${famLabel}
     <form id="ue" class="pf-form" autocomplete="off">
       <span class="lbl">שם תצוגה</span><input class="input" name="name" value="${esc(u.name)}" maxlength="24" placeholder="למשל: תהילה">
       ${isNew ? `<span class="lbl">שם משתמש לכניסה</span><input class="input" name="username" dir="ltr" autocapitalize="none" spellcheck="false" placeholder="english letters, e.g. tehila">
@@ -2944,7 +3075,7 @@ function openUserEdit(key){
       <span class="lbl">צבע</span>${swatches(u.color)}
       ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
       <p class="error" id="ueErr" role="alert"></p>
-      ${!isNew && !self && USERS[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
+      ${!isNew && !self && pool[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
       <div class="actions"><button type="button" class="secondary" id="ueBack">חזרה</button><button class="primary" type="submit" id="ueSave">${isNew ? "יצירת משתמש" : "שמירה"}</button></div>
     </form>`);
   bindSwatches(sh, st);
@@ -2966,7 +3097,7 @@ function openUserEdit(key){
         const username = f.username.value.trim().toLowerCase(), password = f.password.value;
         if (!/^[a-z][a-z0-9._-]{2,19}$/.test(username)){ throw { msg:"שם משתמש: 3–20 תווים באנגלית, מתחיל באות." }; }
         if (password.length < 6) throw { msg:"הסיסמה קצרה מדי — לפחות 6 תווים." };
-        await UsersAPI.create({ username, name, password, role, color:st.color });
+        await UsersAPI.create({ username, name, password, role, color:st.color, family });
         toast(`${name} נוסף/ה ✓`);
       } else {
         const patch = { name, color:st.color };

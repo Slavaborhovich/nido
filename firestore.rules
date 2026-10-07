@@ -1,34 +1,57 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn()  { return request.auth != null; }
-    // the first admin (slava) — can always get in, so the system can never lock itself out
-    function boot()      { return signedIn() && request.auth.uid == 'K2TaGlPsCJQ7W4HPdaOwQqvRKGS2'; }
+    function signedIn()    { return request.auth != null; }
+    // the system admin (slava): manages families and users everywhere — but sees content only of his own family
+    function boot()        { return signedIn() && request.auth.uid == 'K2TaGlPsCJQ7W4HPdaOwQqvRKGS2'; }
     function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
-    function member()    { return signedIn() && exists(profilePath()) && get(profilePath()).data.active == true; }
-    function role()      { return get(profilePath()).data.role; }
-    function isAdmin()   { return boot() || (member() && role() == 'admin'); }
-    function canEdit()   { return isAdmin() || (member() && role() == 'editor'); }
+    function hasProfile()  { return signedIn() && exists(profilePath()); }
+    function profile()     { return get(profilePath()).data; }
+    function member()      { return hasProfile() && profile().active == true; }
+    function myFamily()    { return hasProfile() ? profile().get('family', 'home') : 'home'; }
+    function role()        { return profile().role; }
+    function inFamily(fid) { return (member() || boot()) && myFamily() == fid; }
+    function canEditIn(fid){ return inFamily(fid) && (boot() || role() in ['admin', 'editor']); }
+    function famAdmin(fid) { return boot() || (member() && role() == 'admin' && myFamily() == fid); }
 
-    // app content: envs/{prod|test}/{collection}/{item}
-    match /envs/{env}/{col}/{id} {
-      allow read:  if env in ['prod', 'test'] && (member() || boot());
-      allow write: if env in ['prod', 'test'] && canEdit();
+    // families: name + content. Test environment only for the first family.
+    match /families/{fid} {
+      allow read:  if boot() || inFamily(fid);
+      allow write: if boot();
+      match /envs/{env}/{col}/{id} {
+        allow read:  if inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow write: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+      }
+      match /meta/{doc} {
+        allow read, write: if canEditIn(fid);
+      }
     }
 
-    // people: admins manage everyone; each person may change only their own name, colour and photo
+    // old location of our data (before families) — read-only backup, used once for the move
+    match /envs/{env}/{col}/{id} {
+      allow read:  if inFamily('home');
+      allow write: if false;
+    }
+
+    // people
     match /users/{uid} {
-      allow read: if member() || boot();
-      allow create, update: if isAdmin() && request.resource.data.role in ['admin', 'editor', 'viewer'];
-      allow delete: if isAdmin();
+      allow get:  if boot() || (signedIn() && request.auth.uid == uid) || (member() && resource.data.get('family', 'home') == myFamily());
+      allow list: if boot() || (member() && resource.data.family == myFamily());
+      allow create: if (boot() || famAdmin(request.resource.data.family)) && request.resource.data.role in ['admin', 'editor', 'viewer']
+                       && (request.resource.data.role != 'admin' || request.resource.data.family == 'home');
+      allow update: if boot();
+      allow update: if famAdmin(resource.data.get('family', 'home')) && request.resource.data.role in ['admin', 'editor', 'viewer']
+                       && request.resource.data.get('family', 'home') == resource.data.get('family', 'home')
+                       && (request.resource.data.role != 'admin' || resource.data.get('family', 'home') == 'home');
       allow update: if member() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif']);
+      allow delete: if boot() || famAdmin(resource.data.get('family', 'home'));
     }
 
-    // username -> e-mail lookup, needed before signing in
+    // username -> e-mail lookup, needed before signing in (names are unique across all families)
     match /logins/{username} {
       allow get: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if boot() || (member() && role() == 'admin');
     }
   }
 }
