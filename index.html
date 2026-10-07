@@ -629,6 +629,75 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .note{font-size:13px;color:#BCA996;margin:0 0 14px}
 .nt-list .toggle-row{margin-bottom:8px}
 .pf-links .secondary .go{display:inline-flex;align-items:center;gap:4px;font-size:13px}
+/* ---------- Calendar: week board + rich month ---------- */
+.cv-top{margin-bottom:10px}
+.cv-top .month-nav strong{min-width:0;font-size:16px;padding:0 4px;white-space:nowrap}
+.cv-acts{display:flex;gap:6px;align-items:center}
+.cv-today{height:34px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,214,170,.16);background:rgba(30,20,12,.45);color:var(--text);font-size:13px}
+.cv-seg{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:14px;background:rgba(30,20,12,.5);border:1px solid rgba(255,214,170,.12);backdrop-filter:blur(14px)}
+.cv-seg button{flex:1;height:34px;border:0;border-radius:10px;background:none;color:#B9A48E;font-size:14px}
+.cv-seg button[aria-selected="true"]{background:rgba(255,226,190,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,214,170,.18)}
+.cv-sum{display:flex;gap:8px;margin-bottom:12px}
+.cv-sum div{flex:1;padding:10px 12px;border-radius:16px;background:rgba(36,25,17,.62);border:1px solid rgba(255,214,170,.12);backdrop-filter:blur(14px)}
+.cv-sum b{display:block;font-size:20px;font-weight:500;line-height:1.2}
+.cv-sum small{font-size:11.5px;color:#A8917A}
+.cv-sum .sh b{color:#F0D79A}
+.cv-cols{display:grid;gap:5px;font-size:12px;color:#C9B8A6;margin-bottom:6px;text-align:center}
+.cv-cols span{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden}
+.cv-av{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;font-size:10px;font-weight:700;color:#1E140C;flex:none}
+.cv-av svg{width:11px;height:11px}
+.cv-row{display:grid;gap:5px;margin-bottom:5px}
+.cv-dl{border-radius:14px;background:rgba(36,25,17,.62);border:1px solid rgba(255,214,170,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0;min-height:56px;color:var(--text);backdrop-filter:blur(14px)}
+.cv-dl small{font-size:10.5px;color:#93806C}
+.cv-dl b{font-size:18px;font-weight:500;line-height:1.1}
+.cv-dl i{font-style:normal;font-size:9.5px;color:#F0D79A;margin-top:1px}
+.cv-row.today .cv-dl{background:linear-gradient(160deg,#E9A660,#C9803F);color:#1E140C;border-color:transparent}
+.cv-row.today .cv-dl small{color:#4A2E16}
+.cv-row.sat .cv-dl{border-color:rgba(232,196,106,.35)}
+.cv-row.sat .cv-dl small{color:#E8C46A}
+.cv-cell{border-radius:14px;background:rgba(30,20,12,.38);border:1px solid rgba(255,214,170,.09);padding:4px;display:flex;flex-direction:column;gap:4px;min-height:56px;min-width:0;cursor:pointer}
+.cv-row.today .cv-cell{border-color:rgba(242,182,107,.3)}
+.cv-x{display:block;width:100%;text-align:start;border:0;border-radius:9px;padding:5px 6px;font-size:11.5px;line-height:1.3;color:var(--text);overflow:hidden;word-break:break-word;
+  background:color-mix(in srgb,var(--c) 22%,rgba(30,20,12,.85));border-inline-start:2.5px solid var(--c)}
+.cv-x b{display:block;font-weight:600;font-size:10.5px;color:color-mix(in srgb,var(--c) 55%,white)}
+.cv-x.tk{background:rgba(30,20,12,.6);outline:1px dashed color-mix(in srgb,var(--c) 55%,transparent);outline-offset:-1px}
+.cv-x.done{opacity:.5;text-decoration:line-through}
+.cv-strip{border-radius:12px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:7px;
+  background:linear-gradient(100deg,rgba(232,196,106,.18),rgba(232,196,106,.05));border:1px solid rgba(232,196,106,.28);color:#F0D79A}
+.cv-strip svg{width:15px;height:15px}
+.cv-strip.major{background:linear-gradient(100deg,rgba(242,182,107,.26),rgba(242,182,107,.08));border-color:rgba(242,182,107,.45);color:#F7D29E;font-weight:500}
+.cv-hint{text-align:center;margin:14px 0 0}
+.cv-month{border-radius:20px;background:rgba(36,25,17,.62);border:1px solid rgba(255,214,170,.12);padding:8px 3px 4px;backdrop-filter:blur(16px)}
+.cv-dow{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#93806C;text-align:center;padding-bottom:6px}
+.cv-dow span:last-child{color:#E8C46A}
+.cv-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cv-c{height:72px;border:0;border-radius:10px;padding:4px 1px;display:flex;flex-direction:column;gap:2px;overflow:hidden;background:none;color:var(--text);min-width:0}
+.cv-c > b{font-size:12.5px;font-weight:500;text-align:center;line-height:17px;height:17px;flex:none}
+.cv-c.out{opacity:.4}
+.cv-c.sat{background:rgba(232,196,106,.05)}
+.cv-c.today{background:rgba(242,182,107,.14);box-shadow:inset 0 0 0 1.5px #D99A55}
+.cv-c.today > b{color:#F2C48A}
+.cv-c.sel{background:rgba(255,226,190,.14);box-shadow:inset 0 0 0 1.5px rgba(255,226,190,.5)}
+.cv-ev{display:block;font-size:10px;line-height:14px;height:14px;flex:none;border-radius:4px;padding:0 2px;white-space:nowrap;overflow:hidden;text-align:start;
+  background:color-mix(in srgb,var(--c) 26%,transparent);color:color-mix(in srgb,var(--c) 65%,white);border-inline-start:2px solid var(--c)}
+.cv-ev.tk{background:transparent;outline:1px dashed color-mix(in srgb,var(--c) 45%,transparent);outline-offset:-1px}
+.cv-ev.done{opacity:.45;text-decoration:line-through}
+.cv-ev.hol{border-inline-start:0;text-align:center}
+.cv-more{font-size:9.5px;color:#93806C;text-align:center;line-height:11px}
+.cv-day{margin-top:12px;border-radius:20px;background:rgba(46,33,22,.72);border:1px solid rgba(255,214,170,.16);padding:14px;backdrop-filter:blur(16px)}
+.cv-day h3{margin:0 0 8px;font-size:16px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+.cv-day h3 small{font-weight:400;color:#93806C;font-size:12px}
+.cv-hl{display:flex;align-items:center;gap:7px;font-size:13px;color:#F0D79A;padding:6px 0}
+.cv-hl svg{width:15px;height:15px}
+.cv-r{display:flex;align-items:center;gap:10px;width:100%;padding:9px 0;border:0;border-top:1px solid rgba(255,214,170,.1);background:none;color:var(--text);text-align:start}
+.cv-r .tm{width:42px;font-size:13px;font-weight:600;flex:none}
+.cv-r .dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.cv-r .t{flex:1;min-width:0;font-size:14.5px}
+.cv-r .t small{display:block;font-size:11.5px;color:#93806C}
+.cv-r.done .t{opacity:.55;text-decoration:line-through}
+.cv-empty{width:100%;display:flex;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed rgba(255,214,170,.2);background:none;color:#93806C;font-size:13px}
+.cv-empty b{color:#F2C48A;font-weight:500}
+.cv-dates{display:flex;gap:10px}.cv-dates > div{flex:1}
 .env-badge{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:8px;z-index:9999;font:700 10px/1 Heebo,sans-serif;letter-spacing:.06em;padding:5px 8px;border-radius:99px;background:#E8705A;color:#fff;opacity:.9;pointer-events:none}
 .cloud .demo,.cloud #phaseDemo{display:none!important}
 #loginBtn[disabled]{opacity:.65}
@@ -662,6 +731,7 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
   <symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/></g></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></g></symbol>
+  <symbol id="i-candle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21V11h6v10M7 21h10"/><path d="M12 8c-1.2-1-1.2-2.6 0-4 1.2 1.4 1.2 3 0 4z"/></g></symbol>
   <symbol id="i-hand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7-2.4 0-3.9-1.1-5.2-3L3.6 14a1.5 1.5 0 0 1 2.4-1.8L8 14.5"/></g></symbol>
 </svg>
 
@@ -1245,7 +1315,7 @@ function renderToday(){
   $("#allCal").onclick = () => go("cal");
   $("#screen").querySelectorAll("[data-i]").forEach(b => b.onclick = () => {
     const x = items[+b.dataset.i];
-    if (x.kind==="event"){ S.calSel=x.date; const d=parse(x.date); S.calMonth=new Date(d.getFullYear(),d.getMonth(),1); go("cal"); }
+    if (x.kind==="event"){ S.calSel=x.date; const d=parse(x.date); S.calMonth=new Date(d.getFullYear(),d.getMonth(),1); S.calWeek=iso(startOfWeek(d)); go("cal"); }
     else if (x.ty==="sh") go("shop");
     else { S.taskView="active"; go("tasks"); }
   });
@@ -1757,54 +1827,175 @@ function couponForm(c){
 }
 
 /* ================= Calendar ================= */
-function renderCal(){
-  if (!S.calMonth){ const n=new Date(); S.calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
-  const m = S.calMonth, y = m.getFullYear(), mo = m.getMonth();
-  const first = new Date(y,mo,1).getDay(), count = new Date(y,mo+1,0).getDate();
-  const today = iso(new Date());
-  const withEv = new Set(DB.events.map(e=>e.date));
-  let cells = "";
-  for (let i=0;i<first;i++) cells += `<span></span>`;
-  for (let d=1; d<=count; d++){
-    const ds = iso(new Date(y,mo,d));
-    cells += `<button class="day ${ds===today?"today":""} ${ds===S.calSel?"sel":""}" data-d="${ds}" aria-label="${d} ב${MONTHS[mo]}${withEv.has(ds)?", יש אירועים":""}">
-      ${d}<span class="dot ${withEv.has(ds)?"":"off"}"></span></button>`;
-  }
-  const sel = parse(S.calSel);
-  const evs = DB.events.filter(e=>e.date===S.calSel).sort((a,b)=>(a.time||"99")<(b.time||"99")?-1:1);
-  $("#screen").innerHTML = `
-    <header class="top">
-      <div class="month-nav">
-        <button class="icon-btn" id="pm" aria-label="חודש קודם">${icon("prev")}</button>
-        <strong>${MONTHS[mo]} ${y}</strong>
-        <button class="icon-btn" id="nm" aria-label="חודש הבא">${icon("next")}</button>
-      </div>
-      <button class="add-btn" id="addEv">${icon("plus")}אירוע</button>
-    </header>
-    <div class="cal">
-      <div class="dow">${["א","ב","ג","ד","ה","ו","ש"].map(x=>`<span>${x}</span>`).join("")}</div>
-      <div class="days">${cells}</div>
-    </div>
-    <h3 class="day-title">${sel.getDate()} ב${MONTHS[sel.getMonth()]} · יום ${DAYS[sel.getDay()]}</h3>
-    <ul class="panel" id="elist">${ evs.length ? evs.map(e => `
-      <li><button class="ev" data-id="${e.id}">
-        <span class="t">${e.time||"—"}</span>
-        <span class="body"><div class="what">${esc(e.title)}</div>
-          ${e.place||e.note?`<div class="meta">${e.place?`<span>${icon("pin")}${esc(e.place)}</span>`:""}${e.note?`<span>${esc(e.note)}</span>`:""}</div>`:""}
-        </span></button></li>`).join("") : `<li class="empty">אין אירועים ביום הזה.</li>` }</ul>`;
-  $("#pm").onclick = () => { S.calMonth = new Date(y,mo-1,1); renderCal(); };
-  $("#nm").onclick = () => { S.calMonth = new Date(y,mo+1,1); renderCal(); };
-  $("#addEv").onclick = () => eventSheet(null, { date:S.calSel });
-  $("#screen").querySelector(".days").onclick = e => { const b=e.target.closest("[data-d]"); if(b){ S.calSel=b.dataset.d; renderCal(); } };
-  $("#elist").onclick = e => { const b=e.target.closest(".ev"); if(b) eventSheet(DB.events.find(x=>x.id===b.dataset.id)); };
+/* ---------- Shabbat & holidays (Hebcal, Tel Aviv), cached for a day ---------- */
+const Hol = {
+  KEY: "nido.hebcal.v1", data: null, loading: false,
+  load(){
+    if (!this.data){ try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch(e){} }
+    const fresh = this.data && Date.now() - this.data.at < 864e5 && this.data.from <= iso(addDays(new Date(), -40));
+    if (fresh || this.loading || !navigator.onLine) return;
+    this.loading = true;
+    const from = iso(addDays(new Date(), -60)), to = iso(addDays(new Date(), 420));
+    fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&ss=on&mf=on&c=on&geo=geoname&geonameid=293397&M=on&s=off&lg=he&start=${from}&end=${to}`)
+      .then(r => r.json()).then(j => {
+        const by = {};
+        const add = (d, x) => (by[d] = by[d] || []).push(x);
+        for (const it of j.items || []){
+          const d = it.date.slice(0, 10), name = (it.hebrew || it.title || "").trim();
+          if (it.category === "candles") add(d, { k:"candles", t: it.date.slice(11, 16) });
+          else if (it.category === "havdalah") add(d, { k:"havdalah", t: it.date.slice(11, 16) });
+          else if (it.category === "holiday"){
+            if (it.subcat === "modern" && !/עצמאות|הזיכרון לחללי|השואה|ירושלים/.test(name)) continue;
+            add(d, { k: it.subcat === "major" ? "major" : "minor", n: name.replace(/\s*\(.*?\)\s*/g, " ").trim() });
+          } else if (it.category === "roshchodesh") add(d, { k:"rc", n: name });
+        }
+        this.data = { at: Date.now(), from, by };
+        try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch(e){}
+        if (S.tab === "cal" && !uiBusy()) renderCal();
+      }).catch(() => {}).finally(() => { this.loading = false; });
+  },
+  of(ds){ return (this.data && this.data.by[ds]) || []; },
+};
+
+/* ---------- what happens on a day ---------- */
+const TOGETHER = "#F2B66B", SHAB = "#E8C46A";
+const colOf = who => who && USERS[who] ? USERS[who].color : TOGETHER;
+function dayItems(ds){
+  const ev = DB.events.filter(e => e.date === ds || (e.end && e.date < ds && e.end >= ds))
+    .map(e => ({ k:"ev", id:e.id, title:e.title, time: e.date === ds ? e.time : "", who: e.who || null, place:e.place, cont: e.date !== ds, idea: !!e.ideaId }));
+  const tk = DB.tasks.filter(t => t.date === ds)
+    .map(t => ({ k:"tk", id:t.id, title: t.kind === "shop" ? "קניות" : t.title, time:t.time || "", who:t.assignee || null, done:t.done }));
+  return [...ev, ...tk].sort((a, b) => (a.time || "99") < (b.time || "99") ? -1 : (a.time || "99") > (b.time || "99") ? 1 : 0);
 }
+const holLine = h => h.k === "candles" ? `🕯 כניסת שבת ${h.t}` : h.k === "havdalah" ? `צאת שבת ${h.t}` : h.n;
+function openItem(k, id){
+  if (k === "ev"){ const e = DB.events.find(x => x.id === id); if (e) eventSheet(e); }
+  else { const t = DB.tasks.find(x => x.id === id); if (t) taskSheet(t); }
+}
+const startOfWeek = d => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - x.getDay()); return x; };
+
+function renderCal(){
+  Hol.load();
+  if (!S.calView){ try { S.calView = localStorage.getItem("nido.calView") || "week"; } catch(e){ S.calView = "week"; } }
+  if (S.calView === "month") renderMonth(); else renderWeek();
+}
+function calTop(title, prevLbl, nextLbl, showToday){
+  return `<header class="top cv-top">
+      <div class="month-nav">
+        <button class="icon-btn" id="cvPrev" aria-label="${prevLbl}">${icon("prev")}</button>
+        <strong>${title}</strong>
+        <button class="icon-btn" id="cvNext" aria-label="${nextLbl}">${icon("next")}</button>
+      </div>
+      <div class="cv-acts">${showToday ? `<button class="cv-today" id="cvToday">היום</button>` : ""}<button class="add-btn" id="addEv">${icon("plus")}אירוע</button></div>
+    </header>
+    <div class="cv-seg" role="tablist"><button role="tab" data-v="week" aria-selected="${S.calView==="week"}">שבוע</button><button role="tab" data-v="month" aria-selected="${S.calView==="month"}">חודש</button></div>`;
+}
+function bindCalCommon(onPrev, onNext, onToday){
+  $("#cvPrev").onclick = onPrev; $("#cvNext").onclick = onNext;
+  $("#cvToday")?.addEventListener("click", onToday);
+  $("#addEv").onclick = () => eventSheet(null, { date:S.calSel });
+  $("#screen").querySelector(".cv-seg").onclick = e => { const b = e.target.closest("[data-v]"); if (!b) return;
+    S.calView = b.dataset.v; try { localStorage.setItem("nido.calView", S.calView); } catch(x){} renderCal(); };
+}
+
+/* ===== week: family board ===== */
+function renderWeek(){
+  const today = iso(new Date());
+  if (!S.calWeek) S.calWeek = iso(startOfWeek(parse(S.calSel || today)));
+  const ws = parse(S.calWeek), days = [...Array(7)].map((_, i) => iso(addDays(ws, i))), we = parse(days[6]);
+  const cols = [me, null, ...people().filter(k => k !== me && USERS[k].role !== "viewer")].slice(0, 4);
+  const colKey = who => cols.includes(who) ? who : (who && USERS[who] ? null : null);
+  const range = ws.getMonth() === we.getMonth() ? `${ws.getDate()}–${we.getDate()} ב${MONTHS[ws.getMonth()]}` : `${ws.getDate()} ב${MONTHS[ws.getMonth()]} – ${we.getDate()} ב${MONTHS[we.getMonth()]}`;
+  let nEv = 0, nTk = 0; const shabbat = days.flatMap(d => Hol.of(d)).find(h => h.k === "candles");
+  const rows = days.map(ds => {
+    const d = parse(ds), items = dayItems(ds), hol = Hol.of(ds);
+    items.forEach(x => x.k === "ev" ? (!x.cont && nEv++) : (!x.done && nTk++));
+    const cells = cols.map(c => {
+      const mine = items.filter(x => (cols.includes(x.who) ? x.who : null) === c);
+      return `<div class="cv-cell" data-d="${ds}" data-w="${c || ""}">${mine.map(x => `
+        <button class="cv-x ${x.k} ${x.done ? "done" : ""}" style="--c:${colOf(x.who)}" data-k="${x.k}" data-id="${x.id}">
+          ${x.time ? `<b class="tabular">${x.time}</b>` : x.cont ? `<b>המשך</b>` : ""}${x.k === "tk" && x.done ? "✓ " : ""}${esc(x.title)}</button>`).join("")}</div>`;
+    }).join("");
+    const strips = hol.filter(h => h.k !== "rc").map(h => `<div class="cv-strip ${h.k}" style="grid-column:2 / -1">${h.k === "candles" ? icon("candle") : ""}<span>${esc(holLine(h))}</span></div>`).join("");
+    const rc = hol.find(h => h.k === "rc");
+    const quiet = !items.length && strips;
+    const span = (quiet ? 0 : 1) + hol.filter(h => h.k !== "rc").length;
+    return `<div class="cv-row ${ds === today ? "today" : ""} ${d.getDay() === 6 ? "sat" : ""}" style="grid-template-columns:52px repeat(${cols.length},1fr)">
+      <button class="cv-dl" data-day="${ds}" style="grid-row:span ${Math.max(span, 1)}"><small>${"אבגדהוש"[d.getDay()]}׳</small><b>${d.getDate()}</b>${rc ? `<i>ר״ח</i>` : ""}</button>
+      ${quiet ? "" : cells}${strips}</div>`;
+  }).join("");
+  $("#screen").innerHTML = `${calTop(range, "שבוע קודם", "שבוע הבא", !days.includes(today))}
+    <div class="cv-sum">
+      <div><b class="tabular">${nEv}</b><small>${nEv === 1 ? "אירוע" : "אירועים"}</small></div>
+      <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
+      <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
+    </div>
+    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i>${esc(USERS[c].name)}</span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i>יחד</span>`).join("")}</div>
+    <div class="cv-board">${rows}</div>
+    <p class="hint cv-hint">לחיצה על משבצת ריקה מוסיפה אירוע באותו יום ולאותו אדם.</p>`;
+  const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
+  bindCalCommon(() => step(-7), () => step(7), () => { S.calWeek = iso(startOfWeek(new Date())); S.calSel = today; renderWeek(); });
+  $("#screen").querySelector(".cv-board").onclick = e => {
+    const x = e.target.closest(".cv-x"); if (x) return openItem(x.dataset.k, x.dataset.id);
+    const dl = e.target.closest("[data-day]"); if (dl){ S.calSel = dl.dataset.day; S.calView = "month"; const d = parse(S.calSel); S.calMonth = new Date(d.getFullYear(), d.getMonth(), 1); renderCal(); return; }
+    const c = e.target.closest(".cv-cell"); if (c && canEdit()) eventSheet(null, { date:c.dataset.d, who:c.dataset.w || null });
+  };
+}
+
+/* ===== month: rich grid ===== */
+function renderMonth(){
+  if (!S.calMonth){ const n = new Date(); S.calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
+  const m = S.calMonth, y = m.getFullYear(), mo = m.getMonth(), today = iso(new Date());
+  const gStart = startOfWeek(new Date(y, mo, 1)), weeks = Math.ceil((new Date(y, mo, 1).getDay() + new Date(y, mo + 1, 0).getDate()) / 7);
+  let cells = "";
+  for (let i = 0; i < weeks * 7; i++){
+    const d = addDays(gStart, i), ds = iso(d), out = d.getMonth() !== mo;
+    const items = dayItems(ds), hol = Hol.of(ds).filter(h => h.k !== "rc");
+    const chips = [
+      ...hol.filter(h => h.k === "major" || h.k === "minor").map(h => `<span class="cv-ev hol" style="--c:${SHAB}">${esc(h.n)}</span>`),
+      ...items.map(x => `<span class="cv-ev ${x.k} ${x.done ? "done" : ""}" style="--c:${colOf(x.who)}">${x.cont ? "↤ " : ""}${esc(x.title)}</span>`),
+      ...hol.filter(h => h.k === "candles").map(h => `<span class="cv-ev hol" style="--c:${SHAB}">🕯 ${h.t}</span>`),
+    ];
+    const max = 3, extra = chips.length - max;
+    cells += `<button class="cv-c ${out ? "out" : ""} ${ds === today ? "today" : ""} ${ds === S.calSel ? "sel" : ""} ${d.getDay() === 6 ? "sat" : ""}" data-d="${ds}" aria-label="${d.getDate()} ב${MONTHS[d.getMonth()]}">
+      <b>${d.getDate()}</b>${chips.slice(0, extra > 0 ? max - 1 : max).join("")}${extra > 0 ? `<span class="cv-more">+${extra + 1}</span>` : ""}</button>`;
+  }
+  const sel = parse(S.calSel), items = dayItems(S.calSel), hol = Hol.of(S.calSel);
+  const dayName = S.calSel === today ? "היום" : S.calSel === iso(addDays(new Date(), 1)) ? "מחר" : `יום ${DAYS[sel.getDay()]}`;
+  $("#screen").innerHTML = `${calTop(`${MONTHS[mo]} ${y}`, "חודש קודם", "חודש הבא", !(y === new Date().getFullYear() && mo === new Date().getMonth()))}
+    <div class="cv-month">
+      <div class="cv-dow">${["א","ב","ג","ד","ה","ו","ש"].map(x => `<span>${x}</span>`).join("")}</div>
+      <div class="cv-grid">${cells}</div>
+    </div>
+    <section class="cv-day">
+      <h3>${dayName} · ${sel.getDate()}/${sel.getMonth() + 1}<small>${items.length ? (items.length === 1 ? "דבר אחד" : items.length + " דברים") : ""}</small></h3>
+      ${hol.map(h => `<div class="cv-hl">${h.k === "candles" ? icon("candle") : ""}${esc(holLine(h))}</div>`).join("")}
+      ${items.map(x => `<button class="cv-r ${x.done ? "done" : ""}" data-k="${x.k}" data-id="${x.id}" style="--c:${colOf(x.who)}">
+        <span class="tm tabular">${x.time || (x.cont ? "המשך" : "—")}</span><span class="dot"></span>
+        <span class="t">${x.k === "tk" && x.done ? "✓ " : ""}${esc(x.title)}<small>${[x.k === "tk" ? "משימה" : "", x.who && USERS[x.who] ? USERS[x.who].name : (x.k === "ev" ? "יחד" : "ללא אחראי"), x.place ? esc(x.place) : "", x.idea ? "💡 מרעיון" : ""].filter(Boolean).join(" · ")}</small></span></button>`).join("")}
+      ${!items.length ? `<button class="cv-empty" id="cvAddDay">יום פנוי<b>+ להוסיף אירוע</b></button>` : ""}
+    </section>`;
+  bindCalCommon(() => { S.calMonth = new Date(y, mo - 1, 1); renderMonth(); }, () => { S.calMonth = new Date(y, mo + 1, 1); renderMonth(); },
+    () => { const n = new Date(); S.calMonth = new Date(n.getFullYear(), n.getMonth(), 1); S.calSel = today; renderMonth(); });
+  $("#screen").querySelector(".cv-grid").onclick = e => { const b = e.target.closest("[data-d]"); if (!b) return;
+    S.calSel = b.dataset.d; S.calWeek = iso(startOfWeek(parse(S.calSel)));
+    const d = parse(S.calSel); if (d.getMonth() !== mo) S.calMonth = new Date(d.getFullYear(), d.getMonth(), 1); renderMonth(); };
+  $("#screen").querySelector(".cv-day").onclick = e => { const r = e.target.closest(".cv-r"); if (r) openItem(r.dataset.k, r.dataset.id); };
+  $("#cvAddDay")?.addEventListener("click", () => eventSheet(null, { date:S.calSel }));
+}
+
 function eventSheet(ev, preset={}){
-  const edit = !!ev; const e = ev || { title:"", date:S.calSel, time:"", place:"", note:"", ...preset };
+  const edit = !!ev; const e = ev || { title:"", date:S.calSel, time:"", end:"", place:"", note:"", who:null, ...preset };
+  const whoOpts = [["", "יחד"], ...people().map(k => [k, USERS[k].name])];
   const sh = openSheet(`${head(edit?"עריכת אירוע":"אירוע חדש")}
     <form id="ef" class="stack">
       <input class="input" name="title" placeholder="שם האירוע" value="${esc(e.title)}" aria-label="שם האירוע" required>
-      <div><span class="lbl">תאריך</span><input class="input" type="date" name="date" value="${e.date||""}" required></div>
-      <div><span class="lbl">שעה</span><input class="input" type="time" name="time" value="${e.time||""}"></div>
+      <div><span class="lbl">של מי</span>${radios("who", whoOpts, e.who || "")}</div>
+      <div class="cv-dates">
+        <div><span class="lbl">תאריך</span><input class="input" type="date" name="date" value="${e.date||""}" required></div>
+        <div><span class="lbl">שעה</span><input class="input" type="time" name="time" value="${e.time||""}"></div>
+      </div>
+      <div><span class="lbl">עד תאריך <small style="color:var(--faint)">(לאירוע של כמה ימים)</small></span><input class="input" type="date" name="end" value="${e.end||""}"></div>
       <input class="input" name="place" placeholder="מקום" value="${esc(e.place)}" aria-label="מקום">
       <textarea class="textarea" name="note" placeholder="הערה" aria-label="הערה">${esc(e.note)}</textarea>
       <p class="error" id="eerr"></p>
@@ -1814,17 +2005,20 @@ function eventSheet(ev, preset={}){
       </div>
     </form>`);
   const f = sh.querySelector("#ef");
-  setTimeout(()=> (e.title ? f.date : f.title).focus(), 260);
+  if (!edit) setTimeout(()=> (e.title ? f.date : f.title).focus(), 260);
   f.onsubmit = x => {
     x.preventDefault();
     if (!f.title.value.trim() || !f.date.value){ sh.querySelector("#eerr").textContent="שם ותאריך הם שדות חובה."; return; }
-    const data = { title:f.title.value.trim(), date:f.date.value, time:f.time.value, place:f.place.value.trim(), note:f.note.value.trim() };
+    const end = f.end.value && f.end.value > f.date.value ? f.end.value : "";
+    const data = { title:f.title.value.trim(), date:f.date.value, time:f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim() };
     if (edit) Object.assign(ev, data); else DB.events.push({ id:uid(), ideaId:e.ideaId||null, ...data });
     save(); closeSheet();
-    S.calSel = data.date; const d=parse(data.date); S.calMonth=new Date(d.getFullYear(), d.getMonth(), 1);
+    S.calSel = data.date; const d=parse(data.date); S.calMonth=new Date(d.getFullYear(), d.getMonth(), 1); S.calWeek = iso(startOfWeek(d));
     go("cal"); toast(edit?"נשמר":"האירוע נכנס ליומן");
   };
-  if (edit) sh.querySelector("#del").onclick = () => { DB.events = DB.events.filter(x=>x.id!==ev.id); save(); closeSheet(); renderCal(); toast("האירוע נמחק"); };
+  if (edit) sh.querySelector("#del").onclick = async () => {
+    if (!await askConfirm(`למחוק את "${ev.title}"?`, "האירוע יימחק מהיומן.")) return;
+    DB.events = DB.events.filter(x=>x.id!==ev.id); save(); closeSheet(); renderCal(); toast("האירוע נמחק"); };
 }
 
 /* ================= Ideas ================= */
