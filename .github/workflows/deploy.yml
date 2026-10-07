@@ -39,6 +39,16 @@ jobs:
           else
             cp -r _site/index.html _site/manifest.webmanifest _site/sw.js _site/icons _site/test/
           fi
+          # version stamp + release notes → the app shows a "new version" popup
+          stamp () {   # $1 = source checkout, $2 = output dir
+            local sha=$(git -C "$1" rev-parse --short HEAD)
+            sed -i "s/__BUILD__/${sha}/" "$2/index.html"
+            local notes=""; [ -f "$1/whatsnew.txt" ] && notes=$(cat "$1/whatsnew.txt")
+            jq -n --arg b "$sha" --arg n "$notes" '{build:$b, notes:$n}' > "$2/version.json"
+            rm -f "$2/whatsnew.txt"
+          }
+          stamp main _site
+          if [ -f test/index.html ]; then stamp test _site/test; else stamp main _site/test; fi
           touch _site/.nojekyll
           ls -la _site _site/test
       - uses: actions/configure-pages@v5

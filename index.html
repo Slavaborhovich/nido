@@ -446,6 +446,13 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .cfm .row{display:flex;gap:10px;margin-top:18px}
 .cfm .row button{flex:1;height:46px;border-radius:14px;font-size:15px;font-weight:600;border:1px solid var(--line);background:rgba(255,226,190,.08);color:var(--text)}
 .cfm .row .del{border:0;background:#E5735F;color:#1E0F0A}
+.cfm.upd{max-width:350px}
+.cfm .ic.upd-ic{background:rgba(242,182,107,.16);color:#F2C48A}
+.upd-notes{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,226,190,.06);border:1px solid rgba(255,214,170,.1);list-style:none;display:flex;flex-direction:column;gap:6px}
+.upd-notes li{font-size:13.5px;line-height:1.45;padding-inline-start:16px;position:relative}
+.upd-notes li::before{content:"";position:absolute;right:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:#F2B66B}
+.cfm .row .go{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;background:#D99A55;color:#1E140C}
+.cfm .row .go svg{width:17px;height:17px}
 .cfm .ic.buy{background:rgba(242,182,107,.16);color:#F2C48A}
 .cfm .row [data-l]{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;background:#D99A55;color:#1E140C}
 .cfm .row [data-l] svg{width:18px;height:18px}
@@ -1242,6 +1249,51 @@ const Notify = {
 if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
   if (e.data && e.data.tab && me){ closeSheet(); S.tab = e.data.tab; render(); }
 });
+
+/* ================= "New version" popup ================= */
+/* Each deploy stamps BUILD into this file and writes version.json next to it with the release notes. */
+const BUILD = "__BUILD__";
+const Updates = {
+  shown: null,
+  start(){
+    if (BUILD.startsWith("__")) return;                       // local copy — nothing to compare
+    const check = () => this.check();
+    setTimeout(check, 4000);
+    setInterval(check, 5 * 60e3);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(check, 1200); });
+    try { const done = sessionStorage.getItem("nido.updated"); if (done){ sessionStorage.removeItem("nido.updated"); setTimeout(() => toast("האפליקציה עודכנה ✓"), 1800); } } catch(e){}
+  },
+  async check(){
+    if (!navigator.onLine || this.shown) return;
+    try {
+      const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
+      const v = await r.json();
+      if (!v.build || v.build === BUILD) return;
+      const wait = () => (uiBusy() || document.getElementById("splash")) ? setTimeout(wait, 2000) : this.show(v);
+      wait();
+    } catch(e){}
+  },
+  show(v){
+    if (this.shown || document.querySelector(".upd-scrim")) return; this.shown = v.build;
+    const notes = String(v.notes || "").split("\n").map(x => x.replace(/^[•\-\*]\s*/, "").trim()).filter(Boolean).slice(0, 6);
+    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
+    w.innerHTML = `<div class="cfm upd" role="alertdialog" aria-modal="true" aria-labelledby="updT">
+      <div class="ic upd-ic">${icon("repeat")}</div>
+      <h3 id="updT">גרסה חדשה של Nido</h3>
+      <p>עלה עדכון לאפליקציה. רענון לוקח שנייה, ושום דבר לא הולך לאיבוד.</p>
+      ${notes.length ? `<ul class="upd-notes">${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+      <div class="row"><button type="button" class="no">אחר כך</button><button type="button" class="go">${icon("repeat")}רענן</button></div></div>`;
+    document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); };
+    w.querySelector(".no").onclick = () => { close(); setTimeout(() => { this.shown = null; }, 30 * 60e3); };   // ask again in half an hour
+    w.querySelector(".go").onclick = async () => {
+      const b = w.querySelector(".go"); b.disabled = true; b.textContent = "מעדכן…";
+      try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch(e){}
+      try { sessionStorage.setItem("nido.updated", "1"); } catch(e){}
+      location.reload();
+    };
+  },
+};
 
 /* re-render after a remote change, but never under the user's fingers */
 function uiBusy(){
@@ -2988,14 +3040,8 @@ if (CLOUD){
   if (ENV === "test"){ const b=document.createElement("div"); b.className="env-badge"; b.textContent="סביבת בדיקה"; document.body.appendChild(b); }
   if ("serviceWorker" in navigator){
     addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => r.update()).catch(()=>{}));
-    /* a new version took over → reload once so it shows (not while the user is in the middle of something) */
-    let reloaded = false; const hadWorker = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (reloaded || !hadWorker) return; reloaded = true;
-      const go = () => uiBusy() ? setTimeout(go, 1500) : location.reload();
-      setTimeout(go, 300);
-    });
   }
+  Updates.start();
 }
 const s=getSession();
 if (s && USERS[s]){ enter(s); try { playSplash(null); } catch(_) { document.getElementById("splash")?.remove(); } }
