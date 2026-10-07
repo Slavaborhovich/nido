@@ -3151,19 +3151,7 @@ async function cloudLogin(u, p){
 $("#loginBtn").addEventListener("click", doLogin);
 $("#loginForm").addEventListener("submit", e => { e.preventDefault(); doLogin(); });
 ["#user","#pass"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key==="Enter"){ e.preventDefault(); doLogin(); } }));
-/* replay the opening every time the user comes back into the app (tab switch, app switch, restored page) */
-let hiddenAt = 0;
-function replayOnReturn(){
-  if (!me || $("#app").hidden || document.getElementById("splash")) return;
-  if (document.getElementById("sheetRoot").innerHTML) return;          // don't interrupt an open form
-  S.tab = "today"; render(); window.scrollTo(0,0);
-  try { playSplash(null); } catch(_) { document.getElementById("splash")?.remove(); }
-}
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) hiddenAt = Date.now();
-  else if (hiddenAt && Date.now() - hiddenAt > 1500) replayOnReturn();
-});
-addEventListener("pageshow", e => { if (e.persisted) replayOnReturn(); });
+/* the opening animation plays only on a fresh start (app was fully closed) — coming back from the background keeps you where you were */
 
 if (CLOUD){
   Cloud.ready = Cloud.start().catch(e => { console.error(e); toast("אין חיבור לשרת — עובדים מהזיכרון המקומי"); throw e; });
