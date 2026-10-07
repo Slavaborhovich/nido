@@ -22,6 +22,19 @@ service cloud.firestore {
         allow read:  if inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
         allow write: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
       }
+      // "פתק על המקרר": only sender + recipients see it; id = env_day_sender → one note per person per day
+      match /notes/{id} {
+        allow get:    if inFamily(fid) && (resource == null || request.auth.uid in resource.data.to || resource.data.from == request.auth.uid);
+        allow list:   if inFamily(fid) && request.auth.uid in resource.data.to;
+        allow create: if inFamily(fid) && request.resource.data.from == request.auth.uid
+                         && request.resource.data.env in ['prod', 'test']
+                         && id == request.resource.data.env + '_' + request.resource.data.day + '_' + request.auth.uid
+                         && request.resource.data.text is string && request.resource.data.text.size() <= 200
+                         && request.resource.data.to is list && request.resource.data.to.size() > 0 && request.resource.data.to.size() <= 10;
+        allow update: if inFamily(fid) && request.auth.uid in resource.data.to
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+                         && request.resource.data.readBy.diff(resource.data.readBy).affectedKeys().hasOnly([request.auth.uid]);
+      }
       match /meta/{doc} {
         allow read, write: if canEditIn(fid);
       }
