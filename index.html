@@ -1573,7 +1573,7 @@ const Notes = {
         const fab = $("#noteFab"); fab.classList.add("bye");
         close(); setTimeout(() => { fab.classList.remove("bye"); this.refreshFab(); }, 300);
         toast(`הפתק הודבק על המקרר 🧲`);
-      } catch(x){ console.error(x); b.disabled = false; b.textContent = "להדביק על המקרר 🧲"; toast(String(x && x.code || "").includes("permission") ? "כבר השארת פתק היום ❤️" : "לא הצלחתי להדביק. נסה שוב."); }
+      } catch(x){ console.error(x); b.disabled = false; b.textContent = "להדביק על המקרר 🧲"; toast("הפתק לא נשמר. נסה שוב בעוד רגע."); }
     };
   },
 };
