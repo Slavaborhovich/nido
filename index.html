@@ -616,6 +616,8 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:#2C2016;border:1px solid rgba(255,214,170,.12);margin-bottom:16px}
 .toggle-row input{width:22px;height:22px;accent-color:#D99A55}
 .note{font-size:13px;color:#BCA996;margin:0 0 14px}
+.nt-list .toggle-row{margin-bottom:8px}
+.pf-links .secondary .go{display:inline-flex;align-items:center;gap:4px;font-size:13px}
 .env-badge{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:8px;z-index:9999;font:700 10px/1 Heebo,sans-serif;letter-spacing:.06em;padding:5px 8px;border-radius:99px;background:#E8705A;color:#fff;opacity:.9;pointer-events:none}
 .cloud .demo,.cloud #phaseDemo{display:none!important}
 #loginBtn[disabled]{opacity:.65}
@@ -648,6 +650,7 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
   <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></g></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/></g></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></g></symbol>
   <symbol id="i-hand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 7-6.5 7-2.4 0-3.9-1.1-5.2-3L3.6 14a1.5 1.5 0 0 1 2.4-1.8L8 14.5"/></g></symbol>
 </svg>
 
@@ -828,7 +831,7 @@ const Cloud = {
     const B = "https://www.gstatic.com/firebasejs/10.12.2/";
     const [A, AU, F] = await Promise.all([import(B+"firebase-app.js"), import(B+"firebase-auth.js"), import(B+"firebase-firestore.js")]);
     this.fb = { ...AU, ...F }; this.A = A;
-    const app = A.initializeApp(FIREBASE_CONFIG);
+    const app = this.app = A.initializeApp(FIREBASE_CONFIG);
     this.auth = AU.getAuth(app);
     try { this.db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
     catch(e){ this.db = F.getFirestore(app); }
@@ -858,7 +861,7 @@ const Cloud = {
       return this.deny("אין לך הרשאה לאפליקציה. פנה למנהל.");
     }
     const map = {};
-    list.forEach(x => { if (x.username) map[x.username] = { name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid }; });
+    list.forEach(x => { if (x.username) map[x.username] = { name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{} }; });
     setUsers(map); storeUsers();
     if (mine.active === false) return this.deny("המשתמש שלך הושבת. פנה למנהל.");
     const u = mine.username;
@@ -866,6 +869,7 @@ const Cloud = {
     if (!me && !this.loggingIn){ setSession(u); enter(u); try { playSplash(null); } catch(_){ document.getElementById("splash")?.remove(); } }
     else if (me && me !== u){ me = u; setSession(u); }
     this.listen();
+    Push.refresh();
     document.documentElement.classList.toggle("ro", !canEdit());
     refreshOpenPanels(); softRender();
   },
@@ -935,7 +939,7 @@ const Cloud = {
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
-    const docs = qs.docs.map(d => { const x = d.data(), o = x._o || 0; delete x._o; if (!x.id) x.id = d.id; return [o, x]; }).sort((a, b) => a[0] - b[0]);
+    const docs = qs.docs.map(d => { const x = d.data(), o = x._o || 0; delete x._o; delete x._by; if (!x.id) x.id = d.id; return [o, x]; }).sort((a, b) => a[0] - b[0]);
     const out = []; let changed = (DB[c] || []).length !== docs.length;
     docs.forEach(([o, x], i) => {
       const j = stable(x); ord.set(x.id, o); snap.set(x.id, j);
@@ -972,7 +976,7 @@ const Cloud = {
         const j = stable(it);
         if (force || snap.get(it.id) !== j){
           snap.set(it.id, j);
-          const data = JSON.parse(j); data._o = ord.get(it.id);
+          const data = JSON.parse(j); data._o = ord.get(it.id); data._by = this.user.uid;
           add(b => b.set(this.ref(c, it.id), data));
         }
       }
@@ -988,6 +992,56 @@ const Cloud = {
     toast(code.includes("permission") ? "אין הרשאה לשמור — נסה להתחבר מחדש" : code.includes("exhausted") || code.includes("too-large") || /size|bytes/i.test(err && err.message || "") ? "הפריט גדול מדי — נסה תמונה קטנה יותר" : "השמירה לענן נכשלה — ננסה שוב");
   },
 };
+/* ================= Push notifications ================= */
+/* Each phone/browser registers a token in devices/{token}; a Cloud Function sends to the family's devices. */
+const VAPID_KEY = "BN9RSCqd50xsTsPbBFtQVEnrXsz9NsmBhJLx1MwwWZu3mCN9vPNfUrXaPqF_bde5rf4M5_cgYUW7yKYp4ZUhE_o";   // public Web Push key
+const NOTIF_KINDS = [
+  ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון"],
+  ["assigned", "שובצה לי משימה",              "כשמישהו מעביר אליך משימה"],
+  ["done",     "בוצע / יצאו לקניות",          "משימה הושלמה או שמישהו לקח את הקניות"],
+  ["remind",   "תזכורות",                     "שעה לפני אירוע או משימה, וסיכום בוקר ב־8:00"],
+];
+const Push = {
+  KEY: "nido.push." + ENV,
+  supported(){ return CLOUD && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window; },
+  on(){ try { return this.supported() && Notification.permission === "granted" && !!localStorage.getItem(this.KEY); } catch(e){ return false; } },
+  async messaging(){
+    const M = this.M || (this.M = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js"));
+    return { M, msg: M.getMessaging(Cloud.app) };
+  },
+  async token(){
+    const { M, msg } = await this.messaging();
+    const reg = await navigator.serviceWorker.ready;
+    return M.getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+  },
+  async save(token){
+    const F = Cloud.fb;
+    await F.setDoc(F.doc(Cloud.db, "devices", token), { uid: Cloud.user.uid, env: ENV, ua: navigator.userAgent.slice(0, 140), updated: Date.now() });
+    localStorage.setItem(this.KEY, token);
+  },
+  async enable(){
+    if (!this.supported()) throw { code:"unsupported" };
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw { code: perm === "denied" ? "denied" : "dismissed" };
+    await this.save(await this.token());
+  },
+  async disable(){
+    const t = localStorage.getItem(this.KEY); localStorage.removeItem(this.KEY);
+    if (!t) return;
+    try { await Cloud.fb.deleteDoc(Cloud.fb.doc(Cloud.db, "devices", t)); } catch(e){}
+    try { const { M, msg } = await this.messaging(); await M.deleteToken(msg); } catch(e){}
+  },
+  /* tokens rotate — re-register quietly on every start */
+  async refresh(){
+    if (!this.on() || this._refreshed) return; this._refreshed = true;
+    try { const t = await this.token(); if (t) await this.save(t); } catch(e){ console.warn("[push]", e); }
+  },
+};
+/* a tap on a notification opens the right tab */
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
+  if (e.data && e.data.tab && me){ closeSheet(); S.tab = e.data.tab; render(); }
+});
+
 /* re-render after a remote change, but never under the user's fingers */
 function uiBusy(){
   const a = document.activeElement;
@@ -1158,7 +1212,7 @@ function completeTask(t){
   } else if (t.repeat && t.repeat!=="none"){
     const base = t.date ? parse(t.date) : new Date();
     const next = t.repeat==="daily" ? addDays(base,1) : t.repeat==="weekly" ? addDays(base,7) : new Date(base.getFullYear(), base.getMonth()+1, base.getDate());
-    DB.tasks.push({ ...t, id:uid(), done:false, doneAt:undefined, doneBy:undefined, date:iso(next), created:Date.now() });
+    DB.tasks.push({ ...t, id:uid(), done:false, doneAt:undefined, doneBy:undefined, date:iso(next), created:Date.now(), spawned:true });
     toast(`בוצע · הפעם הבאה: ${dayLabel(iso(next))}`);
   } else toast("בוצע");
   save();
@@ -2295,6 +2349,7 @@ function openProfile(){
       <button class="primary" type="submit" id="pfSave">שמירה</button>
     </form>
     <div class="pf-links">
+      ${CLOUD?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
       <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
       ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}ניהול משתמשים<span class="go">${icon("next")}</span></button>`:""}
       <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
@@ -2310,8 +2365,41 @@ function openProfile(){
     catch(err){ toast(errText(err)); busyBtn(b, false, "שמירה"); }
   });
   sh.querySelector("#pwBtn").onclick = openPassword;
+  sh.querySelector("#ntBtn")?.addEventListener("click", openNotifications);
   sh.querySelector("#adminBtn")?.addEventListener("click", () => openAdmin());
   sh.querySelector("#outBtn").onclick = async () => { if (await askConfirm("יציאה מהחשבון", "תצטרך להתחבר שוב עם שם משתמש וסיסמה.", "יציאה")) { S.panel = null; logout(); } };
+}
+
+function openNotifications(){
+  const prefs = { ...(meU().notif || {}) };
+  const blocked = Push.supported() && Notification.permission === "denied";
+  const sh = openSheet(`${head("התראות")}
+    <label class="toggle-row"><span><b style="font-weight:500">התראות במכשיר הזה</b><br><small class="note" style="margin:0" id="ntState">${
+      !Push.supported() ? "המכשיר או הדפדפן לא תומכים. באנדרואיד: Chrome ← ⋮ ← הוספה למסך הבית, ולפתוח משם."
+      : blocked ? "ההתראות חסומות. פתח את הגדרות האפליקציה בטלפון ← התראות ← אפשר."
+      : Push.on() ? "פועל — ההתראות יגיעו גם כשהאפליקציה סגורה" : "כבוי"}</small></span>
+      <input type="checkbox" id="ntDev" ${Push.on()?"checked":""} ${!Push.supported()||blocked?"disabled":""}></label>
+    <span class="lbl">על מה לקבל התראה</span>
+    <div class="nt-list">${NOTIF_KINDS.map(([k,l,d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-k="${k}" ${prefs[k]!==false?"checked":""}></label>`).join("")}</div>
+    <p class="note">ההעדפות שלך נשמרות לכל המכשירים. התראה לא נשלחת על משהו שעשית בעצמך.</p>`);
+  const dev = sh.querySelector("#ntDev"), stateEl = sh.querySelector("#ntState");
+  dev.addEventListener("change", async () => {
+    dev.disabled = true;
+    try {
+      if (dev.checked){ stateEl.textContent = "מפעיל…"; await Push.enable(); stateEl.textContent = "פועל — ההתראות יגיעו גם כשהאפליקציה סגורה"; toast("ההתראות הופעלו 🔔"); }
+      else { await Push.disable(); stateEl.textContent = "כבוי"; toast("ההתראות כובו במכשיר הזה"); }
+    } catch(e){
+      dev.checked = false;
+      stateEl.textContent = e.code === "denied" ? "ההתראות חסומות. פתח את הגדרות האפליקציה בטלפון ← התראות ← אפשר."
+        : e.code === "dismissed" ? "לא אישרת — נסה שוב ולחץ \"אפשר\"." : "לא הצלחתי להפעיל. נסה שוב.";
+      console.error("[push]", e);
+    }
+    dev.disabled = false;
+  });
+  sh.querySelectorAll("[data-k]").forEach(c => c.addEventListener("change", async () => {
+    prefs[c.dataset.k] = c.checked;
+    try { await UsersAPI.update(me, { notif: { ...prefs } }); } catch(e){ c.checked = !c.checked; prefs[c.dataset.k] = c.checked; toast(errText(e)); }
+  }));
 }
 
 function openPassword(){
@@ -2407,7 +2495,9 @@ function openUserEdit(key){
 /* ================= Session ================= */
 function getSession(){ try{ return localStorage.getItem("nido.user"); }catch(e){ return null; } }
 function setSession(u){ try{ u?localStorage.setItem("nido.user",u):localStorage.removeItem("nido.user"); }catch(e){} }
-function enter(u){ me=u; document.documentElement.classList.toggle("ro", !canEdit()); Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false; S.tab="today"; render(); }
+function enter(u){ me=u; document.documentElement.classList.toggle("ro", !canEdit()); Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false;
+  const want = new URLSearchParams(location.search).get("tab"); S.tab = TABS.some(t => t[0]===want) ? want : "today";
+  if (want) history.replaceState(null, "", location.pathname); render(); }
 function logout(fromCloud){ if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } closeSheet(); document.documentElement.classList.remove("ro"); hideAmbient(); setSession(null); me=null; $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
 function doLogin(){
   const u=$("#user").value.trim().toLowerCase(), p=$("#pass").value, err=$("#err");

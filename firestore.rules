@@ -22,7 +22,13 @@ service cloud.firestore {
       allow create, update: if isAdmin() && request.resource.data.role in ['admin', 'editor', 'viewer'];
       allow delete: if isAdmin();
       allow update: if member() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif']);
+    }
+
+    // each phone/browser that wants notifications (read only by the server)
+    match /devices/{token} {
+      allow create, update: if member() && request.resource.data.uid == request.auth.uid && request.resource.data.env in ['prod', 'test'];
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // username -> e-mail lookup, needed before signing in

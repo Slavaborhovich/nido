@@ -33,9 +33,9 @@ jobs:
       - name: Build site
         run: |
           mkdir -p _site/test
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' main/ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' --exclude 'functions' --exclude 'firebase.json' --exclude '.firebaserc' --exclude 'firestore.rules' main/ _site/
           if [ -f test/index.html ]; then
-            rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' test/ _site/test/
+            rsync -a --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '*.template.html' --exclude 'functions' --exclude 'firebase.json' --exclude '.firebaserc' --exclude 'firestore.rules' test/ _site/test/
           else
             cp -r _site/index.html _site/manifest.webmanifest _site/sw.js _site/icons _site/test/
           fi

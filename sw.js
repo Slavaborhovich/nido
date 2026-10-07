@@ -33,3 +33,30 @@ self.addEventListener("fetch", e => {
     }).catch(() => caches.match(req).then(r => r || caches.match("./"))));
   }
 });
+
+/* ---------- push notifications ---------- */
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { data: { body: e.data && e.data.text() } }; }
+  const data = d.data || {}, n = d.notification || {};
+  const title = data.title || n.title || "Nido";
+  e.waitUntil(self.registration.showNotification(title, {
+    body: data.body || n.body || "",
+    icon: "icons/icon-192.png",
+    badge: "icons/badge-96.png",
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
+    dir: "rtl", lang: "he",
+    data: { tab: data.tab || "" },
+  }));
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const tab = (e.notification.data || {}).tab || "";
+  const url = self.registration.scope + (tab ? "?tab=" + tab : "");
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const c of list) if (c.url.startsWith(self.registration.scope)) { c.postMessage({ tab }); return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});
