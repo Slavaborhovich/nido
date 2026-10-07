@@ -2986,7 +2986,16 @@ if (CLOUD){
   Cloud.ready = Cloud.start().catch(e => { console.error(e); toast("אין חיבור לשרת — עובדים מהזיכרון המקומי"); throw e; });
   Cloud.ready.catch(()=>{});
   if (ENV === "test"){ const b=document.createElement("div"); b.className="env-badge"; b.textContent="סביבת בדיקה"; document.body.appendChild(b); }
-  if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  if ("serviceWorker" in navigator){
+    addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => r.update()).catch(()=>{}));
+    /* a new version took over → reload once so it shows (not while the user is in the middle of something) */
+    let reloaded = false; const hadWorker = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded || !hadWorker) return; reloaded = true;
+      const go = () => uiBusy() ? setTimeout(go, 1500) : location.reload();
+      setTimeout(go, 300);
+    });
+  }
 }
 const s=getSession();
 if (s && USERS[s]){ enter(s); try { playSplash(null); } catch(_) { document.getElementById("splash")?.remove(); } }

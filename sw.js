@@ -1,5 +1,6 @@
 /* Nido service worker — the app opens offline; online it always fetches the newest version. */
 const CACHE = "nido-shell-" + new URL(self.registration.scope).pathname;
+const VERSION = 2;   // bump to force phones to pick up a new worker
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -27,7 +28,8 @@ self.addEventListener("fetch", e => {
   if (url.origin === scope.origin && url.pathname.startsWith(scope.pathname)) {
     // don't let the prod worker swallow the test environment
     if (scope.pathname !== url.pathname && url.pathname.startsWith(scope.pathname + "test/") && !scope.pathname.endsWith("/test/")) return;
-    e.respondWith(fetch(req).then(res => {
+    // always ask the server (cheap 304 when nothing changed) so a new version shows up on the next open
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(res => {
       if (res.ok) caches.open(CACHE).then(c => c.put(req, res.clone()));
       return res;
     }).catch(() => caches.match(req).then(r => r || caches.match("./"))));
