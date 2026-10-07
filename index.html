@@ -446,6 +446,12 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .cfm .row{display:flex;gap:10px;margin-top:18px}
 .cfm .row button{flex:1;height:46px;border-radius:14px;font-size:15px;font-weight:600;border:1px solid var(--line);background:rgba(255,226,190,.08);color:var(--text)}
 .cfm .row .del{border:0;background:#E5735F;color:#1E0F0A}
+.cfm .ic.buy{background:rgba(242,182,107,.16);color:#F2C48A}
+.cfm .row [data-l]{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;background:#D99A55;color:#1E140C}
+.cfm .row [data-l] svg{width:18px;height:18px}
+.cfm .skip{display:block;width:100%;margin-top:8px;height:40px;border:0;background:none;color:var(--muted);font-size:14px}
+.st-cart b{font-size:11px;font-weight:600;margin-inline-start:3px}
+.st-cart.on.lbl{width:auto;padding:0 9px;border-radius:999px;display:inline-flex;gap:2px}
 
 
 /* ---------- Idea form / detail (modern) ---------- */
@@ -1307,7 +1313,7 @@ function completeTask(t){
     });
     DB.shop = DB.shop.filter(i=>i.taskId!==t.id);
     toast(`הקניות הושלמו · ${t.items.length} פריטים ירדו מהרשימה`);
-  } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הסופר");
+  } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הקניות");
   } else if (t.repeat && t.repeat!=="none"){
     const base = t.date ? parse(t.date) : new Date();
     const next = t.repeat==="daily" ? addDays(base,1) : t.repeat==="weekly" ? addDays(base,7) : new Date(base.getFullYear(), base.getMonth()+1, base.getDate());
@@ -1373,9 +1379,10 @@ function taskSheet(t){
     box.hidden = !box.hidden; c.classList.toggle("on", !box.hidden);
     if (!box.hidden){ const inp = box.querySelector("input"); if (inp && inp.type!=="radio") inp.focus(); }
   });
-  f.onsubmit = e => {
+  f.onsubmit = async e => {
     e.preventDefault();
     const title = f.title.value.trim(); if (!title){ f.title.focus(); return; }
+    const buy = !edit && isBuy(title) && canEdit() ? await askList(title) : (edit ? t.buy || false : false);
     const vis = k => !sh.querySelector(`[data-f="${k}"]`).hidden;
     const data = {
       title,
@@ -1385,9 +1392,12 @@ function taskSheet(t){
       repeat: vis("rep") ? f.repeat.value : "none",
     };
     if (data.time && !data.date) data.date = iso(new Date());
+    let tk = t;
     if (edit) Object.assign(t, data);
-    else DB.tasks.push({ id:uid(), ...data, done:false, created:Date.now() });
-    save(); closeSheet(); S.taskView="active"; render(); toast(edit?"נשמר":"המשימה נוספה");
+    else { tk = { id:uid(), ...data, done:false, buy: buy || false, created:Date.now() }; DB.tasks.push(tk); }
+    if (tk.buy) syncBuy(tk);
+    save(); closeSheet(); S.taskView="active"; render();
+    toast(edit ? "נשמר" : buy ? `המשימה נוספה · ונכנסה לרשימת ${buy==="home"?"לבית":"הסופר"} 🛒` : "המשימה נוספה");
   };
   if (edit) sh.querySelector("#del").onclick = () => {
     DB.tasks = DB.tasks.filter(x=>x.id!==t.id); save(); closeSheet(); render(); toast("המשימה נמחקה");
@@ -1830,9 +1840,9 @@ const ideaTasks = i => DB.tasks.filter(t => t.ideaId===i.id);
 function syncBuy(t){
   const it = t.shopItemId && DB.shop.find(i => i.id===t.shopItemId);
   if (t.buy && !t.done){
-    if (it){ if (!it.takenBy) it.name = t.title; return; }
+    if (it){ if (!it.takenBy){ it.name = buyName(t.title); it.list = t.buy === "home" ? "home" : "super"; } return; }
     const idea = DB.ideas.find(x => x.id===t.ideaId);
-    const n = { id:uid(), name:t.title, qty:"", note: idea ? `ל${idea.title}` : "", takenBy:null, taskId:null, list:"super", fromTask:t.id };
+    const n = { id:uid(), name:buyName(t.title), qty:"", note: idea ? `ל${idea.title}` : "", takenBy:null, taskId:null, list: t.buy === "home" ? "home" : "super", fromTask:t.id };
     DB.shop.push(n); t.shopItemId = n.id;
   } else {
     if (it && !it.takenBy) DB.shop = DB.shop.filter(x => x !== it);
@@ -1904,7 +1914,7 @@ function ideaDetail(i){
       </div>
       ${ts.length ? `<section class="if-sec"><header><h4>${icon("chk")}משימות</h4><small>${ts.filter(t=>t.done).length}/${ts.length} בוצעו</small></header>
         <div id="dTasks">${ts.map(t => `<div class="st-row ${t.done?"done":""}" data-t="${t.id}">
-          <button type="button" class="dot ${t.done?"on":""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy?`<span class="st-cart on" aria-label="ברשימת הסופר">${icon("cart")}</span>`:""}${whoChip(t.assignee)}</div>`).join("")}</div></section>` : ""}
+          <button type="button" class="dot ${t.done?"on":""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy?`<span class="st-cart on lbl" aria-label="ברשימת קניות">${icon(t.buy==="home"?"home":"cart")}<b>${t.buy==="home"?"לבית":"סופר"}</b></span>`:""}${whoChip(t.assignee)}</div>`).join("")}</div></section>` : ""}
       <section class="if-sec"><header><h4>★ איך היה?</h4>${times?`<small>נקבע ביומן ${times===1?"פעם אחת":times+" פעמים"}</small>`:""}</header>
         <div id="dFb">${feedbackHTML(i.rating||0, i.review)}</div></section>
       <div class="row-btns"><button class="primary" id="plan">${icon("cal")} קובעים</button></div>
@@ -1933,14 +1943,14 @@ function ideaForm(idea){
   const edit = !!idea; const i = idea || { title:"", desc:"", link:"", image:"", rating:0, review:"" };
   let img = i.image;
   const state = { rating:i.rating||0, review:i.review||"" };
-  let rows = edit ? ideaTasks(i).map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done, buy:!!t.buy })) : [];
+  let rows = edit ? ideaTasks(i).map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done, buy:t.buy ? (t.buy === "home" ? "home" : "super") : false })) : [];
   const cover = () => img
     ? `<img src="${img}" alt=""><div class="tools"><button type="button" data-rm>הסרה</button></div>`
     : `<div class="ph">${icon("image")}<span>הוספת תמונה</span><small style="color:var(--faint)">מהגלריה או מהמצלמה</small></div>`;
   const rowsHTML = () => rows.map((r, k) => `<div class="st-row ${r.done?"done":""}" data-k="${k}">
       <span class="dot ${r.done?"on":""}">${icon("tick")}</span>
       <input value="${esc(r.title)}" aria-label="משימה" ${r.done?"disabled":""}>
-      <button type="button" class="st-cart ${r.buy?"on":""}" aria-pressed="${r.buy}" aria-label="להוסיף לרשימת הסופר" ${r.done?"disabled":""}>${icon("cart")}</button>
+      <button type="button" class="st-cart ${r.buy?"on":""}" aria-pressed="${!!r.buy}" aria-label="${r.buy==="home"?"ברשימת לבית":r.buy?"ברשימת הסופר":"להוסיף לרשימת קניות"}" title="${r.buy==="home"?"לבית":r.buy?"סופר":"לרשימת קניות"}" ${r.done?"disabled":""}>${icon(r.buy==="home"?"home":"cart")}</button>
       <button type="button" class="st-whob" style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(r.assignee)}</button>
       <button type="button" class="st-x" aria-label="הסרה">${icon("close")}</button></div>`).join("");
   const sh = openSheet(`${head(edit?"עריכת רעיון":"רעיון חדש")}
@@ -1985,7 +1995,11 @@ function ideaForm(idea){
 
   // sub-tasks
   const redraw = () => { $r.innerHTML = rowsHTML(); };
-  const addRow = () => { const inp = sh.querySelector("#newRow"), t = inp.value.trim(); if (!t) return; rows.push({ title:t, assignee:null, done:false }); inp.value = ""; redraw(); inp.focus(); };
+  const addRow = () => {
+    const inp = sh.querySelector("#newRow"), t = inp.value.trim(); if (!t) return;
+    const row = { title:t, assignee:null, done:false, buy:false }; rows.push(row); inp.value = ""; redraw();
+    if (isBuy(t)) askList(t).then(l => { if (l){ row.buy = l; redraw(); } inp.focus(); }); else inp.focus();
+  };
   sh.querySelector("#newRow").addEventListener("keydown", e => { if (e.key==="Enter"){ e.preventDefault(); addRow(); } });
   sh.querySelector("#newRow").addEventListener("blur", addRow);
   $r.addEventListener("input", e => { const row = e.target.closest("[data-k]"); if (row && e.target.tagName==="INPUT") rows[+row.dataset.k].title = e.target.value; });
@@ -1993,7 +2007,11 @@ function ideaForm(idea){
   $r.addEventListener("click", e => {
     const row = e.target.closest("[data-k]"); if (!row) return; const r = rows[+row.dataset.k];
     if (e.target.closest(".st-x")){ rows.splice(+row.dataset.k, 1); redraw(); return; }
-    if (e.target.closest(".st-cart") && !r.done){ r.buy = !r.buy; redraw(); if (r.buy) toast("ייכנס לרשימת הסופר בשמירה"); return; }
+    if (e.target.closest(".st-cart") && !r.done){
+      if (r.buy){ r.buy = false; redraw(); return; }
+      askList(r.title).then(l => { if (l){ r.buy = l; redraw(); toast(`ייכנס לרשימת ${l==="home"?"לבית":"הסופר"} בשמירה`); } });
+      return;
+    }
     if (e.target.closest(".st-whob") && !r.done){ { const P = peopleCycle(); r.assignee = P[(P.indexOf(r.assignee) + 1) % P.length]; } redraw(); }
   });
 
@@ -2006,13 +2024,13 @@ function ideaForm(idea){
     // sync sub-tasks into the Tasks screen
     const keep = new Set(); let added = 0, bought = 0;
     rows.filter(r => r.title.trim()).forEach(r => {
-      if (r.id){ const t = DB.tasks.find(x => x.id===r.id); if (t){ keep.add(t.id); if (!t.done){ t.title = r.title.trim(); t.assignee = r.assignee; t.buy = !!r.buy; syncBuy(t); } } }
-      else { const t = { id:uid(), kind:"idea", ideaId:target.id, title:r.title.trim(), assignee:r.assignee, date:null, time:null, repeat:"none", done:false, buy:!!r.buy, created:Date.now() }; DB.tasks.push(t); syncBuy(t); keep.add(t.id); added++; if (t.buy) bought++; }
+      if (r.id){ const t = DB.tasks.find(x => x.id===r.id); if (t){ keep.add(t.id); if (!t.done){ t.title = r.title.trim(); t.assignee = r.assignee; t.buy = r.buy || false; syncBuy(t); } } }
+      else { const t = { id:uid(), kind:"idea", ideaId:target.id, title:r.title.trim(), assignee:r.assignee, date:null, time:null, repeat:"none", done:false, buy:r.buy || false, created:Date.now() }; DB.tasks.push(t); syncBuy(t); keep.add(t.id); added++; if (t.buy) bought++; }
     });
     DB.tasks.filter(t => t.ideaId===target.id && !keep.has(t.id) && !t.done).forEach(t => { t.buy = false; syncBuy(t); });
     DB.tasks = DB.tasks.filter(t => t.ideaId!==target.id || keep.has(t.id) || t.done);
     save(); closeSheet(); renderIdeas();
-    toast(added ? `${edit?"נשמר":"הרעיון נוסף"} · ${added===1?"משימה אחת נוספה":added+" משימות נוספו"}${bought?` · ${bought} לסופר 🛒`:""}` : (edit?"נשמר":"הרעיון נוסף למאגר"));
+    toast(added ? `${edit?"נשמר":"הרעיון נוסף"} · ${added===1?"משימה אחת נוספה":added+" משימות נוספו"}${bought?` · ${bought} לרשימת הקניות 🛒`:""}` : (edit?"נשמר":"הרעיון נוסף למאגר"));
   };
 }
 
@@ -2267,6 +2285,27 @@ document.addEventListener("keydown", e => {
 });
 
 /* ================= In-app confirm ================= */
+/* "לקנות …" → ask which shopping list. Resolves "super" | "home" | null */
+const BUY_RE = /(^|\s)(לקנות|לקנייה|קניית|קנייה של)(\s|$)/;
+const isBuy = t => BUY_RE.test(String(t || ""));
+const buyName = t => String(t || "").replace(/^\s*(לקנות|לקנייה|קניית|קנייה של)\s+/, "").trim() || String(t || "").trim();
+function askList(title){
+  return new Promise(resolve => {
+    const w = document.createElement("div"); w.className = "cfm-scrim";
+    w.innerHTML = `<div class="cfm" role="alertdialog" aria-modal="true" aria-labelledby="alT">
+      <div class="ic buy">${icon("cart")}</div><h3 id="alT">להוסיף לרשימת קניות?</h3><p></p>
+      <div class="row"><button type="button" data-l="super">${icon("cart")}סופר</button><button type="button" data-l="home">${icon("home")}לבית</button></div>
+      <button type="button" class="skip">לא, רק משימה</button></div>`;
+    w.querySelector("p").textContent = `"${buyName(title)}"`;
+    document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    const done = v => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); document.removeEventListener("keydown", key); resolve(v); };
+    const key = e => { if (e.key === "Escape") done(null); };
+    document.addEventListener("keydown", key);
+    w.querySelectorAll("[data-l]").forEach(b => b.onclick = () => done(b.dataset.l));
+    w.querySelector(".skip").onclick = () => done(null);
+    w.onclick = e => { if (e.target === w) done(null); };
+  });
+}
 function askConfirm(title, text, okLabel = "מחיקה"){
   return new Promise(resolve => {
     const w = document.createElement("div"); w.className = "cfm-scrim";
