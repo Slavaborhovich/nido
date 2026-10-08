@@ -450,6 +450,8 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .cfm .ic.upd-ic{background:rgba(242,182,107,.16);color:#F2C48A}
 .cfm .ic.upd-ic{font-size:22px}
 .cfm.upd .row .go:only-child{flex:1}
+.cfm .upd-p{margin:8px 0 0;font-size:14.5px;line-height:1.55;color:#E9DCCB}
+.cfm.upd h3{font-size:19px}
 .upd-notes{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,226,190,.06);border:1px solid rgba(255,214,170,.1);list-style:none;display:flex;flex-direction:column;gap:6px}
 .upd-notes li{font-size:13.5px;line-height:1.45;padding-inline-start:16px;position:relative}
 .upd-notes li::before{content:"";position:absolute;right:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:#F2B66B}
@@ -752,7 +754,10 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
   width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,226,190,.22);padding:0;display:grid;place-items:center;cursor:pointer;
   background:radial-gradient(circle at 35% 30%,rgba(255,240,215,.22),rgba(46,32,21,.88) 70%);backdrop-filter:blur(12px);box-shadow:0 10px 26px rgba(10,5,2,.5);
   transition:transform .25s,opacity .25s}
-.note-fab svg{width:32px;height:32px}
+.note-fab svg{width:32px;height:32px;pointer-events:none}
+.note-fab{touch-action:none;user-select:none;-webkit-user-select:none}
+.note-fab.dragging{transform:scale(1.12);box-shadow:0 16px 34px rgba(10,5,2,.6);transition:none;cursor:grabbing}
+.note-fab.snap{transition:left .25s cubic-bezier(.2,.9,.3,1.2),top .25s}
 .note-fab:active{transform:scale(.92)}
 .note-fab.bye{transform:scale(.4) rotate(-20deg);opacity:0}
 .note-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:26px;background:rgba(12,7,3,.5);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
@@ -1396,15 +1401,22 @@ const Updates = {
     setTimeout(wait, 600);
   },
   notesList(t){ return String(t || "").split("\n").map(x => x.replace(/^[•\-\*]\s*/, "").trim()).filter(Boolean).slice(0, 6); },
+  /* whatsnew.txt: an optional first line "# title", then lines — "• …" become bullets, anything else a paragraph */
+  parse(t){
+    const lines = String(t || "").split("\n").map(x => x.trim()).filter(Boolean);
+    let title = ""; if (lines[0] && lines[0].startsWith("#")) title = lines.shift().replace(/^#+\s*/, "");
+    const bullets = lines.filter(x => /^[•\-\*]/.test(x)).map(x => x.replace(/^[•\-\*]\s*/, ""));
+    const paras = lines.filter(x => !/^[•\-\*]/.test(x));
+    return { title, html: paras.map(p => `<p class="upd-p">${esc(p)}</p>`).join("") + (bullets.length ? `<ul class="upd-notes">${bullets.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : "") };
+  },
   showDone(text){
     if (document.querySelector(".upd-scrim")) return;
-    const notes = this.notesList(text);
+    const r = this.parse(text);
     const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
     w.innerHTML = `<div class="cfm upd" role="dialog" aria-modal="true" aria-labelledby="updT">
       <div class="ic upd-ic">✨</div>
-      <h3 id="updT">Nido עודכן</h3>
-      <p>${notes.length ? "מה חדש בגרסה הזו:" : "האפליקציה עודכנה לגרסה החדשה."}</p>
-      ${notes.length ? `<ul class="upd-notes">${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+      <h3 id="updT">${esc(r.title || "Nido עודכן")}</h3>
+      ${r.html || `<p>האפליקציה עודכנה לגרסה החדשה.</p>`}
       <div class="row"><button type="button" class="go">מעולה</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
     const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); };
@@ -1422,13 +1434,13 @@ const Updates = {
   },
   show(v){
     if (this.shown || document.querySelector(".upd-scrim")) return; this.shown = v.build;
-    const notes = this.notesList(v.notes);
+    const r = this.parse(v.notes);
     const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
     w.innerHTML = `<div class="cfm upd" role="alertdialog" aria-modal="true" aria-labelledby="updT">
       <div class="ic upd-ic">${icon("repeat")}</div>
       <h3 id="updT">יש גרסה חדשה של Nido</h3>
       <p>רענון לוקח שנייה, ושום דבר לא הולך לאיבוד.</p>
-      ${notes.length ? `<ul class="upd-notes">${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+      ${r.title ? `<p class="upd-p" style="font-weight:600;color:var(--text)">${esc(r.title)}</p>` : ""}${r.html}
       <div class="row"><button type="button" class="no">אחר כך</button><button type="button" class="go">${icon("repeat")}רענן</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
     const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); };
@@ -1577,7 +1589,38 @@ const Notes = {
     };
   },
 };
-document.getElementById("noteFab").addEventListener("click", () => Notes.compose());
+/* the button can be dragged anywhere; a tap opens the note. It snaps to the nearest side and remembers its spot. */
+(() => {
+  const fab = document.getElementById("noteFab"), KEY = "nido.noteFabPos";
+  const place = (x, y) => {
+    const w = fab.offsetWidth || 52, h = fab.offsetHeight || 52, m = 10;
+    x = Math.min(Math.max(m, x), innerWidth - w - m); y = Math.min(Math.max(m + 30, y), innerHeight - h - m);
+    fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto";
+  };
+  const restore = () => { try { const p = JSON.parse(localStorage.getItem(KEY)); if (p) place(p.side === "l" ? 0 : innerWidth, p.y * innerHeight); } catch(e){} };
+  restore(); addEventListener("resize", restore);
+  let start = null, moved = false;
+  fab.addEventListener("pointerdown", e => {
+    const r = fab.getBoundingClientRect(); start = { x: e.clientX, y: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top }; moved = false;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener("pointermove", e => {
+    if (!start) return;
+    if (!moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 8) return;
+    moved = true; fab.classList.add("dragging"); place(e.clientX - start.ox, e.clientY - start.oy);
+  });
+  const end = e => {
+    if (!start) return; start = null;
+    if (!moved){ Notes.compose(); return; }
+    fab.classList.remove("dragging");
+    const r = fab.getBoundingClientRect(), left = r.left + r.width / 2 < innerWidth / 2;
+    fab.classList.add("snap"); place(left ? 0 : innerWidth, r.top); setTimeout(() => fab.classList.remove("snap"), 260);
+    try { localStorage.setItem(KEY, JSON.stringify({ side: left ? "l" : "r", y: r.top / innerHeight })); } catch(x){}
+  };
+  fab.addEventListener("pointerup", end);
+  fab.addEventListener("pointercancel", () => { start = null; fab.classList.remove("dragging"); });
+  fab.addEventListener("click", e => e.preventDefault());
+})();
 /* the day changed while the app was open → the button comes back */
 setInterval(() => Notes.refreshFab(), 60e3);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) Notes.refreshFab(); });
