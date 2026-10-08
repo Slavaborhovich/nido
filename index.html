@@ -450,6 +450,8 @@ li+li .ev{border-top:1px solid var(--line)}
 .ev-when .w{flex:1;min-width:0}.ev-when .w b{display:block;font-size:15.5px;font-weight:500}.ev-when .w small{color:#93806C;font-size:13px}
 .ev-who{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 4px;border-radius:99px;background:rgba(255,226,190,.07);font-size:13px;flex:none}
 .ev-who i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;color:#1E140C}
+.ev-due{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+.ev-due b{font-weight:400;padding:4px 10px;border-radius:99px;background:rgba(179,207,159,.12);color:var(--sage)}
 .ev-from{display:block;border:0;background:none;color:#F2C48A;font:inherit;font-size:13.5px;padding:14px 2px 2px;text-align:start}
 /* ---------- Sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(3,7,15,.6);z-index:40;opacity:0;transition:opacity .2s}
@@ -3242,6 +3244,17 @@ function eventView(ev){
 function eventSheet(ev, preset={}){
   const edit = !!ev; const e = ev || { title:"", date:S.calSel, time:"", end:"", place:"", note:"", who:null, ...preset };
   const whoOpts = [["", "יחד"], ...people().map(k => [k, USERS[k].name])];
+  // the event's tasks: an idea's event shares the idea's tasks; any other event has its own
+  const idea0 = e.ideaId ? DB.ideas.find(x => x.id === e.ideaId) : null;
+  const evId = edit ? ev.id : uid();
+  const own = () => idea0 ? ideaTasks(idea0) : DB.tasks.filter(t => t.eventId === evId);
+  let rows = own().map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done, buy:t.buy ? (t.buy === "home" ? "home" : "super") : false }));
+  const rowsHTML = () => rows.map((r, k) => `<div class="st-row ${r.done?"done":""}" data-k="${k}">
+      <span class="dot ${r.done?"on":""}">${icon("tick")}</span>
+      <input value="${esc(r.title)}" aria-label="משימה" ${r.done?"disabled":""}>
+      <button type="button" class="st-cart ${r.buy?"on":""}" aria-pressed="${!!r.buy}" aria-label="${r.buy==="home"?"ברשימת לבית":r.buy?"ברשימת הסופר":"להוסיף לרשימת קניות"}" ${r.done?"disabled":""}>${icon(r.buy==="home"?"home":"cart")}</button>
+      <button type="button" class="st-whob" style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(r.assignee)}</button>
+      <button type="button" class="st-x" aria-label="הסרה">${icon("close")}</button></div>`).join("");
   const sh = openSheet(`${head(edit?"עריכת אירוע":"אירוע חדש")}
     <form id="ef" class="stack">
       <input class="input" name="title" placeholder="שם האירוע" value="${esc(e.title)}" aria-label="שם האירוע" required>
@@ -3253,6 +3266,12 @@ function eventSheet(ev, preset={}){
       <div><span class="lbl">עד תאריך <small style="color:var(--faint)">(לאירוע של כמה ימים)</small></span><input class="input" type="date" name="end" value="${e.end||""}"></div>
       <input class="input" name="place" placeholder="מקום" value="${esc(e.place)}" aria-label="מקום">
       <textarea class="textarea" name="note" placeholder="הערה" aria-label="הערה">${esc(e.note)}</textarea>
+      <section class="if-sec">
+        <header><h4>${icon("chk")}משימות לאירוע</h4><small>יופיעו במסך המשימות</small></header>
+        <div id="evRows">${rowsHTML()}</div>
+        <div class="st-add">${icon("plus")}<input id="evNewRow" placeholder="משימה חדשה — למשל: לקנות מתנה" aria-label="משימה חדשה" autocomplete="off"></div>
+        <div class="ev-due">תאריך יעד למשימות חדשות: <b>📅 עד יום האירוע</b></div>
+      </section>
       <p class="error" id="eerr"></p>
       <div class="actions">
         ${edit?`<button type="button" class="danger" id="del">${icon("trash")}מחיקה</button>`:""}
@@ -3261,22 +3280,57 @@ function eventSheet(ev, preset={}){
     </form>`);
   const f = sh.querySelector("#ef");
   if (!edit) setTimeout(()=> (e.title ? f.date : f.title).focus(), 260);
+  // tasks: same behaviour as in an idea — tap the person to change, 🛒 for the shopping list
+  const $r = sh.querySelector("#evRows"), redraw = () => { $r.innerHTML = rowsHTML(); };
+  const addRow = () => {
+    const inp = sh.querySelector("#evNewRow"), t = inp.value.trim(); if (!t) return;
+    const row = { title:t, assignee:null, done:false, buy:false }; rows.push(row); inp.value = ""; redraw();
+    if (isBuy(t)) askList(t).then(l => { if (l){ row.buy = l; redraw(); } inp.focus(); }); else inp.focus();
+  };
+  sh.querySelector("#evNewRow").addEventListener("keydown", x => { if (x.key === "Enter"){ x.preventDefault(); addRow(); } });
+  sh.querySelector("#evNewRow").addEventListener("blur", addRow);
+  $r.addEventListener("input", x => { const row = x.target.closest("[data-k]"); if (row && x.target.tagName === "INPUT") rows[+row.dataset.k].title = x.target.value; });
+  $r.addEventListener("keydown", x => { if (x.key === "Enter" && x.target.tagName === "INPUT"){ x.preventDefault(); sh.querySelector("#evNewRow").focus(); } });
+  $r.addEventListener("click", x => {
+    const row = x.target.closest("[data-k]"); if (!row) return; const r = rows[+row.dataset.k];
+    if (x.target.closest(".st-x")){ rows.splice(+row.dataset.k, 1); redraw(); return; }
+    if (x.target.closest(".st-cart") && !r.done){
+      if (r.buy){ r.buy = false; redraw(); return; }
+      askList(r.title).then(l => { if (l){ r.buy = l; redraw(); toast(`ייכנס לרשימת ${l==="home"?"לבית":"הסופר"} בשמירה`); } });
+      return;
+    }
+    if (x.target.closest(".st-whob") && !r.done){ const P = peopleCycle(); r.assignee = P[(P.indexOf(r.assignee) + 1) % P.length]; redraw(); }
+  });
   f.onsubmit = x => {
-    x.preventDefault();
+    x.preventDefault(); addRow();
     if (!f.title.value.trim() || !f.date.value){ sh.querySelector("#eerr").textContent="שם ותאריך הם שדות חובה."; return; }
     const end = f.end.value && f.end.value > f.date.value ? f.end.value : "";
     const data = { title:f.title.value.trim(), date:f.date.value, time:f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim() };
-    if (edit) Object.assign(ev, data); else DB.events.push({ id:uid(), ideaId:e.ideaId||null, ...data });
+    const oldDate = edit ? ev.date : null;
+    if (edit) Object.assign(ev, data); else DB.events.push({ id:evId, ideaId:e.ideaId||null, ...data });
+    // sync the tasks into the Tasks screen (new ones are due on the event's day)
+    const keep = new Set(); let added = 0, bought = 0;
+    rows.filter(r => r.title.trim()).forEach(r => {
+      if (r.id){ const t = DB.tasks.find(y => y.id === r.id); if (t){ keep.add(t.id); if (!t.done){ t.title = r.title.trim(); t.assignee = r.assignee; t.buy = r.buy || false; syncBuy(t); } } }
+      else { const t = { id:uid(), kind:"idea", ideaId: idea0 ? idea0.id : null, eventId: idea0 ? null : evId, title:r.title.trim(), assignee:r.assignee, date:data.date, time:"", repeat:"none", done:false, buy:r.buy || false, created:Date.now() };
+        DB.tasks.push(t); syncBuy(t); keep.add(t.id); added++; if (t.buy) bought++; }
+    });
+    own().filter(t => !keep.has(t.id) && !t.done).forEach(t => { t.buy = false; syncBuy(t); });
+    const gone = new Set(own().filter(t => !keep.has(t.id) && !t.done).map(t => t.id));
+    DB.tasks = DB.tasks.filter(t => !gone.has(t.id));
+    // the event moved: its own open tasks that were due on the old day move with it
+    if (edit && oldDate && oldDate !== data.date) DB.tasks.forEach(t => { if (!t.done && t.date === oldDate && (t.eventId === evId || (idea0 && t.ideaId === idea0.id))) t.date = data.date; });
     // an idea that needs tickets: scheduling it adds "לקנות כרטיסים" (once)
     const idea = !edit && e.ideaId && DB.ideas.find(x => x.id === e.ideaId);
     if (idea && idea.cost === "tix" && !ideaTasks(idea).some(t => !t.done && /כרטיס/.test(t.title)))
       DB.tasks.push({ id:uid(), kind:"idea", ideaId:idea.id, title:"לקנות כרטיסים", assignee:null, date:null, time:null, repeat:"none", done:false, buy:false, created:Date.now() });
     save(); closeSheet();
     S.calSel = data.date; const d=parse(data.date); S.calMonth=new Date(d.getFullYear(), d.getMonth(), 1); S.calWeek = iso(startOfWeek(d));
-    go("cal"); toast(edit?"נשמר":"האירוע נכנס ליומן");
+    go("cal"); toast(`${edit?"נשמר":"האירוע נכנס ליומן"}${added ? ` · ${added===1?"משימה אחת נוספה":added+" משימות נוספו"}` : ""}${bought ? ` · ${bought} לרשימת הקניות 🛒` : ""}`);
   };
   if (edit) sh.querySelector("#del").onclick = async () => {
-    if (!await askConfirm(`למחוק את "${ev.title}"?`, "האירוע יימחק מהיומן.")) return;
+    const n = DB.tasks.filter(t => t.eventId === ev.id).length;
+    if (!await askConfirm(`למחוק את "${ev.title}"?`, `האירוע יימחק מהיומן${n ? ` יחד עם ${n === 1 ? "המשימה שלו" : n + " המשימות שלו"}` : ""}.`)) return;
     DB.tasks.filter(t => t.eventId === ev.id).forEach(t => { if (t.buy){ t.buy = false; syncBuy(t); } });
     DB.tasks = DB.tasks.filter(t => t.eventId !== ev.id);
     DB.events = DB.events.filter(x=>x.id!==ev.id); save(); closeSheet(); renderCal(); toast("האירוע נמחק"); };
