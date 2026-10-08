@@ -1477,6 +1477,7 @@ const Updates = {
     if (last === BUILD || (!last && !this.hadSession)) return;   // nothing new, or a brand-new device
     let notes = "";
     try { const v = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json(); if (v.build === BUILD) notes = v.notes || ""; } catch(e){}
+    if (/^#\s*silent/i.test(notes.trim())) return;
     const wait = () => (!me || uiBusy() || document.getElementById("splash")) ? setTimeout(wait, 1200) : this.showDone(notes);
     setTimeout(wait, 600);
   },
@@ -1508,6 +1509,7 @@ const Updates = {
       const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
       const v = await r.json();
       if (!v.build || v.build === BUILD) return;
+      if (/^#\s*silent/i.test(String(v.notes || "").trim())) return;   // quiet release: picked up on the next open, no popup
       const wait = () => (uiBusy() || document.getElementById("splash")) ? setTimeout(wait, 2000) : this.show(v);
       wait();
     } catch(e){}
