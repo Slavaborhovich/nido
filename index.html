@@ -664,7 +664,8 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .cv-sum small{font-size:11.5px;color:#A8917A}
 .cv-sum .sh b{color:#F0D79A}
 .cv-cols{display:grid;gap:5px;font-size:12px;color:#C9B8A6;margin-bottom:6px;text-align:center}
-.cv-cols span{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden}
+.cv-cols span{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden}
+.cv-cols em{font-style:normal;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .cv-av{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;font-size:10px;font-weight:700;color:#1E140C;flex:none}
 .cv-av svg{width:11px;height:11px}
 .cv-row{display:grid;gap:5px;margin-bottom:5px}
@@ -2556,7 +2557,7 @@ function dayItems(ds){
     .map(t => ({ k:"tk", id:t.id, title: t.kind === "shop" ? "קניות" : t.title, time:t.time || "", who:t.assignee || null, done:t.done }));
   return [...ev, ...tk].sort((a, b) => (a.time || "99") < (b.time || "99") ? -1 : (a.time || "99") > (b.time || "99") ? 1 : 0);
 }
-const holLine = h => h.k === "candles" ? `🕯 כניסת שבת ${h.t}` : h.k === "havdalah" ? `צאת שבת ${h.t}` : h.n;
+const holLine = h => h.k === "candles" ? `כניסת שבת ${h.t}` : h.k === "havdalah" ? `צאת שבת ${h.t}` : h.n;
 function openItem(k, id){
   if (k === "ev"){ const e = DB.events.find(x => x.id === id); if (e) eventSheet(e); }
   else { const t = DB.tasks.find(x => x.id === id); if (t) taskSheet(t); }
@@ -2621,7 +2622,7 @@ function renderWeek(){
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
       <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
     </div>
-    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i>${esc(USERS[c].name)}</span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i>יחד</span>`).join("")}</div>
+    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span title="${esc(USERS[c].name)}"><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i><em>${esc(USERS[c].name.trim().split(/\s+/)[0])}</em></span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i><em>יחד</em></span>`).join("")}</div>
     <div class="cv-board">${rows}</div>
     <p class="hint cv-hint">לחיצה על תאריך פותחת את היום בציר זמן · משבצת ריקה מוסיפה אירוע.</p>`;
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
