@@ -44,7 +44,8 @@ jobs:
             local sha=$(git -C "$1" rev-parse --short HEAD)
             sed -i "s/__BUILD__/${sha}/" "$2/index.html"
             local notes=""; [ -f "$1/whatsnew.txt" ] && notes=$(cat "$1/whatsnew.txt")
-            jq -n --arg b "$sha" --arg n "$notes" '{build:$b, notes:$n}' > "$2/version.json"
+            local silent=false; if printf '%s' "$notes" | head -1 | grep -qi '^#\s*silent'; then silent=true; notes=""; fi
+            jq -n --arg b "$sha" --arg n "$notes" --argjson s "$silent" '{build:$b, notes:$n, silent:$s}' > "$2/version.json"
             rm -f "$2/whatsnew.txt"
           }
           stamp main _site
