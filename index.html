@@ -150,6 +150,16 @@ li+li .up{border-top:1px solid var(--line)}
 .count b{display:block;font-size:34px;font-weight:300;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .prog{width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden;margin-bottom:6px}
 .prog i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#CFE0FF,#82B2FF)}
+.cdE .lb{display:block;font-size:11.5px;letter-spacing:.06em;color:rgba(255,236,214,.65);margin-bottom:4px}
+.cdE .nm{display:flex;align-items:flex-start;direction:ltr;gap:3px}
+.cdE .u{display:flex;flex-direction:column;align-items:center;min-width:38px}
+.cdE .u b{font-size:30px;font-weight:200;letter-spacing:.02em;font-variant-numeric:tabular-nums;line-height:1}
+.cdE .u small{font-size:9.5px;letter-spacing:.08em;color:rgba(255,236,214,.5);margin-top:6px}
+.cdE .u.s b{opacity:.55}
+.cdE .nm i{font-style:normal;font-size:22px;font-weight:200;opacity:.4;transform:translateY(2px)}
+.cdE.long .u{min-width:32px}.cdE.long .u b{font-size:25px}.cdE.long .nm i{font-size:18px}
+.prog.thin{height:2px;width:96px;background:rgba(255,255,255,.12)}
+.prog.thin i{background:rgba(255,236,214,.75)}
 .ty{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
 .ty svg{width:18px;height:18px}
 .ty.ty-ev{background:rgba(130,178,255,.12);color:var(--blue)}
@@ -2382,10 +2392,14 @@ const dl = x => x.date ? dayLabel(x.date) : "ללא תאריך";
 const TY = { ev:["cal","אירוע"], tk:["chk","משימה"], sh:["cart","קניות"] };
 function countdown(x){
   if (!x.time) return null;
-  const m = Math.max(0, Math.round((new Date(`${x.date}T${x.time}`) - new Date())/60000));
-  if (m >= 48*60) return { v:String(Math.round(m/1440)), u:"ימים", m };
-  if (m >= 60) return { v:`${Math.floor(m/60)}:${pad(m%60)}`, u:"שעות", m };
-  return { v:String(m), u:"דקות", m };
+  const s = Math.max(0, Math.floor((new Date(`${x.date}T${x.time}`) - new Date())/1000));
+  return { s, m: Math.ceil(s/60) };
+}
+/* the "הבא בתור" clock: thin digits, a tiny label under each, seconds a little softer */
+function cdUnits(c){
+  const d = Math.floor(c.s/86400), h = Math.floor(c.s%86400/3600), mi = Math.floor(c.s%3600/60), se = c.s%60;
+  const u = [...(d ? [[String(d), d===1 ? "יום" : "ימים"]] : []), [pad(h),"שעות"], [pad(mi),"דקות"], [pad(se),"שניות"]];
+  return u.map(([v, l], k) => `${k ? "<i>:</i>" : ""}<span class="u ${k===u.length-1 ? "s" : ""}"><b>${v}</b><small>${l}</small></span>`).join("");
 }
 let todayTimer = null;
 function renderToday(){
@@ -2402,7 +2416,7 @@ function renderToday(){
       <h4>${esc(first.title)}</h4>
       <div class="meta">${first.date?`<span>${icon("clock")}<b class="tabular" style="font-weight:500">${dl(first)}${first.time?" · "+first.time:""}</b></span>`:""}
         ${first.place?`<span>${icon("pin")}${esc(first.place)}</span>`:""}${first.who?`<span>${who(first.who)}</span>`:(first.date?"":`<span>${who(null)}</span>`)}</div>
-      <div class="bar">${c ? `<div class="count"><span>בעוד</span><b id="cdV">${c.v}</b><span id="cdU">${c.u}</span></div><div class="prog"><i style="width:${pct}%"></i></div>`
+      <div class="bar">${c ? `<div class="cdE ${c.s >= 86400 ? "long" : ""}"><span class="lb">בעוד</span><div class="nm" id="cdN">${cdUnits(c)}</div></div>${c.s < 86400 ? `<div class="prog thin"><i id="cdP" style="width:${pct}%"></i></div>` : ""}`
                           : `<div class="count"><span>מתי</span><b style="font-size:24px">${dl(first)}</b><span>${first.date?"במהלך היום":"כשמתפנים"}</span></div>`}</div>
     </button>`;
   }
@@ -2429,9 +2443,12 @@ function renderToday(){
   });
   if (first && first.time) todayTimer = setInterval(() => {
     if (S.tab!=="today") return clearInterval(todayTimer);
-    const c = countdown(first); if (!c || c.m===0) return renderToday();
-    const v = $("#cdV"), u = $("#cdU"); if (v){ v.textContent = c.v; u.textContent = c.u; }
-  }, 20000);
+    const c = countdown(first); if (!c || c.s===0) return renderToday();
+    const n = $("#cdN"); if (!n) return;
+    if ((c.s >= 86400) !== n.parentNode.classList.contains("long")) return renderToday();
+    n.innerHTML = cdUnits(c);
+    const p = $("#cdP"); if (p) p.style.width = Math.round(Math.max(0, Math.min(1, 1 - c.m/(24*60)))*100) + "%";
+  }, 1000);
 }
 
 /* ================= Tasks ================= */
