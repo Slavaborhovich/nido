@@ -180,6 +180,14 @@ li+li .up{border-top:1px solid var(--line)}
 .ttile .w{font-size:15px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ttile .k{margin-top:4px;font-size:12px;color:var(--faint)}
 .ttile .bot{margin-top:auto}
+.evtags{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:16px 0 2px}
+.evtag{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 4px 0 12px;border-radius:99px;background:rgba(30,18,8,.26);border:1px solid rgba(255,230,200,.18);font-size:12.5px;color:#FBEBD6;cursor:pointer;transition:opacity .2s,background .2s}
+.evtag i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:600;color:#1E140C}
+.evtag i.none{background:rgba(255,236,214,.3);color:#5a3415}
+.evtag.done{opacity:.5;text-decoration:line-through;background:rgba(30,18,8,.14)}
+.evtag.more{padding:0 12px;color:rgba(255,236,214,.75)}
+.evline{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.evline .av i{width:18px;height:18px;font-size:9px;border-color:#2A1E15}
 .t-empty{padding:34px 18px;border-radius:24px;background:var(--surface);border:1px solid var(--line);text-align:center;color:var(--muted)}
 
 
@@ -2380,17 +2388,21 @@ function greeting(h){
   if (h>=17 && h<22) return "ערב טוב";
   return "לילה טוב";
 }
+/* an event's tasks: the idea's (for an idea's event) or the event's own */
+function evTasks(ev){ const idea = ev.ideaId && DB.ideas.find(x => x.id === ev.ideaId); return idea ? ideaTasks(idea) : DB.tasks.filter(t => t.eventId === ev.id); }
+/* tasks that belong to an event show inside its card, not as tiles of their own */
+const onEvent = t => !!t.eventId || (!!t.ideaId && DB.events.some(e => e.ideaId === t.ideaId && e.date === t.date));
 function upcoming(){
   const now = new Date(), today = iso(now);
   const list = [
     ...DB.events.map(e => ({ kind:"event", ty:"ev", ref:e, title:e.title, date:e.date, time:e.time, place:e.place })),
-    ...DB.tasks.filter(t => !t.done && t.date).map(t => ({ kind:"task", ty:t.kind==="shop"?"sh":"tk", ref:t, title:t.title, date:t.date, time:t.time, who:t.assignee })),
+    ...DB.tasks.filter(t => !t.done && t.date && !onEvent(t)).map(t => ({ kind:"task", ty:t.kind==="shop"?"sh":"tk", ref:t, title:t.title, date:t.date, time:t.time, who:t.assignee })),
   ].filter(x => x.time ? new Date(`${x.date}T${x.time}`) >= now : x.date >= today);
   const key = x => `${x.date}T${x.time || "23:59"}`;
   const out = list.sort((a,b) => key(a) < key(b) ? -1 : 1).slice(0, UPCOMING_COUNT);
   // room left? fill it with open tasks that have no date, oldest first
   if (out.length < UPCOMING_COUNT){
-    const undated = DB.tasks.filter(t => !t.done && !t.date).sort((a,b) => a.created - b.created)
+    const undated = DB.tasks.filter(t => !t.done && !t.date && !onEvent(t)).sort((a,b) => a.created - b.created)
       .map(t => { const shop = t.kind==="shop", n = shop ? DB.shop.filter(i=>i.taskId===t.id).length : 0;
         return { kind:"task", ty:shop?"sh":"tk", ref:t, title: shop ? `קניות · ${n} פריטים` : t.title, date:null, time:null, who:t.assignee }; });
     out.push(...undated.slice(0, UPCOMING_COUNT - out.length));
@@ -2413,6 +2425,17 @@ function cdUnits(c){
   return `<div class="days"><b>${d}</b><span>${d===1 ? "יום" : "ימים"}</span></div><span class="dv"></span><div class="clk">${clock}</div>`;
 }
 let todayTimer = null;
+const tagAva = id => { const u = id && USERS[id]; return u ? `<i style="background:${u.color};${avaStyle(u)}">${initial(u)}</i>` : `<i class="none">?</i>`; };
+function evTagsHTML(ev){
+  const ts = evTasks(ev); if (!ts.length) return "";
+  const list = [...ts.filter(t => !t.done), ...ts.filter(t => t.done)], shown = list.slice(0, 4);
+  return `<div class="evtags">${shown.map(t => `<span class="evtag ${t.done ? "done" : ""}" data-tt="${t.id}" role="button" aria-label="${esc(t.title)}${t.done ? " — בוצע" : ""}">${esc(t.title)}${tagAva(t.assignee)}</span>`).join("")}${list.length > 4 ? `<span class="evtag more">+${list.length - 4}</span>` : ""}</div>`;
+}
+function evLineHTML(ev){
+  const ts = evTasks(ev); if (!ts.length) return "";
+  const ppl = [...new Set(ts.filter(t => !t.done && t.assignee && USERS[t.assignee]).map(t => t.assignee))];
+  return `<div class="evline">✓ ${ts.filter(t => t.done).length}/${ts.length} משימות <span class="av">${ppl.map(tagAva).join("")}</span></div>`;
+}
 function renderToday(){
   clearInterval(todayTimer);
   const now = new Date(), items = upcoming(), first = items[0], rest = items.slice(1);
@@ -2427,6 +2450,7 @@ function renderToday(){
       <h4>${esc(first.title)}</h4>
       <div class="meta">${first.date?`<span>${icon("clock")}<b class="tabular" style="font-weight:500">${dl(first)}${first.time?" · "+first.time:""}</b></span>`:""}
         ${first.place?`<span>${icon("pin")}${esc(first.place)}</span>`:""}${first.who?`<span>${who(first.who)}</span>`:(first.date?"":`<span>${who(null)}</span>`)}</div>
+      ${first.kind === "event" ? evTagsHTML(first.ref) : ""}
       <div class="bar">${c ? `<div class="cdE long"><span class="lb">בעוד</span><div class="row" id="cdN">${cdUnits(c)}</div></div>`
                           : `<div class="count"><span>מתי</span><b style="font-size:24px">${dl(first)}</b><span>${first.date?"במהלך היום":"כשמתפנים"}</span></div>`}</div>
     </button>`;
@@ -2441,12 +2465,18 @@ function renderToday(){
     ${ items.length ? hero + (rest.length ? `<div class="tgrid">${rest.map((x,i)=>`
       <button class="ttile" data-i="${i+1}">
         <div class="row"><span class="ty ty-${x.ty}">${icon(TY[x.ty][0])}</span><span class="when"><b>${x.time||"—"}</b>${dl(x)}</span></div>
-        <div class="bot"><div class="w">${esc(x.title)}</div><div class="k">${whoLine(x)}</div></div>
+        <div class="bot"><div class="w">${esc(x.title)}</div><div class="k">${whoLine(x)}</div>${x.kind === "event" ? evLineHTML(x.ref) : ""}</div>
       </button>`).join("")}</div>` : "")
       : `<div class="t-empty">אין שום דבר קרוב. הבית רגוע.</div>` }`;
   $("#meBtn").onclick = openProfile;
   $("#allCal").onclick = () => go("cal");
-  $("#screen").querySelectorAll("[data-i]").forEach(b => b.onclick = () => {
+  $("#screen").querySelectorAll("[data-i]").forEach(b => b.onclick = e => {
+    const tg = e.target.closest("[data-tt]");
+    if (tg){                                   // tapping a task tag marks it done (tap again to undo)
+      const t = DB.tasks.find(y => y.id === tg.dataset.tt); if (!t || !canEdit()) return;
+      if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
+      if (t.buy) syncBuy(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); return;
+    }
     const x = items[+b.dataset.i];
     if (x.kind==="event"){ S.calSel=x.date; const d=parse(x.date); S.calMonth=new Date(d.getFullYear(),d.getMonth(),1); S.calWeek=iso(startOfWeek(d)); go("cal"); }
     else if (x.ty==="sh") go("shop");
