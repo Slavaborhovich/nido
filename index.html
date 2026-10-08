@@ -180,6 +180,18 @@ li+li .up{border-top:1px solid var(--line)}
 .ttile .w{font-size:15px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ttile .k{margin-top:4px;font-size:12px;color:var(--faint)}
 .ttile .bot{margin-top:auto}
+.evtl{position:relative;margin:16px 0 2px}
+.evtl .hd{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.06em;color:rgba(255,236,214,.6);padding:0 2px 6px}
+.evtl .ct{display:flex;align-items:center;gap:8px}
+.evtl .bar{width:60px;height:2px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}.evtl .bar b{display:block;height:100%;background:#FFE2B8}
+.evtl .r{display:flex;align-items:center;gap:10px;padding:7px 2px;font-size:13.5px;color:#FBEBD6;border-top:1px solid rgba(255,230,200,.12);cursor:pointer}
+.evtl .r .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evtl .r.done{opacity:.5}.evtl .r.done .t{text-decoration:line-through}
+.evtl .c{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(255,236,214,.55);flex:none;display:grid;place-items:center;font-size:9px;font-style:normal}
+.evtl .r.done .c{background:#FFE2B8;border-color:#FFE2B8;color:#5a3415}
+.evtl .r > i:last-child{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:600;color:#1E140C;flex:none}
+.evtl .r > i.none{background:rgba(255,236,214,.3);color:#5a3415}
+.evtl .more{text-align:center;font-size:12px;color:rgba(255,236,214,.75);border-top:1px solid rgba(255,230,200,.12);padding-top:8px;cursor:pointer}
 .evtags{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:16px 0 2px}
 .evtag{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 4px 0 12px;border-radius:99px;background:rgba(30,18,8,.26);border:1px solid rgba(255,230,200,.18);font-size:12.5px;color:#FBEBD6;cursor:pointer;transition:opacity .2s,background .2s}
 .evtag i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:600;color:#1E140C}
@@ -2428,8 +2440,10 @@ let todayTimer = null;
 const tagAva = id => { const u = id && USERS[id]; return u ? `<i style="background:${u.color};${avaStyle(u)}">${initial(u)}</i>` : `<i class="none">?</i>`; };
 function evTagsHTML(ev){
   const ts = evTasks(ev); if (!ts.length) return "";
-  const list = [...ts.filter(t => !t.done), ...ts.filter(t => t.done)], shown = list.slice(0, 4);
-  return `<div class="evtags">${shown.map(t => `<span class="evtag ${t.done ? "done" : ""}" data-tt="${t.id}" role="button" aria-label="${esc(t.title)}${t.done ? " — בוצע" : ""}">${esc(t.title)}${tagAva(t.assignee)}</span>`).join("")}${list.length > 4 ? `<span class="evtag more">+${list.length - 4}</span>` : ""}</div>`;
+  const list = [...ts.filter(t => !t.done), ...ts.filter(t => t.done)], shown = list.slice(0, 3), dn = ts.filter(t => t.done).length;
+  return `<div class="evtl"><div class="hd"><span>משימות לקראת</span><span class="ct"><span class="bar"><b style="width:${Math.round(dn / ts.length * 100)}%"></b></span><span class="tabular">${dn}/${ts.length}</span></span></div>
+    ${shown.map(t => `<div class="r ${t.done ? "done" : ""}" data-tt="${t.id}" role="button" aria-label="${esc(t.title)}${t.done ? " — בוצע" : ""}"><i class="c">${t.done ? "✓" : ""}</i><span class="t">${esc(t.title)}</span>${tagAva(t.assignee)}</div>`).join("")}
+    ${list.length > 3 ? `<div class="more" data-evmore="${ev.id}">ועוד ${list.length - 3} ${list.length - 3 === 1 ? "משימה" : "משימות"} ←</div>` : ""}</div>`;
 }
 function evLineHTML(ev){
   const ts = evTasks(ev); if (!ts.length) return "";
@@ -2471,6 +2485,8 @@ function renderToday(){
   $("#meBtn").onclick = openProfile;
   $("#allCal").onclick = () => go("cal");
   $("#screen").querySelectorAll("[data-i]").forEach(b => b.onclick = e => {
+    const mo = e.target.closest("[data-evmore]");
+    if (mo){ const ev = DB.events.find(y => y.id === mo.dataset.evmore); if (ev) eventView(ev); return; }
     const tg = e.target.closest("[data-tt]");
     if (tg){                                   // tapping a task tag marks it done (tap again to undo)
       const t = DB.tasks.find(y => y.id === tg.dataset.tt); if (!t || !canEdit()) return;
