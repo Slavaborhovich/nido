@@ -609,6 +609,14 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .cfm .upd-p{margin:8px 0 0;font-size:14.5px;line-height:1.55;color:#E9DCCB}
 .cfm.upd h3{font-size:19px}
 .upd-notes{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,226,190,.06);border:1px solid rgba(255,214,170,.1);list-style:none;display:flex;flex-direction:column;gap:6px}
+.cfm.mu .pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#93806C;margin:-2px 0 6px}
+.cfm.mu .dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+.cfm.mu .dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,226,190,.2);transition:width .2s}
+.cfm.mu .dots i.on{background:#F2B66B;width:18px;border-radius:9px}
+.cfm.mu .row2{display:flex;gap:8px;margin-top:16px}
+.cfm.mu .row2 button{flex:1;height:48px !important;min-height:0;margin:0 !important;padding:0 12px;border-radius:14px;font:inherit;font-size:15px}
+.cfm.mu .row2 .sec2{background:none;border:1px solid rgba(255,214,170,.2);color:#D0BBA5}
+.cfm.mu .row2 .pri{border:0;background:linear-gradient(180deg,#F2B66B,#D99A55);color:#1E140C;font-weight:600}
 .upd-notes li{font-size:13.5px;line-height:1.45;padding-inline-start:16px;position:relative}
 .upd-notes li::before{content:"";position:absolute;right:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:#F2B66B}
 .cfm .row .go{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;background:#D99A55;color:#1E140C}
@@ -1705,15 +1713,48 @@ const Updates = {
     document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(check, 1200); });
   },
   /* first time this device runs a new version (after login): tell what changed */
+  /* every update message the family hasn't seen yet (updates.json keeps the history) — none get missed */
   async seen(){
     if (BUILD.startsWith("__") || this._seenDone) return; this._seenDone = true;
-    let last = null; try { last = localStorage.getItem("nido.seenBuild"); localStorage.setItem("nido.seenBuild", BUILD); } catch(e){ return; }
-    if (last === BUILD || (!last && !this.hadSession)) return;   // nothing new, or a brand-new device
-    let notes = "";
-    try { const v = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json(); if (v.build === BUILD){ notes = v.notes || ""; if (v.silent) notes = "#silent"; } } catch(e){}
-    if (/^#\s*silent/i.test(notes.trim())) return;
-    const wait = () => (!me || uiBusy() || document.getElementById("splash")) ? setTimeout(wait, 1200) : this.showDone(notes);
+    let last = null, seen = null;
+    try { last = localStorage.getItem("nido.seenBuild"); localStorage.setItem("nido.seenBuild", BUILD); seen = JSON.parse(localStorage.getItem("nido.seenNotes") || "null"); } catch(e){ return; }
+    let hist = [];
+    try { const r = await fetch("updates.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) hist = await r.json(); } catch(e){ return; }
+    if (!Array.isArray(hist) || !hist.length) return;
+    if (!seen){
+      // first time with this feature: a brand-new device has seen everything; others saw what their last version showed
+      seen = (!last && !this.hadSession) ? hist.map(h => h.id) : hist.filter(h => (h.seenIn || []).includes(last)).map(h => h.id);
+      this.markSeen(seen);
+    }
+    const todo = hist.filter(h => !seen.includes(h.id)).slice(0, 3);
+    if (!todo.length) return;
+    const wait = () => (!me || uiBusy() || document.getElementById("splash")) ? setTimeout(wait, 1200) : this.showMany(todo, () => this.markSeen([...seen, ...hist.map(h => h.id)]));
     setTimeout(wait, 600);
+  },
+  markSeen(ids){ try { localStorage.setItem("nido.seenNotes", JSON.stringify([...new Set(ids)].slice(-50))); } catch(e){} },
+  /* one message → the usual window; several → one at a time, "עדכון 1 מתוך 2", newest first */
+  showMany(list, done){
+    if (document.querySelector(".upd-scrim")) return;
+    if (list.length === 1){ this.showDone(list[0].text, done); return; }
+    let k = 0;
+    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
+    const when = d => { const t = iso(new Date()), y = iso(addDays(new Date(), -1)); if (d === t) return "היום"; if (d === y) return "אתמול"; const x = parse(d); return `${x.getDate()}.${x.getMonth() + 1}`; };
+    const draw = () => {
+      const r = this.parse(list[k].text), last = k === list.length - 1;
+      w.innerHTML = `<div class="cfm upd mu" role="dialog" aria-modal="true" aria-labelledby="updT">
+        <div class="pg"><span>עדכון ${k + 1} מתוך ${list.length}</span><span>${esc(when(list[k].date))}</span></div>
+        <div class="ic upd-ic">✨</div>
+        <h3 id="updT">${esc(r.title || "Nido עודכן")}</h3>
+        ${r.html}
+        <div class="dots">${list.map((_, j) => `<i class="${j === k ? "on" : ""}"></i>`).join("")}</div>
+        <div class="row2">${last ? `<button type="button" class="pri go">מעולה</button>` : `<button type="button" class="sec2 skip">דלג</button><button type="button" class="pri nx">לעדכון הבא ←</button>`}</div></div>`;
+    };
+    draw(); document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); done && done(); };
+    w.onclick = e => {
+      if (e.target.closest(".nx")){ k++; draw(); return; }
+      if (e.target.closest(".skip") || e.target.closest(".go")) return close();
+    };
   },
   notesList(t){ return String(t || "").split("\n").map(x => x.replace(/^[•\-\*]\s*/, "").trim()).filter(Boolean).slice(0, 6); },
   /* whatsnew.txt: an optional first line "# title", then lines — "• …" become bullets, anything else a paragraph */
@@ -1733,7 +1774,7 @@ const Updates = {
     flush();
     return { title, html };
   },
-  showDone(text){
+  showDone(text, done){
     if (document.querySelector(".upd-scrim")) return;
     const r = this.parse(text);
     const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
@@ -1743,7 +1784,7 @@ const Updates = {
       ${r.html || `<p>האפליקציה עודכנה לגרסה החדשה.</p>`}
       <div class="row"><button type="button" class="go">מעולה</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
-    const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); };
+    const close = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); done && done(); };
     w.querySelector(".go").onclick = close; w.onclick = e => { if (e.target === w) close(); };
   },
   async check(){
@@ -2402,7 +2443,7 @@ const Back = {
     const ns = document.querySelector(".note-scrim");
     if (ns){ const x = ns.querySelector(".send .x"); if (x) x.click(); return true; }      // writing a note: cancel; a received note waits for "קיבלתי"
     const dlg = [...document.querySelectorAll(".cfm-scrim")].pop();
-    if (dlg){ const go = dlg.querySelector(".upd .go"); if (go) go.click(); else dlg.click(); return true; }
+    if (dlg){ const go = dlg.querySelector(".upd .go, .upd .skip"); if (go) go.click(); else dlg.click(); return true; }
     if ($("#sheetRoot").innerHTML){ closeSheet(); return true; }
     if (!$("#admin").hidden){ if (S.adminFam){ S.adminFam = null; Admin.render(); } else Admin.close(); return true; }
     if (S.take){ S.take = false; S.takeSel = new Set(); render(); return true; }
