@@ -815,7 +815,7 @@ body.admin-open .note-fab{display:none}
 .adm-card .lbl{display:block;margin:10px 0 6px}
 .adm-card .input,.adm-card .textarea{width:100%;background:#2C2016;border-color:rgba(255,214,170,.14)}
 .adm-card .toggle-row{margin-bottom:8px}
-.adm-limit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 10px;padding:8px 14px;border-radius:14px;background:rgba(255,226,190,.04);font-size:14px}
+.adm-limit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:8px 14px;border-radius:14px;background:rgba(255,226,190,.04);font-size:14px}
 .adm-limit .input{width:84px;height:40px;text-align:center}
 .adm-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 2px;border:0;border-top:1px solid rgba(255,214,170,.08);background:none;color:var(--text);text-align:start;font:inherit}
 .adm-card h3 + .adm-row{border-top:0}
@@ -932,7 +932,7 @@ const ALLUSERS = {};                   // every family's people — only the sys
 const FAMILIES = {};                   // id → { name, city, features, active }
 const CITIES = [["293397","תל אביב"],["281184","ירושלים"],["294801","חיפה"],["295530","באר שבע"],["293703","ראשון לציון"],["293918","פתח תקווה"],["294071","נתניה"],["295629","אשדוד"],["294751","חולון"],["293788","רמת גן"],["294778","הרצליה"]];
 const FEATURES = [["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
-let FAM = { city:"293397", features:{}, noteLimit:1 };   // the current family's settings
+let FAM = { city:"293397", features:{} };   // the current family's settings
 const feat = k => !(FAM.features && FAM.features[k] === false);   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
@@ -1121,7 +1121,7 @@ const Cloud = {
     if (this.isSuper && !qs.metadata.fromCache) this.tagFamilies(list);
     this.fam = mine.family || HOME_FAMILY;
     try { localStorage.setItem("nido.family", this.fam); } catch(e){}
-    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY, lastSeen:x.lastSeen||0, build:x.build||"" });
+    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY, lastSeen:x.lastSeen||0, build:x.build||"", noteLimit:+x.noteLimit||1 });
     const map = {}, all = {};
     list.forEach(x => { if (!x.username) return; all[x.username] = toUser(x); if ((x.family || HOME_FAMILY) === this.fam) map[x.username] = all[x.username]; });
     Object.keys(ALLUSERS).forEach(k => delete ALLUSERS[k]); Object.assign(ALLUSERS, all);
@@ -1135,6 +1135,7 @@ const Cloud = {
     if (!this._notesOn){ this._notesOn = true; Notes.listen(); }
     this.listenFamily(); this.presence(); Announce.listen();
     Notes.refreshFab(); this.notesSentCheck();
+    if (this._lastLimit !== meU().noteLimit){ this._lastLimit = meU().noteLimit; Notes.alreadySent().then(() => Notes.refreshFab()); }
     Push.refresh();
     document.documentElement.classList.toggle("ro", !canEdit());
     refreshOpenPanels(); softRender();
@@ -1147,7 +1148,7 @@ const Cloud = {
     this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
       const x = d.exists() ? d.data() : {};
       const before = JSON.stringify(FAM);
-      FAM = { city: x.city || "293397", features: x.features || {}, noteLimit: Math.max(1, +x.noteLimit || 1) };
+      FAM = { city: x.city || "293397", features: x.features || {} };
       if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); Notes.alreadySent().then(() => Notes.refreshFab()); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
     }, () => {});
   },
@@ -1200,7 +1201,7 @@ const Cloud = {
     return this.fb.signInWithEmailAndPassword(this.auth, email, p);
   },
   /* admin: create a new person. A second Firebase app makes the account so the admin stays signed in. */
-  async createUser({ username, name, password, role, color, family }){
+  async createUser({ username, name, password, role, color, family, noteLimit }){
     const F = this.fb;
     if ((await F.getDoc(F.doc(this.db, "logins", username))).exists()) throw { code:"taken" };
     const sec = this.secApp || (this.secApp = this.A.initializeApp(FIREBASE_CONFIG, "creator"));
@@ -1214,7 +1215,7 @@ const Cloud = {
     }
     const uid = cred.user.uid; await F.signOut(sa);
     const b = F.writeBatch(this.db);
-    b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", family: family || this.fam, created:Date.now() });
+    b.set(F.doc(this.db, "users", uid), { username, name, color, role, active:true, photo:"", family: family || this.fam, noteLimit: noteLimit || 1, created:Date.now() });
     b.set(F.doc(this.db, "logins", username), { email, uid });
     await b.commit();
   },
@@ -1263,7 +1264,7 @@ const Cloud = {
       await Promise.all(commits);
     } catch(e){ console.error("[migrate]", e); }
   },
-  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{}, noteLimit:1 }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{} }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -1542,7 +1543,7 @@ const Updates = {
 const NOTE_COLORS = { yellow:"#FBE7A6", pink:"#F9CFD3", blue:"#CFE3F7", green:"#D5EBC5", white:"#FBF6EC" };
 const Notes = {
   queue: [], showing: false, sentKey: () => `nido.noteCount.${ENV}.${me}`,
-  limit(){ return CLOUD ? (FAM.noteLimit || 1) : 1; },
+  limit(){ return Math.max(1, +(meU().noteLimit) || 1); },
   count(){ try { const c = JSON.parse(localStorage.getItem(this.sentKey())); return c && c.day === this.today() ? c.n : 0; } catch(e){ return 0; } },
   setCount(n){ try { localStorage.setItem(this.sentKey(), JSON.stringify({ day: this.today(), n })); } catch(e){} this.refreshFab(); },
   left(){ return Math.max(0, this.limit() - this.count()); },
@@ -1823,8 +1824,7 @@ const Admin = {
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
       <section class="adm-card"><h3>פיצ׳רים</h3>
-        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>
-          ${k === "notes" && feats.notes !== false ? `<div class="adm-limit"><span>פתקים ביום לכל משתמש</span><select class="input" data-notelimit>${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+f.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>` : ""}`).join("")}</section>
+        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>`).join("")}</section>
       ${!home ? `<section class="adm-card danger-zone"><h3>השבתת המשפחה</h3>
         <p class="adm-note">${f.active === false ? "המשפחה מושבתת — אף אחד ממנה לא יכול להיכנס." : "כל המשתמשים של המשפחה ייחסמו. הנתונים שלהם נשמרים, ואפשר להחזיר בכל רגע."}</p>
         <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>` : ""}`;
@@ -1850,7 +1850,6 @@ const Admin = {
     q("[data-rename]")?.addEventListener("click", () => openFamilyForm(S.adminFam));
     q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
     el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
-    q("[data-notelimit]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { noteLimit: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
       const f = { ...((FAMILIES[S.adminFam] || {}).features || {}) }; f[c.dataset.feat] = c.checked;
@@ -3357,7 +3356,7 @@ const UsersAPI = {
     if (CLOUD) return Cloud.createUser(d);
     if (USERS[d.username]) throw { code:"taken" };
     delete d.family;
-    USERS[d.username] = { name:d.name, color:d.color, role:d.role, photo:"", active:true, password:d.password };
+    USERS[d.username] = { name:d.name, color:d.color, role:d.role, photo:"", active:true, password:d.password, noteLimit:d.noteLimit||1 };
     storeUsers(); afterUsersChange();
   },
   async remove(username){
@@ -3584,6 +3583,7 @@ function openUserEdit(key, forFamily){
       <span class="lbl">הרשאה</span>
       ${self ? `<p class="note">${roleBadge(u.role)} — אי אפשר לשנות את ההרשאה של עצמך.</p>` : `${radios("role", roleOpts, u.role || "editor")}<p class="role-desc" id="roleDesc">${esc(ROLES[u.role||"editor"].desc)}</p>`}
       <span class="lbl">צבע</span>${swatches(u.color)}
+      <div class="adm-limit"><span>📝 פתקים על המקרר ביום</span><select class="input" name="noteLimit">${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+u.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
       ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
       <p class="error" id="ueErr" role="alert"></p>
       ${!isNew && !self && pool[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
@@ -3608,10 +3608,10 @@ function openUserEdit(key, forFamily){
         const username = f.username.value.trim().toLowerCase(), password = f.password.value;
         if (!/^[a-z][a-z0-9._-]{2,19}$/.test(username)){ throw { msg:"שם משתמש: 3–20 תווים באנגלית, מתחיל באות." }; }
         if (password.length < 6) throw { msg:"הסיסמה קצרה מדי — לפחות 6 תווים." };
-        await UsersAPI.create({ username, name, password, role, color:st.color, family });
+        await UsersAPI.create({ username, name, password, role, color:st.color, family, noteLimit: +f.noteLimit.value || 1 });
         toast(`${name} נוסף/ה ✓`);
       } else {
-        const patch = { name, color:st.color };
+        const patch = { name, color:st.color, noteLimit: +f.noteLimit.value || 1 };
         if (!self){ patch.role = role; patch.active = f.active.checked; }
         await UsersAPI.update(key, patch);
         toast("נשמר");
