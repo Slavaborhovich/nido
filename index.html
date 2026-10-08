@@ -2309,7 +2309,42 @@ function renderTabs(){
     `<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${icon(i)}<span>${l}</span></button>`).join("");
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) go(b.dataset.tab); });
-function go(tab){ S.tab = tab; if (tab!=="shop"){ S.take=false; } render(); window.scrollTo(0,0); }
+function go(tab, fromBack){ if (!fromBack && S.tab !== tab){ Back.prev.push(S.tab); if (Back.prev.length > 20) Back.prev.shift(); } S.tab = tab; if (tab!=="shop"){ S.take=false; } render(); window.scrollTo(0,0); }
+
+/* ================= the phone's back button =================
+   Back closes whatever is open (photo, dialog, window, admin), then steps back through the screens.
+   On the home screen, the first press only warns — a second press within 2 seconds leaves the app. */
+const Back = {
+  prev:[], on:false, warnT:null,
+  init(){
+    if (this.on) return; this.on = true;
+    try { history.replaceState({ nido:"base" }, ""); history.pushState({ nido:"top" }, ""); } catch(e){}
+    addEventListener("popstate", () => this.pop());
+    // Chrome may skip history entries the user never touched — re-arm on the first touch
+    document.addEventListener("pointerdown", () => { if (me && (!history.state || history.state.nido !== "top")) this.arm(); }, true);
+  },
+  arm(){ try { history.pushState({ nido:"top" }, ""); } catch(e){} },
+  pop(){
+    if (!me) return;
+    if (this.close()){ this.arm(); return; }
+    // home screen, nothing open: stay one step from leaving, and warn
+    toast("לחיצה נוספת על חזור תצא מהאפליקציה");
+    clearTimeout(this.warnT);
+    this.warnT = setTimeout(() => { if (me && history.state && history.state.nido === "base") this.arm(); }, 2000);
+  },
+  close(){
+    if (Viewer.el){ Viewer.close(); return true; }
+    const ns = document.querySelector(".note-scrim");
+    if (ns){ const x = ns.querySelector(".send .x"); if (x) x.click(); return true; }      // writing a note: cancel; a received note waits for "קיבלתי"
+    const dlg = [...document.querySelectorAll(".cfm-scrim")].pop();
+    if (dlg){ const go = dlg.querySelector(".upd .go"); if (go) go.click(); else dlg.click(); return true; }
+    if ($("#sheetRoot").innerHTML){ closeSheet(); return true; }
+    if (!$("#admin").hidden){ if (S.adminFam){ S.adminFam = null; Admin.render(); } else Admin.close(); return true; }
+    if (S.take){ S.take = false; S.takeSel = new Set(); render(); return true; }
+    if (S.tab !== "today"){ let p = this.prev.pop(); while (p === S.tab) p = this.prev.pop(); go(p || "today", true); return true; }
+    return false;
+  },
+};
 function render(){
   renderTabs();
   const fn = { today:renderToday, tasks:renderTasks, shop:renderShop, cal:renderCal, ideas:renderIdeas }[S.tab];
@@ -4400,7 +4435,7 @@ function openUserEdit(key, forFamily){
 /* ================= Session ================= */
 function getSession(){ try{ return localStorage.getItem("nido.user"); }catch(e){ return null; } }
 function setSession(u){ try{ u?localStorage.setItem("nido.user",u):localStorage.removeItem("nido.user"); }catch(e){} }
-function enter(u){ me=u; document.documentElement.classList.toggle("ro", !canEdit()); Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false;
+function enter(u){ me=u; Back.init(); document.documentElement.classList.toggle("ro", !canEdit()); Sky.hide(); setAmbient(); $("#login").hidden=true; $("#app").hidden=false;
   S.calView = null; S.calSel = iso(new Date()); S.calWeek = null; S.calMonth = null;
   const want = new URLSearchParams(location.search).get("tab"); S.tab = TABS.some(t => t[0]===want) ? want : "today";
   if (want) history.replaceState(null, "", location.pathname); render(); if (CLOUD) Updates.seen();
