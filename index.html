@@ -2408,7 +2408,7 @@ function cdUnits(c){
   const u = [[pad(h),"שעות"], [pad(mi),"דקות"], [pad(se),"שניות"]];
   const clock = u.map(([v, l], k) => `${k ? "<i>:</i>" : ""}<span class="u ${k===u.length-1 ? "s" : ""}"><b>${v}</b><small>${l}</small></span>`).join("");
   // more than a day away: the days large and thin, a hairline, then a small clock
-  return d ? `<div class="days"><b>${d}</b><span>${d===1 ? "יום" : "ימים"}</span></div><span class="dv"></span><div class="clk">${clock}</div>` : clock;
+  return `<div class="days"><b>${d}</b><span>${d===1 ? "יום" : "ימים"}</span></div><span class="dv"></span><div class="clk">${clock}</div>`;
 }
 let todayTimer = null;
 function renderToday(){
@@ -2425,7 +2425,7 @@ function renderToday(){
       <h4>${esc(first.title)}</h4>
       <div class="meta">${first.date?`<span>${icon("clock")}<b class="tabular" style="font-weight:500">${dl(first)}${first.time?" · "+first.time:""}</b></span>`:""}
         ${first.place?`<span>${icon("pin")}${esc(first.place)}</span>`:""}${first.who?`<span>${who(first.who)}</span>`:(first.date?"":`<span>${who(null)}</span>`)}</div>
-      <div class="bar">${c ? `<div class="cdE ${c.s >= 86400 ? "long" : ""}"><span class="lb">בעוד</span><div class="${c.s >= 86400 ? "row" : "nm"}" id="cdN">${cdUnits(c)}</div></div>${c.s < 86400 ? `<div class="prog thin"><i id="cdP" style="width:${pct}%"></i></div>` : ""}`
+      <div class="bar">${c ? `<div class="cdE long"><span class="lb">בעוד</span><div class="row" id="cdN">${cdUnits(c)}</div></div>`
                           : `<div class="count"><span>מתי</span><b style="font-size:24px">${dl(first)}</b><span>${first.date?"במהלך היום":"כשמתפנים"}</span></div>`}</div>
     </button>`;
   }
@@ -2454,7 +2454,6 @@ function renderToday(){
     if (S.tab!=="today") return clearInterval(todayTimer);
     const c = countdown(first); if (!c || c.s===0) return renderToday();
     const n = $("#cdN"); if (!n) return;
-    if ((c.s >= 86400) !== n.parentNode.classList.contains("long")) return renderToday();
     n.innerHTML = cdUnits(c);
     const p = $("#cdP"); if (p) p.style.width = Math.round(Math.max(0, Math.min(1, 1 - c.m/(24*60)))*100) + "%";
   }, 1000);
