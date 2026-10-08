@@ -2591,6 +2591,16 @@ function bindCalCommon(onPrev, onNext, onToday){
 }
 
 /* ===== week: family board ===== */
+/* first name only — unless two people share it, then add the surname's initial (or the full name) */
+function shortName(k, among){
+  const words = n => String(n || "").trim().split(/\s+/), u = USERS[k]; if (!u) return "";
+  const first = words(u.name)[0], same = (among || people()).filter(x => x && x !== k && USERS[x] && words(USERS[x].name)[0] === first);
+  if (!same.length) return first;
+  const ini = n => (words(n)[1] || "")[0] || "";
+  const mine = ini(u.name);
+  if (mine && !same.some(x => ini(USERS[x].name) === mine)) return `${first} ${mine}׳`;
+  return u.name.trim();
+}
 function renderWeek(){
   const today = iso(new Date());
   if (!S.calWeek) S.calWeek = iso(startOfWeek(parse(S.calSel || today)));
@@ -2622,7 +2632,7 @@ function renderWeek(){
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
       <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
     </div>
-    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span title="${esc(USERS[c].name)}"><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i><em>${esc(USERS[c].name.trim().split(/\s+/)[0])}</em></span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i><em>יחד</em></span>`).join("")}</div>
+    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span title="${esc(USERS[c].name)}"><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i><em>${esc(shortName(c, cols))}</em></span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i><em>יחד</em></span>`).join("")}</div>
     <div class="cv-board">${rows}</div>
     <p class="hint cv-hint">לחיצה על תאריך פותחת את היום בציר זמן · משבצת ריקה מוסיפה אירוע.</p>`;
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
