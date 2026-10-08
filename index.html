@@ -872,6 +872,8 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .note-fab.bye{transform:scale(.4) rotate(-20deg);opacity:0}
 .note-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:26px;background:rgba(12,7,3,.5);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
 .note-scrim.show{opacity:1}
+.upd-lbl{margin:10px 0 4px;font-size:14px;font-weight:600;color:var(--text)}
+.upd-sig{margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,214,170,.12);font-size:14px;color:var(--gold);text-align:center}
 .fnote{--paper:#FBE7A6;--ink:#4A3518;position:relative;width:100%;max-width:330px;padding:34px 24px 20px;color:var(--ink);
   background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 40%),var(--paper);border-radius:3px 3px 18px 3px;
   box-shadow:0 2px 0 rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.45),inset 0 -12px 18px rgba(120,80,20,.08);
@@ -1661,9 +1663,18 @@ const Updates = {
   parse(t){
     const lines = String(t || "").split("\n").map(x => x.trim()).filter(Boolean);
     let title = ""; if (lines[0] && lines[0].startsWith("#")) title = lines.shift().replace(/^#+\s*/, "");
-    const bullets = lines.filter(x => /^[•\-\*]/.test(x)).map(x => x.replace(/^[•\-\*]\s*/, ""));
-    const paras = lines.filter(x => !/^[•\-\*]/.test(x));
-    return { title, html: paras.map(p => `<p class="upd-p">${esc(p)}</p>`).join("") + (bullets.length ? `<ul class="upd-notes">${bullets.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : "") };
+    // keeps the order: paragraphs, "label:" lines, • bullets (grouped), and a "> " closing line
+    let html = "", ul = [];
+    const flush = () => { if (ul.length){ html += `<ul class="upd-notes">${ul.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`; ul = []; } };
+    lines.forEach(x => {
+      if (/^[•\-\*]/.test(x)){ ul.push(x.replace(/^[•\-\*]\s*/, "")); return; }
+      flush();
+      if (x.startsWith(">")) html += `<p class="upd-sig">${esc(x.replace(/^>\s*/, ""))}</p>`;
+      else if (/:$/.test(x)) html += `<p class="upd-lbl">${esc(x)}</p>`;
+      else html += `<p class="upd-p">${esc(x)}</p>`;
+    });
+    flush();
+    return { title, html };
   },
   showDone(text){
     if (document.querySelector(".upd-scrim")) return;
