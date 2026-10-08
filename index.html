@@ -681,6 +681,11 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .cv-row.today .cv-cell{border-color:rgba(242,182,107,.3)}
 .cv-x{display:block;width:100%;text-align:start;border:0;border-radius:9px;padding:5px 6px;font-size:11.5px;line-height:1.3;color:var(--text);overflow:hidden;word-break:break-word;
   background:color-mix(in srgb,var(--c) 22%,rgba(30,20,12,.85));border-inline-start:2.5px solid var(--c)}
+.cv-x{position:relative}
+.cv-who{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:9px;font-weight:700;color:#1E140C}
+.cv-legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;font-size:12px;color:#C9B8A6;margin:-2px 0 10px}
+.cv-legend span{display:inline-flex;align-items:center;gap:5px}
+.cv-legend i{width:9px;height:9px;border-radius:3px}
 .cv-x b{display:block;font-weight:600;font-size:10.5px;color:color-mix(in srgb,var(--c) 55%,white)}
 .cv-x.tk{background:rgba(30,20,12,.6);outline:1px dashed color-mix(in srgb,var(--c) 55%,transparent);outline-offset:-1px}
 .cv-x.done{opacity:.5;text-decoration:line-through}
@@ -2605,24 +2610,25 @@ function renderWeek(){
   const today = iso(new Date());
   if (!S.calWeek) S.calWeek = iso(startOfWeek(parse(S.calSel || today)));
   const ws = parse(S.calWeek), days = [...Array(7)].map((_, i) => iso(addDays(ws, i))), we = parse(days[6]);
-  const cols = [me, null, ...people().filter(k => k !== me && USERS[k].role !== "viewer")].slice(0, 4);
-  const colKey = who => cols.includes(who) ? who : (who && USERS[who] ? null : null);
+  const SLOTS = 3;                                               // three slots a day; they fill in order, more → another row
   const range = ws.getMonth() === we.getMonth() ? `${ws.getDate()}–${we.getDate()} ב${MONTHS[ws.getMonth()]}` : `${ws.getDate()} ב${MONTHS[ws.getMonth()]} – ${we.getDate()} ב${MONTHS[we.getMonth()]}`;
   let nEv = 0, nTk = 0; const shabbat = days.flatMap(d => Hol.of(d)).find(h => h.k === "candles");
   const rows = days.map(ds => {
     const d = parse(ds), items = dayItems(ds), hol = Hol.of(ds);
     items.forEach(x => x.k === "ev" ? (!x.cont && nEv++) : (!x.done && nTk++));
-    const cells = cols.map(c => {
-      const mine = items.filter(x => (cols.includes(x.who) ? x.who : null) === c);
-      return `<div class="cv-cell" data-d="${ds}" data-w="${c || ""}">${mine.map(x => `
-        <button class="cv-x ${x.k} ${x.done ? "done" : ""}" style="--c:${colOf(x.who)}" data-k="${x.k}" data-id="${x.id}">
-          ${x.time ? `<b class="tabular">${x.time}</b>` : x.cont ? `<b>המשך</b>` : ""}${x.k === "tk" && x.done ? "✓ " : ""}${esc(x.title)}</button>`).join("")}</div>`;
+    const n = Math.max(SLOTS, Math.ceil(items.length / SLOTS) * SLOTS);
+    const cells = [...Array(n)].map((_, i) => { const x = items[i];
+      if (!x) return `<div class="cv-cell" data-d="${ds}"></div>`;
+      const u = x.who && USERS[x.who];
+      return `<div class="cv-cell"><button class="cv-x ${x.k} ${x.done ? "done" : ""}" style="--c:${colOf(x.who)}" data-k="${x.k}" data-id="${x.id}">
+          ${u ? `<i class="cv-who" style="background:${u.color};${avaStyle(u)}" title="${esc(u.name)}">${initial(u)}</i>` : ""}
+          ${x.time ? `<b class="tabular">${x.time}</b>` : x.cont ? `<b>המשך</b>` : ""}${x.k === "tk" && x.done ? "✓ " : ""}${esc(x.title)}</button></div>`;
     }).join("");
     const strips = hol.filter(h => h.k !== "rc").map(h => `<div class="cv-strip ${h.k}" style="grid-column:2 / -1">${h.k === "candles" ? icon("candle") : ""}<span>${esc(holLine(h))}</span></div>`).join("");
     const rc = hol.find(h => h.k === "rc");
     const quiet = !items.length && strips;
-    const span = (quiet ? 0 : 1) + hol.filter(h => h.k !== "rc").length;
-    return `<div class="cv-row ${ds === today ? "today" : ""} ${d.getDay() === 6 ? "sat" : ""}" style="grid-template-columns:52px repeat(${cols.length},1fr)">
+    const span = (quiet ? 0 : n / SLOTS) + hol.filter(h => h.k !== "rc").length;
+    return `<div class="cv-row ${ds === today ? "today" : ""} ${d.getDay() === 6 ? "sat" : ""}" style="grid-template-columns:52px repeat(${SLOTS},1fr)">
       <button class="cv-dl" data-day="${ds}" style="grid-row:span ${Math.max(span, 1)}"><small>${"אבגדהוש"[d.getDay()]}׳</small><b>${d.getDate()}</b>${rc ? `<i>ר״ח</i>` : ""}</button>
       ${quiet ? "" : cells}${strips}</div>`;
   }).join("");
@@ -2632,7 +2638,7 @@ function renderWeek(){
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
       <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
     </div>
-    <div class="cv-cols" style="grid-template-columns:52px repeat(${cols.length},1fr)"><span></span>${cols.map(c => c ? `<span title="${esc(USERS[c].name)}"><i class="cv-av" style="background:${USERS[c].color};${avaStyle(USERS[c])}">${initial(USERS[c])}</i><em>${esc(shortName(c, cols))}</em></span>` : `<span><i class="cv-av" style="background:${TOGETHER}">${icon("heart")}</i><em>יחד</em></span>`).join("")}</div>
+    <div class="cv-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(shortName(k))}</span>`).join("")}<span><i style="background:${TOGETHER}"></i>יחד</span></div>
     <div class="cv-board">${rows}</div>
     <p class="hint cv-hint">לחיצה על תאריך פותחת את היום בציר זמן · משבצת ריקה מוסיפה אירוע.</p>`;
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
@@ -2640,7 +2646,7 @@ function renderWeek(){
   $("#screen").querySelector(".cv-board").onclick = e => {
     const x = e.target.closest(".cv-x"); if (x) return openItem(x.dataset.k, x.dataset.id);
     const dl = e.target.closest("[data-day]"); if (dl){ S.calSel = dl.dataset.day; S.calView = "day"; renderCal(); window.scrollTo(0, 0); return; }
-    const c = e.target.closest(".cv-cell"); if (c && canEdit()) eventSheet(null, { date:c.dataset.d, who:c.dataset.w || null });
+    const c = e.target.closest(".cv-cell[data-d]"); if (c && canEdit()) eventSheet(null, { date:c.dataset.d });
   };
 }
 
