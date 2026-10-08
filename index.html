@@ -2638,7 +2638,7 @@ function renderWeek(){
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
       <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
     </div>
-    <div class="cv-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(shortName(k))}</span>`).join("")}<span><i style="background:${TOGETHER}"></i>יחד</span></div>
+    <div class="cv-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${TOGETHER}"></i>יחד</span></div>
     <div class="cv-board">${rows}</div>
     <p class="hint cv-hint">לחיצה על תאריך פותחת את היום בציר זמן · משבצת ריקה מוסיפה אירוע.</p>`;
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
