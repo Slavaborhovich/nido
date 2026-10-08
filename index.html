@@ -4748,7 +4748,10 @@ function enter(u){ me=u; Back.init(); document.documentElement.classList.toggle(
   const want = new URLSearchParams(location.search).get("tab"); S.tab = TABS.some(t => t[0]===want) ? want : "today";
   if (want) history.replaceState(null, "", location.pathname); render(); if (CLOUD) Updates.seen();
   Notes.refreshFab(); if (!CLOUD) Notes.listen(); }
-function logout(fromCloud){ if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } closeSheet(); document.documentElement.classList.remove("ro"); hideAmbient(); setSession(null); me=null; Notes.stop(); Notes.refreshFab(); $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
+function logout(fromCloud){
+  // a shared phone must stop getting this person's notifications — unregister it while we still have their sign-in
+  if (CLOUD && !fromCloud && Push.on() && !logout._busy){ logout._busy = true; Push.disable().catch(() => {}).finally(() => { logout._busy = false; logout(fromCloud); }); return; }
+  if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } closeSheet(); document.documentElement.classList.remove("ro"); hideAmbient(); setSession(null); me=null; Notes.stop(); Notes.refreshFab(); $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
 function doLogin(){
   const u=$("#user").value.trim().toLowerCase(), p=$("#pass").value, err=$("#err");
   if (!u||!p){ err.textContent="יש למלא שם משתמש וסיסמה."; return; }

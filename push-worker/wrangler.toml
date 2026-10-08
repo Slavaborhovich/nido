@@ -1,0 +1,16 @@
+# Nido push server — Cloudflare Workers FREE plan only.
+# Do NOT add a payment method, Workers Paid, Durable Objects, Queues, D1 or R2.
+# Nothing is deployed until the owner approves it.
+name = "nido-push"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+# one cron trigger (the free plan allows up to 5)
+[triggers]
+crons = ["* * * * *"]
+
+# one KV namespace (free: 100k reads / 1k writes / 1 GB per day). The id is filled in only at setup time.
+[[kv_namespaces]]
+binding = "NIDO"
+id = "__KV_NAMESPACE_ID__"
