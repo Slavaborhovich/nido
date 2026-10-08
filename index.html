@@ -988,6 +988,24 @@ body.admin-open .note-fab{display:none}
 .adm-card .input,.adm-card .textarea{width:100%;background:#2C2016;border-color:rgba(255,214,170,.14)}
 .adm-card .toggle-row{margin-bottom:8px}
 .adm-limit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:8px 14px;border-radius:14px;background:rgba(255,226,190,.04);font-size:14px}
+.dv-emo{font-size:17px;width:22px;text-align:center;flex:none}
+.dv-sh{font-size:13px;color:#93806C;margin:-4px 2px 12px}
+.dv-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(36,25,17,.7);border:1px solid rgba(255,214,170,.12);margin:4px 0 12px}
+.dv-seg button{flex:1;height:36px;border:0;border-radius:10px;background:none;color:#B9A48E;font:inherit;font-size:12.5px;white-space:nowrap;padding:0 4px}
+.dv-seg button i{font-style:normal;opacity:.55;font-size:11px;margin-inline-start:3px}
+.dv-seg button[aria-selected="true"]{background:rgba(255,226,190,.14);color:var(--text)}
+.dv-add{display:flex;gap:8px;margin-bottom:14px}
+.dv-add .input{flex:1}
+.dv-add .pl{width:48px;flex:none;border-radius:14px;border:0;background:rgba(242,182,107,.18);color:#F2C48A;display:grid;place-items:center}
+.dv-add .pl svg{width:20px;height:20px}
+.dv-it{display:flex;gap:11px;padding:12px;border-radius:16px;background:rgba(255,226,190,.045);border:1px solid rgba(255,214,170,.1);margin-bottom:8px;cursor:pointer;text-align:start}
+.dv-it .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:none;border:0;padding:0;color:#BDE6CA}
+.dv-it .t{flex:1;min-width:0}.dv-it b{display:block;font-size:14.5px;font-weight:500}.dv-it small{display:block;font-size:12px;color:#93806C;margin-top:3px;line-height:1.4;white-space:pre-line}
+.dv-it .tg{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.dv-it .tg span{font-size:10.5px;padding:2px 8px;border-radius:99px}
+.k-feature{background:rgba(127,176,255,.14);color:#A9C8FF}.k-improve{background:rgba(143,211,168,.14);color:#9FD9B3}.k-bug{background:rgba(232,112,90,.16);color:#F3A493}.k-v{background:rgba(195,177,255,.16);color:#CDBEFF}
+.p-high{background:rgba(232,112,90,.14);color:#F3A493}.p-mid{background:rgba(232,196,106,.14);color:#E8C46A}.p-low{background:rgba(255,226,190,.08);color:#B9A48E}
+.dv-it.done{opacity:.5}.dv-it.done b{text-decoration:line-through}
 .adm-swatches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 10px}
 .adm-swatches .sw{position:relative;width:38px;height:38px;border-radius:50%;border:2px solid transparent;padding:0;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .adm-swatches .sw.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
@@ -2113,6 +2131,87 @@ const Stats = {
   },
 };
 document.addEventListener("visibilitychange", () => { if (document.hidden && Stats.pend) Stats.flush(); });
+
+/* ================= פנקס פיתוח — the system admin's own notes (features, improvements, bugs) =================
+   Stored in devnotes/{id}; the database rules let only the system admin read or write them. */
+const DEV_KINDS = { feature:["💡","פיצ'ר","rgba(127,176,255,.14)"], improve:["✨","שיפור","rgba(143,211,168,.14)"], bug:["🐞","באג","rgba(232,112,90,.16)"] };
+const DEV_PRIO = { high:"דחוף", mid:"בינוני", low:"נמוך" };
+const DevNotes = {
+  list:[], filter:"all", unsub:null,
+  col(){ return Cloud.fb.collection(Cloud.db, "devnotes"); },
+  listen(){
+    if (this.unsub || !(CLOUD && Cloud.isSuper)) return;
+    this.unsub = Cloud.fb.onSnapshot(this.col(), qs => { this.list = qs.docs.map(d => ({ id:d.id, ...d.data() })); this.redraw(); }, e => { console.warn("[devnotes]", e); toast(errText(e)); });
+  },
+  async put(n){ const { id, ...x } = n; await Cloud.fb.setDoc(Cloud.fb.doc(this.col(), id), x); },
+  async del(id){ await Cloud.fb.deleteDoc(Cloud.fb.doc(this.col(), id)); },
+  sorted(){
+    const P = { high:0, mid:1, low:2 };
+    return [...this.list].filter(n => this.filter === "all" || n.kind === this.filter)
+      .sort((a, b) => (a.done - b.done) || (a.done ? (b.doneAt || 0) - (a.doneAt || 0) : (P[a.prio] ?? 1) - (P[b.prio] ?? 1) || b.created - a.created));
+  },
+  html(){
+    const cnt = k => this.list.filter(n => k === "all" || n.kind === k).length, open = this.list.filter(n => !n.done).length;
+    return `${head("🛠 פנקס פיתוח")}
+      <p class="dv-sh">רק אתה רואה את זה · ${open} פתוחים${this.list.length - open ? ` · ${this.list.length - open} בוצעו` : ""}</p>
+      <div class="dv-seg" role="tablist">${[["all","הכול"],["feature","💡 פיצ'רים"],["improve","✨ שיפורים"],["bug","🐞 באגים"]].map(([k, l]) => `<button type="button" data-f="${k}" aria-selected="${this.filter === k}">${l}<i>${cnt(k)}</i></button>`).join("")}</div>
+      <form class="dv-add" id="dvAdd"><input class="input" name="t" placeholder="רעיון חדש…" autocomplete="off" aria-label="רעיון חדש"><button type="submit" class="pl" aria-label="הוספה">${icon("plus")}</button></form>
+      <div id="dvList">${this.sorted().map(n => { const k = DEV_KINDS[n.kind] || DEV_KINDS.feature;
+        return `<div class="dv-it ${n.done ? "done" : ""}" data-id="${esc(n.id)}" role="button" tabindex="0">
+          <button type="button" class="ic" data-done style="background:${k[2]}" aria-label="${n.done ? "החזרה לפתוחים" : "סימון כבוצע"}">${n.done ? "✓" : k[0]}</button>
+          <div class="t"><b>${esc(n.title)}</b>${n.note ? `<small>${esc(n.note)}</small>` : ""}
+            <div class="tg"><span class="k-${n.kind || "feature"}">${k[1]}</span>${n.done ? `<span class="k-v">✓ ${esc(n.doneVer || "")}</span>` : `<span class="p-${n.prio || "mid"}">${DEV_PRIO[n.prio || "mid"]}</span>`}</div></div></div>`; }).join("") || `<p class="adm-note" style="text-align:center;margin:24px 0">${this.list.length ? "אין פריטים בסינון הזה." : "עוד אין רעיונות. מה הדבר הבא ש-NIDO צריך?"}</p>`}</div>`;
+  },
+  open(){
+    if (!(CLOUD && Cloud.isSuper)) return;
+    this.listen();
+    this.sh = openSheet(this.html()); this.bind();
+  },
+  redraw(){
+    const sh = this.sh; if (!(sh && sh.isConnected && sh.querySelector("#dvList"))) return;
+    const inp = sh.querySelector("#dvAdd input"), typed = inp ? inp.value : "", had = document.activeElement === inp, y = sh.scrollTop;
+    sh.querySelector(".inner").innerHTML = `<div class="grab"></div>${this.html()}`; this.bind(); sh.scrollTop = y;
+    const ni = sh.querySelector("#dvAdd input"); if (ni){ ni.value = typed; if (had) ni.focus(); }
+  },
+  bind(){
+    const sh = this.sh; if (!sh) return;
+    sh.querySelector("[data-close]")?.addEventListener("click", () => closeSheet());
+    sh.querySelector(".dv-seg").onclick = e => { const b = e.target.closest("[data-f]"); if (b){ this.filter = b.dataset.f; this.redraw(); } };
+    sh.querySelector("#dvAdd").onsubmit = async e => {
+      e.preventDefault(); const t = e.target.t.value.trim(); if (!t) return; e.target.t.value = "";
+      const kind = this.filter === "all" ? (/באג|שגיאה|לא עובד|נשבר|נחתך/.test(t) ? "bug" : "feature") : this.filter;
+      try { await this.put({ id:uid(), title:t, note:"", kind, prio:"mid", done:false, created:Date.now() }); } catch(x){ toast(errText(x)); }
+      setTimeout(() => this.sh?.querySelector("#dvAdd input")?.focus(), 80);
+    };
+    sh.querySelector("#dvList").onclick = async e => {
+      const row = e.target.closest("[data-id]"); if (!row) return; const n = this.list.find(x => x.id === row.dataset.id); if (!n) return;
+      if (e.target.closest("[data-done]")){
+        const done = !n.done; const d = new Date();
+        try { await this.put({ ...n, done, doneAt: done ? Date.now() : null, doneVer: done ? `גרסה ${d.getDate()}.${d.getMonth() + 1}` : "" }); toast(done ? "✓ בוצע" : "חזר לפתוחים"); } catch(x){ toast(errText(x)); }
+        return;
+      }
+      this.edit(n);
+    };
+  },
+  edit(n){
+    closeSheet();
+    setTimeout(() => {
+      const sh = openSheet(`${head("עריכה")}
+        <form id="dvf" class="stack">
+          <input class="input" name="title" value="${esc(n.title)}" aria-label="כותרת" required>
+          <textarea class="textarea" name="note" rows="3" placeholder="הערה — פרטים, רעיונות, קישור" aria-label="הערה">${esc(n.note || "")}</textarea>
+          <div><span class="lbl">סוג</span>${radios("kind", Object.entries(DEV_KINDS).map(([k, v]) => [k, v[0] + " " + v[1]]), n.kind || "feature")}</div>
+          <div><span class="lbl">עדיפות</span>${radios("prio", Object.entries(DEV_PRIO), n.prio || "mid")}</div>
+          <div class="actions"><button type="button" class="danger" id="dvDel">${icon("trash")}מחיקה</button><button class="primary" type="submit">שמירה</button></div>
+        </form>`);
+      const f = sh.querySelector("#dvf"), back = () => { closeSheet(); setTimeout(() => this.open(), 230); };
+      f.onsubmit = async e => { e.preventDefault(); if (!f.title.value.trim()) return;
+        try { await this.put({ ...n, title:f.title.value.trim(), note:f.note.value.trim(), kind:f.querySelector("input[name=kind]:checked")?.value || n.kind, prio:f.querySelector("input[name=prio]:checked")?.value || n.prio }); } catch(x){ return toast(errText(x)); }
+        back(); };
+      sh.querySelector("#dvDel").onclick = async () => { if (!await askConfirm(`למחוק את "${n.title}"?`, "הפריט יימחק מהפנקס.")) return; try { await this.del(n.id); } catch(x){ return toast(errText(x)); } back(); };
+    }, 230);
+  },
+};
 
 /* ================= מסך ניהול (system admin only) ================= */
 const ago = t => { if (!t) return "עוד לא נכנס/ה"; const m = Math.round((Date.now() - t) / 60e3);
@@ -4434,6 +4533,7 @@ function openProfile(){
       ${CLOUD && PUSH_READY?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
       <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
       ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}${CLOUD && Cloud.isSuper ? "ניהול מערכת" : "ניהול המשפחה"}<span class="go">${icon("next")}</span></button>`:""}
+      ${CLOUD && Cloud.isSuper ? `<button type="button" class="secondary" id="devBtn"><span class="dv-emo">🛠</span>פנקס פיתוח<span class="go">${icon("next")}</span></button>` : ""}
       <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
     </div>`);
   bindSwatches(sh, st);
@@ -4449,6 +4549,7 @@ function openProfile(){
   sh.querySelector("#pwBtn").onclick = openPassword;
   sh.querySelector("#ntBtn")?.addEventListener("click", openNotifications);
   sh.querySelector("#adminBtn")?.addEventListener("click", () => CLOUD && Cloud.isSuper ? Admin.open() : openAdmin());
+  sh.querySelector("#devBtn")?.addEventListener("click", () => { closeSheet(); setTimeout(() => DevNotes.open(), 230); });
   sh.querySelector("#outBtn").onclick = async () => { if (await askConfirm("יציאה מהחשבון", "תצטרך להתחבר שוב עם שם משתמש וסיסמה.", "יציאה")) { S.panel = null; logout(); } };
 }
 

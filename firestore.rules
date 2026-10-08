@@ -91,6 +91,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['items', 'bytes', 'sizedAt', 'lastAct', 'days', 'adds', 'last', 'errs']);
     }
 
+    // the system admin's development notebook — nobody else
+    match /devnotes/{id} {
+      allow read, write: if boot();
+    }
+
     // announcements from the system admin: to everyone or to one family
     match /announcements/{id} {
       allow read:   if boot() || (member() && (resource.data.target == 'all' || resource.data.target == myFamily()));
