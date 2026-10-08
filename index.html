@@ -967,6 +967,10 @@ body.admin-open .note-fab{display:none}
 .adm-card .input,.adm-card .textarea{width:100%;background:#2C2016;border-color:rgba(255,214,170,.14)}
 .adm-card .toggle-row{margin-bottom:8px}
 .adm-limit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:8px 14px;border-radius:14px;background:rgba(255,226,190,.04);font-size:14px}
+.adm-swatches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 10px}
+.adm-swatches .sw{position:relative;width:38px;height:38px;border-radius:50%;border:2px solid transparent;padding:0;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.adm-swatches .sw.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+.adm-swatches .sw i{font-style:normal;font-size:12px;font-weight:700;color:#1E140C;opacity:.7}
 .adm-limit .input{width:84px;height:40px;text-align:center}
 .adm-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 2px;border:0;border-top:1px solid rgba(255,214,170,.08);background:none;color:var(--text);text-align:start;font:inherit}
 .adm-card h3 + .adm-row{border-top:0}
@@ -1113,6 +1117,7 @@ const ROLES = {
   editor: { label:"צפייה ועריכה",  short:"עורך",  desc:"רואה ועורך את כל התוכן" },
   viewer: { label:"צפייה בלבד",    short:"צופה",  desc:"רואה הכול, לא יכול לשנות" },
 };
+const TOGETHER_COLORS = ["#F2B66B","#B8A48C","#E7DCCB","#8FD3A8","#6FD0D9","#F59AB0","#E8705A","#C3B1FF","#7FB0FF","#E8C46A"];
 const PALETTE = ["#7FB0FF","#C3B1FF","#F2B66B","#8FD3A8","#F59AB0","#6FD0D9","#E8C46A","#E8705A"];
 const BOOT_ADMIN_UID = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
 const HOME_FAMILY = "home";            // the first family (ours). Other families get their own id.
@@ -1336,7 +1341,7 @@ const Cloud = {
     this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
       const x = d.exists() ? d.data() : {};
       const before = JSON.stringify(FAM);
-      FAM = { city: x.city || "293397", features: x.features || {}, maxUsers: +x.maxUsers || 0, maxPhotos: +x.maxPhotos || 0 };
+      FAM = { city: x.city || "293397", features: x.features || {}, maxUsers: +x.maxUsers || 0, maxPhotos: +x.maxPhotos || 0, together: x.together || "" };
       if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); Notes.alreadySent().then(() => Notes.refreshFab()); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
     }, () => {});
   },
@@ -2238,6 +2243,11 @@ const Admin = {
         <p class="adm-note" style="margin-top:0">${(() => { const a = this.people(fid).filter(k => ALLUSERS[k].role === "admin" && ALLUSERS[k].uid !== BOOT_ADMIN_UID); return a.length ? "מנהל משפחה: " + a.map(k => esc(ALLUSERS[k].name)).join(", ") + " — יכול להוסיף ולמחוק משתמשים במשפחה." : "אין מנהל משפחה. כדי למנות — פתח משתמש ובחר הרשאה \"מנהל משפחה\"."; })()}</p>
         <div class="adm-limit"><span>מקסימום תמונות לרעיון</span><select class="input" data-maxphotos>${[1,2,3,4,5,6,8,10,12].map(n => `<option value="${n}" ${n === (+f.maxPhotos || 6) ? "selected" : ""}>${n}${n === 6 ? " (ברירת מחדל)" : ""}</option>`).join("")}</select></div>
         <div class="adm-limit"><span>מקסימום משתמשים במשפחה</span><select class="input" data-maxusers><option value="0" ${!(+f.maxUsers) ? "selected" : ""}>ללא</option>${[2,3,4,5,6,8,10,12].map(n => `<option value="${n}" ${n === +f.maxUsers ? "selected" : ""}>${n}</option>`).join("")}</select></div></section>
+      <section class="adm-card"><h3>צבע "יחד" ביומן</h3>
+        <p class="adm-note" style="margin-top:0">הצבע של אירועים ומשימות משותפים. כדאי לבחור צבע שאף אחד מהמשפחה לא משתמש בו.</p>
+        <div class="adm-swatches">${TOGETHER_COLORS.map(c => { const used = this.people(fid).filter(k => (ALLUSERS[k].color || "").toLowerCase() === c.toLowerCase()).map(k => ALLUSERS[k].name);
+          return `<button type="button" class="sw ${(f.together || TOGETHER_DEF).toLowerCase() === c.toLowerCase() ? "on" : ""}" data-together="${c}" style="background:${c}" title="${used.length ? "בשימוש של " + esc(used.join(", ")) : ""}" aria-label="צבע ${c}">${used.length ? `<i>${esc(used[0][0])}</i>` : ""}</button>`; }).join("")}</div>
+        <p class="adm-note" style="margin-bottom:0">אות על צבע = משתמש שכבר בוחר בצבע הזה.</p></section>
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
       <section class="adm-card"><h3>פיצ׳רים</h3>
@@ -2290,6 +2300,9 @@ const Admin = {
     q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
     el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
     q("[data-maxusers]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { maxUsers: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
+    el.querySelectorAll("[data-together]").forEach(b => b.onclick = async () => {
+      try { await Cloud.saveFamily(S.adminFam, { together: b.dataset.together }); if (S.adminFam === Cloud.fam){ FAM.together = b.dataset.together; } toast("נשמר"); this.render(); } catch(x){ toast(errText(x)); }
+    });
     q("[data-maxphotos]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { maxPhotos: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
@@ -3043,8 +3056,10 @@ const Hol = {
 };
 
 /* ---------- what happens on a day ---------- */
-const TOGETHER = "#F2B66B", SHAB = "#E8C46A";
-const colOf = who => who && USERS[who] ? USERS[who].color : TOGETHER;
+const SHAB = "#E8C46A";
+const TOGETHER_DEF = "#F2B66B";
+const together = () => FAM.together || TOGETHER_DEF;            // the family's "יחד" colour (system admin can change it)
+const colOf = who => who && USERS[who] ? USERS[who].color : together();
 function dayItems(ds){
   const ev = DB.events.filter(e => e.date === ds || (e.end && e.date < ds && e.end >= ds))
     .map(e => ({ k:"ev", id:e.id, title:e.title, time: e.date === ds ? e.time : "", who: e.who || null, place:e.place, cont: e.date !== ds, idea: !!e.ideaId }));
@@ -3128,7 +3143,7 @@ function renderWeek(){
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
       <div class="sh"><b class="tabular">${shabbat ? shabbat.t : "—"}</b><small>🕯 כניסת שבת</small></div>
     </div>
-    <div class="cv-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${TOGETHER}"></i>יחד</span></div>
+    <div class="cv-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${together()}"></i>יחד</span></div>
     <div class="cv-board">${rows}</div>
     <p class="hint cv-hint">לחיצה על תאריך פותחת את היום בציר זמן · משבצת ריקה מוסיפה אירוע.</p>`;
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
