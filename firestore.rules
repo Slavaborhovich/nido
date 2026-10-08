@@ -19,8 +19,18 @@ service cloud.firestore {
       allow read:  if boot() || inFamily(fid);
       allow write: if boot();
       match /envs/{env}/{col}/{id} {
-        allow read:  if inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
-        allow write: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow read:  if col != 'photos' && inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow write: if col != 'photos' && canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+      }
+      // an idea's photos: id = idea_seq, seq 1..the family's maxPhotos (set by the system admin, default 6)
+      match /envs/{env}/photos/{id} {
+        allow read:   if inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow delete: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow create, update: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'))
+                         && request.resource.data.seq is int && request.resource.data.seq >= 1
+                         && request.resource.data.seq <= get(/databases/$(database)/documents/families/$(fid)).data.get('maxPhotos', 6)
+                         && id == request.resource.data.ideaId + '_' + string(request.resource.data.seq)
+                         && request.resource.data.img is string && request.resource.data.img.size() < 900000;
       }
       // "פתק על המקרר": only sender + recipients see it; id = env_day_sender[_n] → up to each person's noteLimit (set by the admin) per day
       match /notes/{id} {

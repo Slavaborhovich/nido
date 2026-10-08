@@ -330,6 +330,110 @@ li+li .ev{border-top:1px solid var(--line)}
 .want.on{border-color:transparent;background:rgba(242,196,107,.14);color:var(--gold)}
 .both{font-size:12px;color:var(--gold);margin-inline-start:4px}
 
+/* ---------- Ideas v2 ---------- */
+.id-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(36,25,17,.7);border:1px solid rgba(255,214,170,.12);margin:0 0 14px}
+.id-seg button{flex:1;height:36px;border:0;border-radius:10px;background:none;color:#B9A48E;font:inherit;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.id-seg button i{font-style:normal;font-size:12px;opacity:.6}
+.id-seg button[aria-selected="true"]{background:rgba(255,226,190,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,214,170,.18)}
+.ideas2{display:grid;gap:10px;list-style:none;margin:0;padding:0}
+.idea2{display:flex;gap:13px;padding:12px;border-radius:20px;background:var(--surface);border:1px solid var(--line);cursor:pointer;outline:none}
+.idea2:focus-visible{box-shadow:0 0 0 2px var(--blue-deep)}
+.idea2 > .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.idea2 h3{margin:0;font-size:16.5px;font-weight:500;display:flex;align-items:center;flex-wrap:wrap;gap:4px 7px;line-height:1.3}
+.idea2 .loc{font-size:12.5px;color:#D0BBA5}
+.idea2 .d{margin:0;font-size:13.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.idea2 .meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px;color:#A8917A}
+.idea2 .meta .pl{color:var(--sage)}
+.idea2 .meta .stars{font-size:12px}
+.idea2 .bot{display:flex;justify-content:space-between;align-items:center;margin-top:3px}
+.chip{font-size:11px;font-weight:400;padding:2px 8px;border-radius:99px;background:rgba(242,196,107,.16);color:var(--gold)}
+.cost{font-size:11.5px;padding:3px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cost.free{background:rgba(143,211,168,.16);color:#9FD9B3}.cost.paid{background:rgba(242,196,107,.14);color:var(--gold)}.cost.tix{background:rgba(195,177,255,.16);color:#CDBEFF}
+.av{display:flex;min-height:22px}
+.av i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;color:#1E140C;border:2px solid #2A1E15;margin-inline-start:-6px}
+.av i:first-child{margin-inline-start:0}
+.ht{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 11px;border-radius:99px;border:1px solid rgba(255,214,170,.16);background:none;color:#B9A48E;font:inherit;font-size:13px}
+.ht svg{width:15px;height:15px}
+.ht.on{background:rgba(242,182,107,.16);border-color:rgba(242,182,107,.3);color:#F2C48A}
+.cvr{position:relative;display:grid;place-items:center;overflow:hidden;flex:none;border-radius:16px;background:#3A2A1C}
+.cvr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cvr .em{position:relative;z-index:1;line-height:1}
+.cvr:not(.has)::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.18),transparent 60%)}
+.cvr.tile{width:74px;height:74px}.cvr.tile .em{font-size:30px}
+.cvr.big{width:100%;aspect-ratio:16/9;border-radius:20px}.cvr.big .em{font-size:56px}
+.cvr.wide{width:100%;height:120px;border-radius:18px}.cvr.wide .em{font-size:44px}
+.cvr .pc,.if-cover .pc{position:absolute;z-index:2;left:6px;bottom:6px;font-size:10.5px;font-weight:500;padding:2px 6px;border-radius:99px;background:rgba(20,13,8,.65);color:#F7EEE4}
+.cvr.big .pc,.cvr.wide .pc{left:10px;bottom:10px;font-size:12px;padding:3px 9px}
+.c-trip{background:linear-gradient(135deg,#5E7F5A,#2F4A36)}.c-culture{background:linear-gradient(135deg,#6C5A8E,#3A2E55)}
+.c-water{background:linear-gradient(135deg,#4F8FA8,#24506A)}.c-food{background:linear-gradient(135deg,#B9774A,#6B3A22)}
+.c-home{background:linear-gradient(135deg,#A8865A,#5C4429)}.c-sport{background:linear-gradient(135deg,#B8865A,#7A3F3A)}.c-other{background:linear-gradient(135deg,#8C6E52,#4A3726)}
+/* idea page */
+.idet .id-cover{display:block;width:100%;padding:0;border:0;background:none;margin-bottom:10px;cursor:zoom-in}
+.idet .id-cover[disabled]{cursor:default}
+.id-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.id-strip[hidden]{display:none}
+.id-strip .th{position:relative;flex:none;width:62px;height:62px;border-radius:14px;overflow:hidden;border:1.5px solid transparent;padding:0;background:#2C2016}
+.id-strip .th.on{border-color:var(--gold)}
+.id-strip .th img{width:100%;height:100%;object-fit:cover;display:block}
+.id-strip .th.add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1.5px dashed rgba(255,214,170,.3);color:#F2C48A;font-size:11px;cursor:pointer}
+.id-strip .th.add svg{width:18px;height:18px}
+.id-strip.form .th button{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,13,8,.7);color:#fff;display:grid;place-items:center;padding:0}
+.id-strip.form .th button svg{width:12px;height:12px}
+.id-strip.form{margin-top:-6px}
+.id-desc{margin:4px 0 12px !important;color:var(--muted);font-size:15px;line-height:1.55}
+.info{border-radius:16px;background:rgba(255,226,190,.05);border:1px solid rgba(255,214,170,.1);margin:0 0 12px}
+.info .r{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;border-top:1px solid rgba(255,214,170,.07);background:none;color:var(--text);font:inherit;font-size:14.5px;text-align:start}
+.info .r:first-child{border-top:0}
+.info .r .k{width:22px;text-align:center;flex:none}
+.info .r .v{flex:1;min-width:0}
+.info .r .v small{display:block;color:#93806C;font-size:12.5px}
+.info .r .lnk{color:var(--blue);direction:ltr;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.info .r .go svg{width:16px;height:16px;opacity:.5}
+.nav{display:flex;gap:6px;flex:none}
+.nav a{height:32px;padding:0 12px;border-radius:10px;display:inline-flex;align-items:center;font-weight:500;font-size:13px;text-decoration:none}
+.nav .wz{background:rgba(51,204,255,.15);color:#7FD9FF}.nav .gm{background:rgba(143,211,168,.14);color:#9FD9B3}
+.tixb{flex:none;height:32px;padding:0 12px;border-radius:10px;background:rgba(195,177,255,.16);color:#CDBEFF;display:inline-flex;align-items:center;font-size:13px;text-decoration:none}
+.id-likes{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 2px}
+.id-auto{font-size:12.5px;color:var(--sage);padding:9px 12px;border-radius:12px;background:rgba(179,207,159,.08);margin-top:12px}
+/* idea form */
+.if-lbl{display:block;font-size:13px;color:#B9A48E;margin:14px 2px 7px}
+.if-cats{display:flex;gap:6px;flex-wrap:wrap}
+.if-cats button{height:34px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,214,170,.14);background:none;color:#B9A48E;font:inherit;font-size:13px}
+.if-cats button.on{background:rgba(242,182,107,.16);border-color:rgba(242,182,107,.35);color:#F2C48A}
+.if-cats button.on.auto{border-style:dashed}
+.if-cost{display:flex;gap:6px}
+.if-cost button{flex:1;height:44px;border-radius:13px;border:1px solid rgba(255,214,170,.14);background:none;color:#B9A48E;font:inherit;font-size:13.5px}
+.if-cost button.on.free{border-color:rgba(143,211,168,.45);background:rgba(143,211,168,.12);color:#BDE6CA}
+.if-cost button.on.paid{border-color:rgba(242,196,107,.45);background:rgba(242,196,107,.12);color:#F5D79A}
+.if-cost button.on.tix{border-color:rgba(195,177,255,.45);background:rgba(195,177,255,.14);color:#E2D9FF}
+.if-two[hidden],.if-two [hidden]{display:none}
+.if-link.rtl input{direction:rtl;text-align:right}
+.if-link .em{width:18px;text-align:center;flex:none;color:var(--faint)}
+/* full-screen photo */
+.vw{position:fixed;inset:0;z-index:80;background:#0B0705;overflow:hidden;opacity:0;transition:opacity .2s}
+.vw.show{opacity:1}
+.vw-bg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(40px) brightness(.35) saturate(1.2)}
+.vw-top{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+.vw-x,.vw-tools button{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);display:grid;place-items:center;color:#fff;border:1px solid rgba(255,255,255,.15);padding:0;font-size:17px}
+.vw-x svg,.vw-tools svg{width:18px;height:18px}
+.vw-tools{display:flex;gap:8px}
+.vw-cnt{font-size:13px;color:rgba(255,255,255,.75)}
+.vw-mid{position:absolute;left:16px;right:16px;top:calc(70px + env(safe-area-inset-top,0px));bottom:calc(150px + env(safe-area-inset-bottom,0px));display:grid;place-items:center;z-index:1}
+.vw-img{max-width:100%;max-height:100%;border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}
+.vw-nav{position:absolute;top:50%;z-index:2;width:38px;height:38px;margin-top:-60px;border-radius:50%;border:0;background:rgba(20,13,8,.45);color:#fff;display:grid;place-items:center;padding:0}
+.vw-nav svg{width:18px;height:18px}.vw-nav.prev{right:6px}.vw-nav.next{left:6px}
+.vw-card{position:absolute;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:2;padding:14px 18px;border-radius:22px;background:rgba(36,25,17,.6);backdrop-filter:blur(18px);border:1px solid rgba(255,214,170,.14)}
+.vw-card b{display:block;font-size:18px;font-weight:500;color:#F7EEE4}.vw-card small{font-size:13px;color:#D0BBA5}
+.vw-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}.vw-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25)}.vw-dots i.on{background:#F2C48A}
+/* event window */
+.evv .ev-cover{display:block;width:100%;padding:0;border:0;background:none;margin-bottom:12px;cursor:zoom-in}
+.ev-when{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.c-date{width:58px;height:62px;border-radius:14px;background:rgba(20,13,8,.5);border:1px solid rgba(255,214,170,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
+.c-date small{font-size:10.5px;color:var(--sage)}.c-date b{font-size:22px;font-weight:500;line-height:1.05}
+.ev-when .w{flex:1;min-width:0}.ev-when .w b{display:block;font-size:15.5px;font-weight:500}.ev-when .w small{color:#93806C;font-size:13px}
+.ev-who{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 4px;border-radius:99px;background:rgba(255,226,190,.07);font-size:13px;flex:none}
+.ev-who i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;color:#1E140C}
+.ev-from{display:block;border:0;background:none;color:#F2C48A;font:inherit;font-size:13.5px;padding:14px 2px 2px;text-align:start}
 /* ---------- Sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(3,7,15,.6);z-index:40;opacity:0;transition:opacity .2s}
 .scrim.show{opacity:1}
@@ -1191,7 +1295,7 @@ const Cloud = {
     this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
       const x = d.exists() ? d.data() : {};
       const before = JSON.stringify(FAM);
-      FAM = { city: x.city || "293397", features: x.features || {}, maxUsers: +x.maxUsers || 0 };
+      FAM = { city: x.city || "293397", features: x.features || {}, maxUsers: +x.maxUsers || 0, maxPhotos: +x.maxPhotos || 0 };
       if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); Notes.alreadySent().then(() => Notes.refreshFab()); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
     }, () => {});
   },
@@ -1242,7 +1346,7 @@ const Cloud = {
     if (!fid || fid === HOME_FAMILY) throw { code:"missing" };
     const F = this.fb, refs = [];
     const all = async (...path) => { try { (await F.getDocs(F.collection(this.db, ...path))).docs.forEach(d => refs.push(d.ref)); } catch(e){ console.warn("[delete family]", path.join("/"), e); throw e; } };
-    for (const env of ["prod", "test"]) for (const c of COLS) await all("families", fid, "envs", env, c);
+    for (const env of ["prod", "test"]) for (const c of [...COLS, "photos"]) await all("families", fid, "envs", env, c);
     await all("families", fid, "notes"); await all("families", fid, "meta");
     Object.entries(ALLUSERS).filter(([, u]) => u.family === fid && u.uid !== BOOT_ADMIN_UID).forEach(([k, u]) => { refs.push(F.doc(this.db, "users", u.uid)); refs.push(F.doc(this.db, "logins", k)); });
     Announce.list.filter(a => a.target === fid).forEach(a => refs.push(F.doc(this.db, "announcements", a.id)));
@@ -1881,6 +1985,7 @@ const Stats = {
     if (!p && !sizeOnly) return;
     const F = Cloud.fb, now = Date.now(), fam = Cloud.fam, items = {}, bytes = {};
     COLS.forEach(c => { const a = DB[c] || []; items[c] = a.length; bytes[c] = JSON.stringify(a).length; });
+    bytes.photos = (DB.ideas || []).reduce((a, i) => a + (+i.photoBytes || 0), 0);
     const data = { items, bytes, sizedAt: now };
     if (p && p.errs) data.errs = { [iso(new Date())]: F.increment(p.errs) };
     if (p && p.acts){
@@ -2079,8 +2184,9 @@ const Admin = {
           <span class="t"><b>${esc(u.name)}${k === me ? " (אני)" : ""} <small dir="ltr">@${esc(k)}</small></b><small>${this.userLine(u)}</small></span>
           ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor", u.uid)}<i class="dot ${health(lastUse(u))}"></i></button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
         <button type="button" class="secondary adm-add" data-newuser>${icon("plus")} משתמש חדש</button></section>
-      <section class="adm-card"><h3>מנהלי המשפחה ומכסה</h3>
+      <section class="adm-card"><h3>מנהלי המשפחה ומכסות</h3>
         <p class="adm-note" style="margin-top:0">${(() => { const a = this.people(fid).filter(k => ALLUSERS[k].role === "admin" && ALLUSERS[k].uid !== BOOT_ADMIN_UID); return a.length ? "מנהל משפחה: " + a.map(k => esc(ALLUSERS[k].name)).join(", ") + " — יכול להוסיף ולמחוק משתמשים במשפחה." : "אין מנהל משפחה. כדי למנות — פתח משתמש ובחר הרשאה \"מנהל משפחה\"."; })()}</p>
+        <div class="adm-limit"><span>מקסימום תמונות לרעיון</span><select class="input" data-maxphotos>${[1,2,3,4,5,6,8,10,12].map(n => `<option value="${n}" ${n === (+f.maxPhotos || 6) ? "selected" : ""}>${n}${n === 6 ? " (ברירת מחדל)" : ""}</option>`).join("")}</select></div>
         <div class="adm-limit"><span>מקסימום משתמשים במשפחה</span><select class="input" data-maxusers><option value="0" ${!(+f.maxUsers) ? "selected" : ""}>ללא</option>${[2,3,4,5,6,8,10,12].map(n => `<option value="${n}" ${n === +f.maxUsers ? "selected" : ""}>${n}</option>`).join("")}</select></div></section>
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
@@ -2134,6 +2240,7 @@ const Admin = {
     q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
     el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
     q("[data-maxusers]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { maxUsers: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
+    q("[data-maxphotos]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { maxPhotos: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
       const f = { ...((FAMILIES[S.adminFam] || {}).features || {}) }; f[c.dataset.feat] = c.checked;
@@ -2288,6 +2395,7 @@ function taskRow(t){
   const meta = [];
   meta.push(who(t.assignee));
   if (t.ideaId){ const idea = DB.ideas.find(x => x.id===t.ideaId); if (idea) meta.push(`<span class="from">${icon("bulb")}${esc(idea.title)}</span>`); }
+  if (t.eventId){ const ev = DB.events.find(x => x.id===t.eventId); if (ev) meta.push(`<span class="from">${icon("cal")}${esc(ev.title)}</span>`); }
   if (t.date) meta.push(`<span>${icon("clock")}${dayLabel(t.date)}${t.time?" "+t.time:""}</span>`);
   if (t.repeat && t.repeat!=="none") meta.push(`<span>${icon("repeat")}${REPEAT[t.repeat]}</span>`);
   if (t.done) meta.push(`<span>הושלם ${dayLabel(iso(new Date(t.doneAt)))}${t.doneBy?" ע״י "+esc(USERS[t.doneBy]?.name||""):""}</span>`);
@@ -2827,7 +2935,7 @@ function dayItems(ds){
 }
 const holLine = h => h.k === "candles" ? `כניסת שבת ${h.t}` : h.k === "havdalah" ? `צאת שבת ${h.t}` : h.n;
 function openItem(k, id){
-  if (k === "ev"){ const e = DB.events.find(x => x.id === id); if (e) eventSheet(e); }
+  if (k === "ev"){ const e = DB.events.find(x => x.id === id); if (e) eventView(e); }
   else { const t = DB.tasks.find(x => x.id === id); if (t) taskSheet(t); }
 }
 const startOfWeek = d => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - x.getDay()); return x; };
@@ -3001,6 +3109,65 @@ function renderDay(){
   if (nowMin !== null && !S._dayScrolled){ S._dayScrolled = true; requestAnimationFrame(() => { const top = tl.getBoundingClientRect().top + window.scrollY + y(nowMin) - innerHeight / 2.6; if (top > 0) window.scrollTo(0, top); }); }
 }
 
+/* an event: when, where, tickets, and its tasks (the idea's tasks, or the event's own) */
+function eventView(ev){
+  const idea = ev.ideaId ? DB.ideas.find(x => x.id === ev.ideaId) : null;
+  const d = parse(ev.date), place = ev.place || (idea && idea.place) || "";
+  const ts = idea ? ideaTasks(idea) : DB.tasks.filter(t => t.eventId === ev.id);
+  const who = ev.who && USERS[ev.who], tix = idea && extUrl(idea.tixLink);
+  const when = `${DAYS[d.getDay()]}, ${d.getDate()} ב${MONTHS[d.getMonth()]}${ev.end ? ` – ${shortDate(ev.end)}` : ""}`;
+  const sh = openSheet(`${head(esc(ev.title))}
+    <div class="detail evv">
+      ${idea && idea.image ? `<button type="button" class="ev-cover" data-photos aria-label="תמונות">${coverHTML(idea, "wide")}</button>` : ""}
+      <div class="ev-when"><div class="c-date"><small>${DAYS[d.getDay()]}</small><b class="tabular">${d.getDate()}</b><small>${MONTHS[d.getMonth()]}</small></div>
+        <div class="w"><b>${esc(when)}</b><small>${ev.time ? `<span class="tabular">${ev.time}</span>` : "כל היום"}</small></div>
+        <span class="ev-who">${who ? `<i style="background:${who.color};${avaStyle(who)}">${initial(who)}</i>${esc(who.name)}` : "יחד"}</span></div>
+      ${place || (idea && idea.cost) || ev.note ? `<div class="info">
+        ${place ? `<div class="r"><span class="k">📍</span><span class="v">${esc(place)}</span>${navLinks(place)}</div>` : ""}
+        ${idea && idea.cost ? `<div class="r"><span class="k">${COST[idea.cost][0]}</span><span class="v">${idea.cost === "tix" ? "כרטיסים" : COST[idea.cost][1]}${idea.cost !== "free" && idea.price ? ` · ${esc(priceTxt(idea.price))}` : ""}</span>${tix ? `<a class="tixb" href="${esc(tix)}" target="_blank" rel="noopener">לרכישה ↗</a>` : ""}</div>` : ""}
+        ${ev.note ? `<div class="r"><span class="k">📝</span><span class="v">${esc(ev.note)}</span></div>` : ""}
+      </div>` : ""}
+      <section class="if-sec"><header><h4>${icon("chk")}משימות</h4><small>${ts.length ? `${ts.filter(t => t.done).length}/${ts.length} בוצעו` : "חלוקת משימות לאירוע"}</small></header>
+        <div id="evTasks">${ts.map(t => `<div class="st-row ${t.done ? "done" : ""}" data-t="${t.id}">
+          <button type="button" class="dot ${t.done ? "on" : ""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy ? `<span class="st-cart on lbl" aria-label="ברשימת קניות">${icon(t.buy === "home" ? "home" : "cart")}<b>${t.buy === "home" ? "לבית" : "סופר"}</b></span>` : ""}<button type="button" class="st-whob" data-who style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(t.assignee)}</button></div>`).join("")}</div>
+        ${canEdit() ? `<div class="st-add">${icon("plus")}<input id="evNew" placeholder="משימה חדשה — למשל: להכין צידנית" aria-label="משימה חדשה" autocomplete="off"></div>` : ""}</section>
+      ${idea ? `<button type="button" class="ev-from" data-idea>💡 מתוך הרעיון "${esc(idea.title)}" ←</button>` : ""}
+      ${canEdit() ? `<div class="actions"><button class="danger" id="del">${icon("trash")}מחיקה</button><button class="secondary" id="edit">${icon("edit")}עריכה</button></div>` : ""}
+    </div>`);
+  const again = () => eventView(ev);
+  sh.querySelector(".evv").addEventListener("click", e => {
+    if (e.target.closest("[data-photos]")) return viewIdeaPhotos(idea, 0, again);
+    if (e.target.closest("[data-idea]")){ closeSheet(); return setTimeout(() => ideaDetail(idea), 230); }
+    const row = e.target.closest("[data-t]"); if (!row) return;
+    const t = DB.tasks.find(x => x.id === row.dataset.t); if (!t || !canEdit()) return;
+    if (e.target.closest(".dot")){
+      if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
+      if (t.buy) syncBuy(t); save(); again(); return;
+    }
+    if (e.target.closest("[data-who]") && !t.done){ const P = peopleCycle(); t.assignee = P[(P.indexOf(t.assignee) + 1) % P.length]; save(); again(); }
+  });
+  const inp = sh.querySelector("#evNew");
+  if (inp){
+    const addTask = async () => {
+      const title = inp.value.trim(); if (!title) return; inp.value = "";
+      const t = { id:uid(), kind:"idea", ideaId: idea ? idea.id : null, eventId: idea ? null : ev.id, title, assignee:null, date:null, time:null, repeat:"none", done:false, buy:false, created:Date.now() };
+      DB.tasks.push(t);
+      if (isBuy(title)){ const l = await askList(title); if (l){ t.buy = l; syncBuy(t); } }
+      save(); again(); setTimeout(() => document.getElementById("evNew")?.focus(), 80);
+    };
+    inp.addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); addTask(); } });
+    inp.addEventListener("change", addTask);
+  }
+  sh.querySelector("#edit")?.addEventListener("click", () => { closeSheet(); setTimeout(() => eventSheet(ev), 230); });
+  sh.querySelector("#del")?.addEventListener("click", async () => {
+    const own = DB.tasks.filter(t => t.eventId === ev.id);
+    if (!await askConfirm(`למחוק את "${ev.title}"?`, `האירוע יימחק מהיומן${own.length ? ` יחד עם ${own.length === 1 ? "משימה אחת" : own.length + " משימות"}` : ""}.`)) return;
+    own.forEach(t => { if (t.buy){ t.buy = false; syncBuy(t); } });
+    DB.tasks = DB.tasks.filter(t => t.eventId !== ev.id);
+    DB.events = DB.events.filter(x => x.id !== ev.id); save(); closeSheet(); renderCal(); toast("האירוע נמחק");
+  });
+}
+
 function eventSheet(ev, preset={}){
   const edit = !!ev; const e = ev || { title:"", date:S.calSel, time:"", end:"", place:"", note:"", who:null, ...preset };
   const whoOpts = [["", "יחד"], ...people().map(k => [k, USERS[k].name])];
@@ -3029,12 +3196,18 @@ function eventSheet(ev, preset={}){
     const end = f.end.value && f.end.value > f.date.value ? f.end.value : "";
     const data = { title:f.title.value.trim(), date:f.date.value, time:f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim() };
     if (edit) Object.assign(ev, data); else DB.events.push({ id:uid(), ideaId:e.ideaId||null, ...data });
+    // an idea that needs tickets: scheduling it adds "לקנות כרטיסים" (once)
+    const idea = !edit && e.ideaId && DB.ideas.find(x => x.id === e.ideaId);
+    if (idea && idea.cost === "tix" && !ideaTasks(idea).some(t => !t.done && /כרטיס/.test(t.title)))
+      DB.tasks.push({ id:uid(), kind:"idea", ideaId:idea.id, title:"לקנות כרטיסים", assignee:null, date:null, time:null, repeat:"none", done:false, buy:false, created:Date.now() });
     save(); closeSheet();
     S.calSel = data.date; const d=parse(data.date); S.calMonth=new Date(d.getFullYear(), d.getMonth(), 1); S.calWeek = iso(startOfWeek(d));
     go("cal"); toast(edit?"נשמר":"האירוע נכנס ליומן");
   };
   if (edit) sh.querySelector("#del").onclick = async () => {
     if (!await askConfirm(`למחוק את "${ev.title}"?`, "האירוע יימחק מהיומן.")) return;
+    DB.tasks.filter(t => t.eventId === ev.id).forEach(t => { if (t.buy){ t.buy = false; syncBuy(t); } });
+    DB.tasks = DB.tasks.filter(t => t.eventId !== ev.id);
     DB.events = DB.events.filter(x=>x.id!==ev.id); save(); closeSheet(); renderCal(); toast("האירוע נמחק"); };
 }
 
@@ -3061,31 +3234,220 @@ function syncBuy(t){
   }
 }
 function fbBadges(i){ return ""; }
+/* ---------- ideas: type, cost, status ---------- */
+const CATS = { trip:["טיול","🌲"], food:["אוכל","🍽"], culture:["תרבות","🎬"], water:["מים","🌊"], sport:["פעילות","⚽"], home:["בבית","🏠"], other:["אחר","✨"] };
+const CAT_RX = [["water",/מים|חוף|בריכ|שחיי|ים המלח|כנרת/],["trip",/טיול|צפון|דרום|נחל|מסלול|יער|צימר|קמפינג|גליל|גולן|נופש|חופשה|מעיין/],
+  ["food",/מסעד|אוכל|ארוח|פיקניק|בראנץ|בית קפה|גלידה|פיצה|סושי|המבורגר/],["culture",/סרט|הצג|מוזיא|תיאטר|הופע|קונצרט|קולנוע|תערוכ|מופע/],
+  ["sport",/ספורט|אופני|כדור|טרמפולינ|באולינג|לונה|אטרקצי|חדר בריחה|גלישה|טיפוס|החלקה/],["home",/בבית|ערב משחק|בישול|אפייה|לגו|יצירה/]];
+const guessCat = t => (CAT_RX.find(([, r]) => r.test(t || "")) || ["other"])[0];
+const catOf = i => CATS[i.cat] ? i.cat : guessCat(i.title);
+const COST = { free:["🟢","חינם"], paid:["₪","בתשלום"], tix:["🎟","כרטיסים מראש"] };
+const priceTxt = p => /^\s*\d+([.,]\d+)?\s*$/.test(p || "") ? "₪" + String(p).trim() : String(p || "").trim();
+const costBadge = i => COST[i.cost] ? `<span class="cost ${i.cost}">${COST[i.cost][0]} ${COST[i.cost][1]}${i.cost !== "free" && i.price ? ` · ${esc(priceTxt(i.price))}` : ""}</span>` : "";
+const navLinks = place => `<span class="nav"><a class="wz" href="https://waze.com/ul?q=${encodeURIComponent(place)}&navigate=yes" target="_blank" rel="noopener">Waze</a><a class="gm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}" target="_blank" rel="noopener">מפות</a></span>`;
+const extUrl = u => u ? (/^https?:\/\//.test(u) ? u : "https://" + u) : "";
+const shortDate = ds => { const d = parse(ds); return `${DAYS[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}`; };
+const coverHTML = (i, cls = "") => i.image
+  ? `<span class="cvr ${cls} has"><img src="${esc(i.image)}" alt="" loading="lazy">${i.photoCount > 1 ? `<b class="pc">📷 ${i.photoCount}</b>` : ""}</span>`
+  : `<span class="cvr ${cls} c-${catOf(i)}"><span class="em">${CATS[catOf(i)][1]}</span></span>`;
+/* planned = has an event from today on; done = no upcoming event, and it already happened or got stars */
+function ideaPlan(i){
+  const today = iso(new Date()), evs = DB.events.filter(e => e.ideaId === i.id);
+  const next = evs.filter(e => (e.end || e.date) >= today).sort((a, b) => a.date < b.date ? -1 : 1)[0] || null;
+  const past = evs.some(e => (e.end || e.date) < today);
+  return { next, past, done: !next && (past || i.rating > 0) };
+}
+const likeAvatars = i => `<span class="av">${i.likes.filter(id => USERS[id]).map(id => `<i style="background:${USERS[id].color};${avaStyle(USERS[id])}" title="${esc(USERS[id].name)}">${initial(USERS[id])}</i>`).join("")}</span>`;
+
+/* ---------- photos: each one is its own small record, loaded only when an idea is opened ---------- */
+const Photos = {
+  cache:{},
+  max(){ return Math.max(1, +FAM.maxPhotos || 6); },
+  col(){ return Cloud.fb.collection(Cloud.db, "families", Cloud.fam, "envs", ENV, "photos"); },
+  local(){ try { return JSON.parse(localStorage.getItem("nido.photos") || "[]"); } catch(e){ return []; } },
+  saveLocal(a){ try { localStorage.setItem("nido.photos", JSON.stringify(a)); } catch(e){ toast("אין מספיק מקום לתמונה במכשיר"); throw e; } },
+  async list(i){
+    if (this.cache[i.id]) return this.cache[i.id];
+    let arr = [];
+    if (CLOUD){
+      if (i.photoCount && Cloud.fb && Cloud.user){
+        const F = Cloud.fb; const qs = await F.getDocs(F.query(this.col(), F.where("ideaId", "==", i.id)));
+        arr = qs.docs.map(d => ({ id:d.id, ...d.data() }));
+      }
+    } else arr = this.local().filter(p => p.ideaId === i.id);
+    arr.sort((a, b) => a.seq - b.seq);
+    return this.cache[i.id] = arr;
+  },
+  /* what the gallery shows: the cover first (an old single picture counts as one), then the rest */
+  gallery(i, arr){
+    const g = [];
+    const legacy = i.image && !arr.some(p => p.id === i.coverId);
+    if (legacy) g.push({ legacy:true, img:i.image, by:null });
+    const cov = arr.find(p => p.id === i.coverId);
+    if (cov) g.push(cov);
+    arr.forEach(p => { if (p !== cov) g.push(p); });
+    return g;
+  },
+  count(i, arr){ return arr.length + (i.image && !arr.some(p => p.id === i.coverId) ? 1 : 0); },
+  stat(i, arr){ i.photoCount = this.count(i, arr); i.photoBytes = arr.reduce((a, p) => a + (p.img || "").length, 0); },
+  async add(i, full, thumb){
+    const arr = await this.list(i);
+    if (this.count(i, arr) >= this.max()) throw { code:"limit" };
+    let seq = 1; while (arr.some(p => p.seq === seq)) seq++;
+    if (seq > this.max()) throw { code:"limit" };
+    const id = `${i.id}_${seq}`, doc = { ideaId:i.id, seq, img:full, by:me, at:Date.now() };
+    if (CLOUD) await Cloud.fb.setDoc(Cloud.fb.doc(this.col(), id), doc);
+    else { const all = this.local(); all.push({ id, ...doc }); this.saveLocal(all); }
+    arr.push({ id, ...doc }); arr.sort((a, b) => a.seq - b.seq);
+    if (!i.image){ i.image = thumb; i.coverId = id; }
+    this.stat(i, arr);
+  },
+  async remove(i, p){
+    const arr = await this.list(i);
+    if (p.legacy){ i.image = ""; delete i.coverId; }
+    else {
+      if (CLOUD) await Cloud.fb.deleteDoc(Cloud.fb.doc(this.col(), p.id));
+      else this.saveLocal(this.local().filter(x => x.id !== p.id));
+      const k = arr.findIndex(x => x.id === p.id); if (k >= 0) arr.splice(k, 1);
+      if (i.coverId === p.id){ i.image = ""; delete i.coverId; }
+    }
+    if (!i.image && arr.length){ i.image = await shrinkData(arr[0].img, 600); i.coverId = arr[0].id; }
+    this.stat(i, arr);
+  },
+  async cover(i, p){
+    if (p.legacy || i.coverId === p.id) return;
+    const arr = await this.list(i);
+    if (i.image && !i.coverId){ toast("קודם יש להסיר את התמונה הישנה"); return; }
+    i.image = await shrinkData(p.img, 600); i.coverId = p.id; this.stat(i, arr);
+  },
+  async removeAll(i){
+    try {
+      const arr = await this.list(i);
+      if (CLOUD) await Promise.all(arr.map(p => Cloud.fb.deleteDoc(Cloud.fb.doc(this.col(), p.id))));
+      else this.saveLocal(this.local().filter(x => x.ideaId !== i.id));
+    } catch(e){ console.warn("[photos]", e); }
+    delete this.cache[i.id];
+  },
+};
+/* a picture → JPEG of at most `side` pixels */
+function shrinkData(src, side, q = .72){
+  return new Promise((ok, bad) => { const im = new Image(); im.onload = () => {
+    const k = Math.min(1, side / Math.max(im.width, im.height)), c = document.createElement("canvas");
+    c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    ok(c.toDataURL("image/jpeg", q)); }; im.onerror = bad; im.src = src; });
+}
+function readFile(file){ return new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(file); }); }
+/* several files from a picker → [{full, thumb}] (full ≈1280px, thumb 600px) */
+async function pickPhotos(input){
+  const out = [];
+  for (const f of [...input.files]){ try { const src = await readFile(f); out.push({ full: await shrinkData(src, 1280), thumb: await shrinkData(src, 600) }); } catch(e){ console.warn(e); } }
+  input.value = ""; return out;
+}
+async function addPhotosTo(i, picked){
+  let n = 0;
+  for (const ph of picked){
+    try { await Photos.add(i, ph.full, ph.thumb); n++; }
+    catch(e){ if (e && e.code === "limit"){ toast(`אפשר עד ${Photos.max()} תמונות לרעיון`); break; } toast(errText(e)); break; }
+  }
+  if (n){ save(); renderIdeas(); }
+  return n;
+}
+
+/* ---------- full-screen photo viewer ---------- */
+const Viewer = {
+  open(items, idx, meta = {}){
+    if (!items.length) return;
+    this.close(true);
+    let k = Math.max(0, Math.min(idx, items.length - 1));
+    const w = document.createElement("div"); w.className = "vw"; w.setAttribute("role", "dialog"); w.setAttribute("aria-label", "תמונה");
+    const draw = () => {
+      const it = items[k], who = it.by && (USERS[it.by] || ALLUSERS[it.by]);
+      w.innerHTML = `<div class="vw-bg" style="background-image:url(${it.img})"></div>
+        <div class="vw-top"><button type="button" class="vw-x" data-x aria-label="סגירה">${icon("close")}</button>
+          ${items.length > 1 ? `<span class="vw-cnt tabular">${k + 1} / ${items.length}</span>` : "<span></span>"}
+          <span class="vw-tools">${meta.onCover && canEdit() && !it.legacy && items.length > 1 && k > 0 ? `<button type="button" data-cover aria-label="תמונה ראשית">★</button>` : ""}${meta.onDelete && canEdit() ? `<button type="button" data-del aria-label="מחיקת התמונה">${icon("trash")}</button>` : ""}</span></div>
+        <div class="vw-mid"><img class="vw-img" src="${it.img}" alt=""></div>
+        ${items.length > 1 ? `<button type="button" class="vw-nav prev" data-prev aria-label="הקודמת">${icon("prev")}</button><button type="button" class="vw-nav next" data-next aria-label="הבאה">${icon("next")}</button>` : ""}
+        <div class="vw-card"><div><b>${esc(meta.title || "")}</b><small>${[meta.place ? "📍 " + esc(meta.place) : "", who ? "נוסף ע״י " + esc(who.name) : "", it.at ? esc(new Date(it.at).toLocaleDateString("he-IL")) : ""].filter(Boolean).join(" · ")}</small></div>
+          ${items.length > 1 ? `<div class="vw-dots">${items.map((_, j) => `<i class="${j === k ? "on" : ""}"></i>`).join("")}</div>` : ""}</div>`;
+    };
+    const go = d => { if (items.length < 2) return; k = (k + d + items.length) % items.length; draw(); };
+    draw(); document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    w.onclick = async e => {
+      if (e.target.closest("[data-x]")) return this.close();
+      if (e.target.closest("[data-prev]")) return go(-1);
+      if (e.target.closest("[data-next]")) return go(1);
+      if (e.target.closest("[data-cover]")){ await meta.onCover(items[k]); toast("נקבעה כתמונה ראשית"); return this.close(); }
+      if (e.target.closest("[data-del]")){
+        if (!await askConfirm("למחוק את התמונה?", "היא תימחק מהרעיון לכל המשפחה.")) return;
+        try { await meta.onDelete(items[k]); } catch(x){ toast(errText(x)); return; }
+        items.splice(k, 1); toast("התמונה נמחקה");
+        if (!items.length) return this.close(); k = Math.min(k, items.length - 1); draw(); return;
+      }
+      if (e.target.closest(".vw-mid") && !e.target.closest(".vw-img")) this.close();
+    };
+    let sx = 0, sy = 0;
+    w.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive:true });
+    w.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx > 0 ? 1 : -1);
+      else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) this.close();
+    });
+    this.key = e => { if (e.key === "Escape") this.close(); else if (e.key === "ArrowLeft") go(1); else if (e.key === "ArrowRight") go(-1); };
+    document.addEventListener("keydown", this.key);
+    this.el = w;
+  },
+  close(now){
+    const w = this.el; if (!w) return; this.el = null;
+    document.removeEventListener("keydown", this.key);
+    if (now) return w.remove();
+    w.classList.remove("show"); setTimeout(() => w.remove(), 200);
+  },
+};
+/* open an idea's photos in the viewer (loads them the first time) */
+async function viewIdeaPhotos(i, start = 0, after){
+  let arr = [];
+  try { arr = await Photos.list(i); } catch(e){ console.warn(e); }
+  const g = Photos.gallery(i, arr); if (!g.length) return;
+  Viewer.open(g, start, { title:i.title, place:i.place,
+    onDelete: async p => { await Photos.remove(i, p); save(); renderIdeas(); after && after(); },
+    onCover: async p => { await Photos.cover(i, p); save(); renderIdeas(); after && after(); } });
+}
+
 function renderIdeas(){
-  const all = people().length;
-  const list = [...DB.ideas].sort((a,b) => b.likes.length - a.likes.length || b.created - a.created);
+  const all = people().length, f = S.ideaFilter || "all";
+  const rows = DB.ideas.map(i => ({ i, p: ideaPlan(i) }));
+  const n = { all: rows.length, plan: rows.filter(x => x.p.next).length, done: rows.filter(x => x.p.done).length };
+  let list = rows.filter(x => f === "all" || (f === "plan" ? x.p.next : x.p.done));
+  list = f === "plan" ? list.sort((a, b) => a.p.next.date < b.p.next.date ? -1 : 1)
+       : list.sort((a, b) => b.i.likes.length - a.i.likes.length || b.i.created - a.i.created);
+  const empty = { all:"עוד אין רעיונות. מה בא לכם לעשות?", plan:"אין עדיין רעיונות שנקבעו ביומן.", done:"עוד לא סימנו רעיון שעשינו." }[f];
   $("#screen").innerHTML = `
     <header class="top"><h1>רעיונות</h1><button class="add-btn" id="addIdea">${icon("plus")}רעיון</button></header>
-    <p class="hint">דברים שבא לנו לעשות. נשארים כאן עד שמוחקים אותם.</p>
-    <ul class="ideas" id="ilist">${ list.length ? list.map(i => {
-      const mine = i.likes.includes(me), ts = ideaTasks(i), dn = ts.filter(t=>t.done).length, fb = fbBadges(i);
-      return `<li class="idea" data-id="${i.id}">
-        <button class="open" data-act="open">
-          ${i.image?`<img src="${i.image}" alt="">`:""}
-          <div class="in"><h3>${esc(i.title)}${i.likes.length===all?`<span class="both">· כולם רוצים</span>`:""}</h3>${i.desc?`<p>${esc(i.desc)}</p>`:""}${i.review?`<p class="rv">“${esc(i.review)}”</p>`:""}</div>
-          ${fb || ts.length ? `<div class="fbs">${ts.length?`<span class="fbb">${icon("chk")}${dn}/${ts.length} משימות</span>`:""}${fb}</div>` : ""}
-        </button>
-        <div class="foot">
-          <div class="likers">${i.rating?stars(i.rating):""}${likers(i)}</div>
-          <button class="want ${mine?"on":""}" data-act="want" aria-pressed="${mine}">${icon(mine?"heart":"heart-o")}בא לי</button>
+    <p class="hint">דברים שבא לנו לעשות ביחד</p>
+    <div class="id-seg" role="tablist">${[["all","הכול"],["plan","מתוכננים"],["done","עשינו"]].map(([k, l]) => `<button role="tab" data-f="${k}" aria-selected="${f === k}">${l}<i class="tabular">${n[k]}</i></button>`).join("")}</div>
+    <ul class="ideas2" id="ilist">${ list.length ? list.map(({ i, p }) => {
+      const mine = i.likes.includes(me), ts = ideaTasks(i), dn = ts.filter(t => t.done).length;
+      const meta = [costBadge(i), p.next ? `<span class="pl">📅 ${esc(shortDate(p.next.date))}</span>` : "", ts.length ? `<span>✓ ${dn}/${ts.length} משימות</span>` : "", i.rating ? stars(i.rating) : ""].filter(Boolean);
+      return `<li class="idea2" data-id="${i.id}" data-act="open" tabindex="0">
+        ${coverHTML(i, "tile")}
+        <div class="t">
+          <h3>${esc(i.title)}${all > 1 && i.likes.length >= all ? `<span class="chip">כולם רוצים</span>` : ""}</h3>
+          ${i.place ? `<div class="loc">📍 ${esc(i.place)}</div>` : ""}
+          ${i.desc ? `<p class="d">${esc(i.desc)}</p>` : ""}
+          ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
+          <div class="bot">${likeAvatars(i)}<button type="button" class="ht ${mine ? "on" : ""}" data-act="want" aria-pressed="${mine}">${icon(mine ? "heart" : "heart-o")}${i.likes.length ? `<span class="tabular">${i.likes.length}</span>` : "בא לי"}</button></div>
         </div></li>`;
-    }).join("") : `<li class="empty">עוד אין רעיונות. מה בא לכם לעשות?</li>` }</ul>`;
+    }).join("") : `<li class="empty">${empty}</li>` }</ul>`;
   $("#addIdea").onclick = () => ideaForm();
-  $("#ilist").onclick = e => {
-    const b = e.target.closest("[data-act]"); if (!b) return;
-    const idea = DB.ideas.find(x=>x.id===b.closest(".idea").dataset.id);
-    if (b.dataset.act==="want"){ toggleLike(idea); renderIdeas(); } else ideaDetail(idea);
+  $("#screen").querySelector(".id-seg").onclick = e => { const b = e.target.closest("[data-f]"); if (b){ S.ideaFilter = b.dataset.f; renderIdeas(); } };
+  const open = e => {
+    const li = e.target.closest(".idea2"); if (!li) return;
+    const idea = DB.ideas.find(x => x.id === li.dataset.id); if (!idea) return;
+    if (e.target.closest('[data-act="want"]')){ toggleLike(idea); renderIdeas(); } else ideaDetail(idea);
   };
+  $("#ilist").onclick = open;
+  $("#ilist").onkeydown = e => { if (e.key === "Enter" && e.target.classList.contains("idea2")) open(e); };
 }
 function toggleLike(i){ i.likes = i.likes.includes(me) ? i.likes.filter(x=>x!==me) : [...i.likes, me]; save(); }
 
@@ -3111,18 +3473,24 @@ function bindFeedback(root, state, onChange){
 }
 
 function ideaDetail(i){
-  const mine = i.likes.includes(me);
-  const href = i.link ? (/^https?:\/\//.test(i.link) ? i.link : "https://"+i.link) : "";
-  const times = DB.events.filter(e=>e.ideaId===i.id).length, ts = ideaTasks(i);
+  const mine = i.likes.includes(me), href = extUrl(i.link), tix = extUrl(i.tixLink);
+  const pl = ideaPlan(i), times = DB.events.filter(e => e.ideaId === i.id).length, ts = ideaTasks(i);
   const sh = openSheet(`${head(esc(i.title))}
-    <div class="detail">
-      ${i.image?`<div class="if-cover has" style="cursor:default"><img src="${i.image}" alt=""></div>`:""}
-      ${i.desc?`<p style="margin:0">${esc(i.desc)}</p>`:""}
-      ${href?`<a class="if-link" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${icon("link")}<span class="link" style="flex:1;direction:ltr;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.link)}</span></a>`:""}
-      <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div class="detail idet">
+      <button type="button" class="id-cover" data-view="0" ${i.image ? "" : "disabled"} aria-label="הגדלת התמונה">${coverHTML(i, "big")}</button>
+      <div class="id-strip" id="strip"></div>
+      ${i.desc ? `<p class="id-desc">${esc(i.desc)}</p>` : ""}
+      ${i.place || i.cost || href || pl.next ? `<div class="info">
+        ${i.place ? `<div class="r"><span class="k">📍</span><span class="v">${esc(i.place)}</span>${navLinks(i.place)}</div>` : ""}
+        ${i.cost ? `<div class="r"><span class="k">${COST[i.cost][0]}</span><span class="v">${i.cost === "tix" ? "צריך כרטיסים מראש" : COST[i.cost][1]}${i.cost !== "free" && i.price ? `<small>${esc(priceTxt(i.price))}</small>` : ""}</span>${tix ? `<a class="tixb" href="${esc(tix)}" target="_blank" rel="noopener">לרכישה ↗</a>` : ""}</div>` : ""}
+        ${href ? `<div class="r"><span class="k">🔗</span><a class="v lnk" href="${esc(href)}" target="_blank" rel="noopener">${esc(i.link)}</a></div>` : ""}
+        ${pl.next ? `<button type="button" class="r" data-ev="${pl.next.id}"><span class="k">📅</span><span class="v">נקבע ל${esc(shortDate(pl.next.date))}${pl.next.time ? ` · ${pl.next.time}` : ""}</span><span class="go">${icon("prev")}</span></button>` : ""}
+      </div>` : ""}
+      <div class="id-likes">
         <div class="likers">${likers(i) || `<span class="who none">עוד אף אחד</span>`}</div>
         <button class="want ${mine?"on":""}" id="want">${icon(mine?"heart":"heart-o")}בא לי</button>
       </div>
+      ${i.cost === "tix" && !pl.next && canEdit() ? `<div class="id-auto">✓ כשקובעים ביומן — תיווצר משימה "לקנות כרטיסים"</div>` : ""}
       ${ts.length ? `<section class="if-sec"><header><h4>${icon("chk")}משימות</h4><small>${ts.filter(t=>t.done).length}/${ts.length} בוצעו</small></header>
         <div id="dTasks">${ts.map(t => `<div class="st-row ${t.done?"done":""}" data-t="${t.id}">
           <button type="button" class="dot ${t.done?"on":""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy?`<span class="st-cart on lbl" aria-label="ברשימת קניות">${icon(t.buy==="home"?"home":"cart")}<b>${t.buy==="home"?"לבית":"סופר"}</b></span>`:""}${whoChip(t.assignee)}</div>`).join("")}</div></section>` : ""}
@@ -3131,6 +3499,26 @@ function ideaDetail(i){
       <div class="row-btns"><button class="primary" id="plan">${icon("cal")} קובעים</button></div>
       <div class="actions"><button class="danger" id="del">${icon("trash")}מחיקה</button><button class="secondary" id="edit">${icon("edit")}עריכה</button></div>
     </div>`);
+  // photo strip: loaded only now
+  const strip = sh.querySelector("#strip");
+  const drawStrip = async () => {
+    let arr = []; try { arr = await Photos.list(i); } catch(e){ console.warn(e); }
+    if (!sh.isConnected) return;
+    const g = Photos.gallery(i, arr), room = canEdit() && g.length < Photos.max();
+    strip.innerHTML = (g.length > 1 ? g.map((p, k) => `<button type="button" class="th ${k === 0 ? "on" : ""}" data-view="${k}"><img src="${p.img}" alt=""></button>`).join("") : "")
+      + (room ? `<label class="th add" aria-label="הוספת תמונות">${icon("plus")}<span>תמונה</span><input type="file" accept="image/*" multiple hidden></label>` : "");
+    strip.hidden = !strip.innerHTML;
+    strip.querySelector("input")?.addEventListener("change", async ev => {
+      const picked = await pickPhotos(ev.target); if (!picked.length) return;
+      toast("מעלה…"); const n = await addPhotosTo(i, picked);
+      if (n){ toast(n === 1 ? "התמונה נוספה" : `${n} תמונות נוספו`); ideaDetail(i); }
+    });
+  };
+  drawStrip();
+  sh.querySelector(".detail").addEventListener("click", e => {
+    const v = e.target.closest("[data-view]"); if (v && !v.disabled) viewIdeaPhotos(i, +v.dataset.view, () => ideaDetail(i));
+    const ev = e.target.closest("[data-ev]"); if (ev){ const x = DB.events.find(y => y.id === ev.dataset.ev); if (x){ closeSheet(); setTimeout(() => eventView(x), 230); } }
+  });
   const state = { rating:i.rating||0, review:i.review||"" };
   bindFeedback(sh.querySelector("#dFb"), state, () => { i.rating = state.rating; i.review = (state.review||"").trim(); save(); renderIdeas(); });
   const dt = sh.querySelector("#dTasks"); if (dt) dt.onclick = e => {
@@ -3140,28 +3528,45 @@ function ideaDetail(i){
     save(); renderIdeas(); ideaDetail(i);
   };
   sh.querySelector("#want").onclick = () => { toggleLike(i); renderIdeas(); ideaDetail(i); };
-  sh.querySelector("#plan").onclick = () => { closeSheet(); setTimeout(()=>eventSheet(null, { title:i.title, ideaId:i.id, date:iso(new Date()) }), 230); };
+  sh.querySelector("#plan").onclick = () => { closeSheet(); setTimeout(()=>eventSheet(null, { title:i.title, ideaId:i.id, place:i.place||"", date:iso(new Date()) }), 230); };
   sh.querySelector("#edit").onclick = () => { closeSheet(); setTimeout(()=>ideaForm(i), 230); };
   sh.querySelector("#del").onclick = async () => {
     const evs = DB.events.filter(e => e.ideaId===i.id), parts = [];
     if (ts.length) parts.push(ts.length===1 ? "משימה אחת" : ts.length+" משימות");
     if (evs.length) parts.push(evs.length===1 ? "אירוע אחד ביומן" : evs.length+" אירועים ביומן");
+    if (i.photoCount > 1) parts.push(i.photoCount + " תמונות");
     if (!await askConfirm(`למחוק את "${i.title}"?`, `הרעיון יימחק${parts.length?` יחד עם ${parts.join(" ו")}`:""}.`)) return;
     ts.forEach(t => { if (t.buy){ t.buy = false; syncBuy(t); } });          // its items leave the shopping list too
-    DB.tasks = DB.tasks.filter(t => t.ideaId!==i.id);
+    const evIds = new Set(evs.map(e => e.id));
+    DB.tasks = DB.tasks.filter(t => t.ideaId!==i.id && !(t.eventId && evIds.has(t.eventId)));
     DB.events = DB.events.filter(e => e.ideaId!==i.id);
+    Photos.removeAll(i);
     DB.ideas = DB.ideas.filter(x=>x.id!==i.id); save(); closeSheet(); renderIdeas(); toast("הרעיון נמחק");
   };
 }
 
 function ideaForm(idea){
-  const edit = !!idea; const i = idea || { title:"", desc:"", link:"", image:"", rating:0, review:"" };
-  let img = i.image;
+  const edit = !!idea; const i = idea || { title:"", desc:"", link:"", image:"", rating:0, review:"", place:"", cost:"", price:"", tixLink:"", cat:"" };
+  const tid = edit ? idea.id : uid();
+  // photos: the old single picture / pasted link ("legacy"), saved photos, and new ones waiting for "שמירה"
+  let legacy = i.image && !i.coverId ? i.image : "", photos = [];
+  const adds = [], dels = new Set();
+  const items = () => [
+    ...(legacy ? [{ k:"legacy", img:legacy }] : []),
+    ...photos.filter(p => !dels.has(p.id)).sort((a, b) => (b.id === i.coverId) - (a.id === i.coverId) || a.seq - b.seq).map(p => ({ k:"p:" + p.id, img:p.img })),
+    ...adds.map((a, j) => ({ k:"n:" + j, img:a.thumb })) ];
+  let cat = i.cat || "", cost = i.cost || "";
   const state = { rating:i.rating||0, review:i.review||"" };
   let rows = edit ? ideaTasks(i).map(t => ({ id:t.id, title:t.title, assignee:t.assignee, done:t.done, buy:t.buy ? (t.buy === "home" ? "home" : "super") : false })) : [];
-  const cover = () => img
-    ? `<img src="${img}" alt=""><div class="tools"><button type="button" data-rm>הסרה</button></div>`
-    : `<div class="ph">${icon("image")}<span>הוספת תמונה</span><small style="color:var(--faint)">מהגלריה או מהמצלמה</small></div>`;
+  const cover = () => { const it = items();
+    return it.length
+      ? `<img src="${it[0].img}" alt="">${it.length > 1 ? `<b class="pc">📷 ${it.length}</b>` : ""}`
+      : `<div class="ph">${icon("image")}<span>הוספת תמונות</span><small style="color:var(--faint)">עד ${Photos.max()} · מהגלריה או מהמצלמה</small></div>`; };
+  const stripHTML = () => { const it = items();
+    return it.length ? it.map((x, k) => `<span class="th ${k === 0 ? "on" : ""}"><img src="${x.img}" alt=""><button type="button" data-rmk="${x.k}" aria-label="הסרת התמונה">${icon("close")}</button></span>`).join("")
+      + (it.length < Photos.max() ? `<label class="th add" aria-label="הוספת תמונות">${icon("plus")}<span>תמונה</span><input type="file" accept="image/*" multiple hidden id="moreFiles"></label>` : "") : ""; };
+  const catsHTML = (t = i.title) => { const sel = cat || guessCat(t);
+    return Object.entries(CATS).map(([k, [l, e]]) => `<button type="button" class="${k === sel ? "on" : ""} ${k === sel && !cat ? "auto" : ""}" data-cat="${k}">${e} ${l}</button>`).join(""); };
   const rowsHTML = () => rows.map((r, k) => `<div class="st-row ${r.done?"done":""}" data-k="${k}">
       <span class="dot ${r.done?"on":""}">${icon("tick")}</span>
       <input value="${esc(r.title)}" aria-label="משימה" ${r.done?"disabled":""}>
@@ -3170,11 +3575,20 @@ function ideaForm(idea){
       <button type="button" class="st-x" aria-label="הסרה">${icon("close")}</button></div>`).join("");
   const sh = openSheet(`${head(edit?"עריכת רעיון":"רעיון חדש")}
     <form id="xf" novalidate>
-      <div class="if-cover pick-wrap ${img?"has":""}" id="cover"><div id="coverView" style="position:absolute;inset:0">${cover()}</div><input type="file" accept="image/*" id="file" aria-label="בחירת תמונה"></div>
+      <div class="if-cover pick-wrap ${items().length?"has":""}" id="cover"><div id="coverView" style="position:absolute;inset:0">${cover()}</div><input type="file" accept="image/*" multiple id="file" aria-label="בחירת תמונות"></div>
+      <div class="id-strip form" id="fStrip">${stripHTML()}</div>
       <button type="button" class="if-urlbtn" id="urlBtn">${icon("link")}או להדביק קישור לתמונה</button>
       <div class="if-link" id="urlRow" hidden style="margin:0 0 12px">${icon("image")}<input id="imgUrl" placeholder="https://…/photo.jpg" inputmode="url" aria-label="קישור לתמונה"></div>
       <input class="if-title" name="title" placeholder="מה בא לכם לעשות?" value="${esc(i.title)}" aria-label="שם הרעיון" autocomplete="off">
       <textarea class="if-desc" name="desc" rows="2" placeholder="כמה מילים — מה, איפה, למה זה כיף" aria-label="תיאור">${esc(i.desc)}</textarea>
+      <span class="if-lbl">סוג</span><div class="if-cats" id="cats">${catsHTML()}</div>
+      <div class="if-link rtl"><span class="em">📍</span><input name="place" placeholder="איפה? שם מקום או כתובת" value="${esc(i.place||"")}" aria-label="מיקום" autocomplete="off"></div>
+      <span class="if-lbl">עלות</span>
+      <div class="if-cost" id="cost">${Object.entries(COST).map(([k, [e, l]]) => `<button type="button" data-cost="${k}" class="${cost === k ? "on " + k : ""}">${e} ${k === "tix" ? "כרטיסים" : l}</button>`).join("")}</div>
+      <div class="if-two" id="costMore" ${cost === "paid" || cost === "tix" ? "" : "hidden"}>
+        <div class="if-link rtl"><span class="em">₪</span><input name="price" placeholder="מחיר (למשל 119 לאדם)" value="${esc(i.price||"")}" aria-label="מחיר"></div>
+        <div class="if-link" id="tixRow" ${cost === "tix" ? "" : "hidden"}>${icon("link")}<input name="tixLink" placeholder="קישור לכרטיסים" value="${esc(i.tixLink||"")}" inputmode="url" aria-label="קישור לכרטיסים"></div>
+      </div>
       <div class="if-link">${icon("link")}<input name="link" placeholder="קישור (אתר, מפה, הזמנה)" value="${esc(i.link)}" inputmode="url" aria-label="קישור"></div>
 
       <section class="if-sec">
@@ -3191,19 +3605,41 @@ function ideaForm(idea){
       <div class="if-foot"><div class="row"><button class="primary" type="submit">${edit?"שמירה":"הוספה למאגר"}</button></div></div>
     </form>`);
   const f = sh.querySelector("#xf"), $r = sh.querySelector("#rows");
+  // type + cost
+  const catsEl = sh.querySelector("#cats"), costEl = sh.querySelector("#cost");
+  catsEl.onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = cat === b.dataset.cat ? "" : b.dataset.cat; catsEl.innerHTML = catsHTML(f.title.value); };
+  f.title.addEventListener("input", () => { if (!cat) catsEl.innerHTML = catsHTML(f.title.value); });
+  costEl.onclick = e => { const b = e.target.closest("[data-cost]"); if (!b) return; cost = cost === b.dataset.cost ? "" : b.dataset.cost;
+    costEl.querySelectorAll("[data-cost]").forEach(x => x.className = x.dataset.cost === cost ? "on " + cost : "");
+    sh.querySelector("#costMore").hidden = !(cost === "paid" || cost === "tix"); sh.querySelector("#tixRow").hidden = cost !== "tix"; };
   if (!edit) setTimeout(()=>f.title.focus(), 260);
   bindFeedback(sh.querySelector("#fb"), state);
 
   // cover image
-  const coverEl = sh.querySelector("#cover"), view = sh.querySelector("#coverView");
-  const paint = () => { view.innerHTML = cover(); coverEl.classList.toggle("has", !!img); };
-  sh.querySelector("#file").addEventListener("change", ev => pickImage(ev.target, d => { img = d; paint(); ev.target.value = ""; }));
-  coverEl.addEventListener("click", e => { if (e.target.closest("[data-rm]")){ e.preventDefault(); e.stopPropagation(); img = ""; paint(); } }, true);
+  const coverEl = sh.querySelector("#cover"), view = sh.querySelector("#coverView"), fStrip = sh.querySelector("#fStrip");
+  const paint = () => { view.innerHTML = cover(); coverEl.classList.toggle("has", !!items().length); fStrip.innerHTML = stripHTML(); fStrip.hidden = !items().length; };
+  paint();
+  if (edit && i.photoCount) Photos.list(idea).then(a => { photos = a.slice(); paint(); }).catch(e => console.warn(e));
+  const takeFiles = async input => {
+    const room = Photos.max() - items().length; if (room <= 0){ input.value = ""; toast(`אפשר עד ${Photos.max()} תמונות לרעיון`); return; }
+    const picked = await pickPhotos(input);
+    if (picked.length > room) toast(`נוספו ${room} — אפשר עד ${Photos.max()} תמונות לרעיון`);
+    adds.push(...picked.slice(0, room)); paint();
+  };
+  sh.querySelector("#file").addEventListener("change", ev => { if (items().length){ ev.preventDefault(); } takeFiles(ev.target); });
+  coverEl.addEventListener("click", e => { if (items().length){ e.preventDefault(); } }, true);
+  fStrip.addEventListener("change", e => { if (e.target.id === "moreFiles") takeFiles(e.target); });
+  fStrip.addEventListener("click", e => {
+    const b = e.target.closest("[data-rmk]"); if (!b) return; e.preventDefault();
+    const k = b.dataset.rmk;
+    if (k === "legacy") legacy = ""; else if (k.startsWith("p:")) dels.add(k.slice(2)); else adds.splice(+k.slice(2), 1);
+    paint();
+  });
   sh.querySelector("#urlBtn").onclick = () => { const r = sh.querySelector("#urlRow"); r.hidden = false; sh.querySelector("#urlBtn").hidden = true; sh.querySelector("#imgUrl").focus(); };
   sh.querySelector("#imgUrl").addEventListener("change", e => {
     const u = e.target.value.trim(); if (!u) return;
     const url = /^https?:\/\//.test(u) ? u : "https://" + u, test = new Image();
-    test.onload = () => { img = url; paint(); toast("התמונה נוספה"); };
+    test.onload = () => { if (!legacy && items().length >= Photos.max()){ toast(`אפשר עד ${Photos.max()} תמונות לרעיון`); return; } legacy = url; paint(); toast("התמונה נוספה"); };
     test.onerror = () => toast("לא הצלחתי לטעון תמונה מהקישור הזה");
     test.src = url;
   });
@@ -3233,9 +3669,27 @@ function ideaForm(idea){
   f.onsubmit = e => {
     e.preventDefault(); addRow();
     const title = f.title.value.trim(); if (!title){ f.title.focus(); f.title.style.borderBottomColor = "var(--err)"; return; }
-    const data = { title, desc:f.desc.value.trim(), link:f.link.value.trim(), image:img, rating:state.rating, review:(sh.querySelector("#fb .fb-text").value||"").trim() };
+    const data = { title, desc:f.desc.value.trim(), link:f.link.value.trim(), rating:state.rating, review:(sh.querySelector("#fb .fb-text").value||"").trim(),
+      cat, place:f.place.value.trim(), cost, price: cost === "paid" || cost === "tix" ? f.price.value.trim() : "", tixLink: cost === "tix" ? f.tixLink.value.trim() : "" };
     let target = idea;
-    if (edit) Object.assign(idea, data); else { target = { id:uid(), ...data, likes:[me], created:Date.now() }; DB.ideas.push(target); }
+    if (edit){
+      Object.assign(idea, data);
+      if (legacy && legacy !== (idea.coverId ? "" : idea.image)){ idea.image = legacy; delete idea.coverId; }   // a newly pasted link becomes the cover
+      else if (!legacy && idea.image && !idea.coverId) idea.image = "";                                          // the old picture was removed
+    } else { target = { id:tid, ...data, image:legacy, likes:[me], created:Date.now() }; DB.ideas.push(target); }
+    // photos: removals first, then the new ones (written right after the idea itself)
+    if (dels.size || adds.length || (edit && !target.image && target.photoCount)) (async () => {
+      try {
+        const arr = await Photos.list(target);
+        for (const id of dels){ const ph = arr.find(x => x.id === id); if (ph) await Photos.remove(target, ph); }
+        for (const a of adds) await Photos.add(target, a.full, a.thumb);
+        const now = await Photos.list(target);
+        if (!target.image && now.length){ target.image = await shrinkData(now[0].img, 600); target.coverId = now[0].id; }
+        Photos.stat(target, now);
+      } catch(x){ toast(x && x.code === "limit" ? `אפשר עד ${Photos.max()} תמונות לרעיון` : errText(x)); }
+      save(); renderIdeas();
+    })();
+    else if (edit) Photos.stat(target, Photos.cache[target.id] || photos);
     // sync sub-tasks into the Tasks screen
     const keep = new Set(); let added = 0, bought = 0;
     rows.filter(r => r.title.trim()).forEach(r => {
