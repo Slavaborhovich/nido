@@ -180,6 +180,11 @@ li+li .up{border-top:1px solid var(--line)}
 .ttile .w{font-size:15px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ttile .k{margin-top:4px;font-size:12px;color:var(--faint)}
 .ttile .bot{margin-top:auto}
+.ttile{position:relative;overflow:hidden}
+.ttile::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px 2px 0 0;background:linear-gradient(90deg,transparent,var(--oc,transparent),transparent);opacity:.85;pointer-events:none}
+.ttile .when b{color:var(--oc,var(--text))}
+.next::after{content:"";position:absolute;left:30px;right:30px;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--oc,transparent),transparent);pointer-events:none}
+.t-legend{justify-content:flex-start;margin:-4px 4px 12px}
 .evtl{position:relative;margin:16px 0 2px}
 .evtl .hd{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.06em;color:rgba(255,236,214,.6);padding:0 2px 6px}
 .evtl .ct{display:flex;align-items:center;gap:8px}
@@ -2450,6 +2455,8 @@ function cdUnits(c){
   return `<div class="days"><b>${d}</b><span>${d===1 ? "יום" : "ימים"}</span></div><span class="dv"></span><div class="clk">${clock}</div>`;
 }
 let todayTimer = null;
+/* whose item is it: an event by "של מי", a task by its assignee — the same colours as the calendar */
+const ownCol = x => colOf(x.kind === "event" ? (x.ref && x.ref.who) : x.who);
 const tagAva = id => { const u = id && USERS[id]; return u ? `<i style="background:${u.color};${avaStyle(u)}">${initial(u)}</i>` : `<i class="none">?</i>`; };
 function evTagsHTML(ev){
   const ts = evTasks(ev); if (!ts.length) return "";
@@ -2472,7 +2479,7 @@ function renderToday(){
   let hero = "";
   if (first){
     const c = countdown(first), win = 24*60, pct = c ? Math.round(Math.max(0,Math.min(1,1 - c.m/win))*100) : 0;
-    hero = `<button class="next" data-i="0">
+    hero = `<button class="next" data-i="0" style="--oc:${ownCol(first)}">
       <div class="top"><span class="tag"><i style="${first.date?"":"background:var(--gold);box-shadow:0 0 0 3px rgba(242,196,107,.18)"}"></i>${first.date?"הבא בתור":"מחכה למישהו"}</span><span class="tag">${icon(TY[first.ty][0])}${TY[first.ty][1]}</span></div>
       <h4>${esc(first.title)}</h4>
       <div class="meta">${first.date?`<span>${icon("clock")}<b class="tabular" style="font-weight:500">${dl(first)}${first.time?" · "+first.time:""}</b></span>`:""}
@@ -2489,8 +2496,9 @@ function renderToday(){
     </header>
     <section class="t-greet"><h2>${greeting(now.getHours())}, <b>${esc(meU().name)}</b></h2><p>${sub}</p></section>
     <div class="t-sec"><h3>בקרוב<span>${items.length}</span></h3><button id="allCal">יומן</button></div>
+    ${items.length ? `<div class="cv-legend t-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${together()}"></i>יחד</span></div>` : ""}
     ${ items.length ? hero + (rest.length ? `<div class="tgrid">${rest.map((x,i)=>`
-      <button class="ttile" data-i="${i+1}">
+      <button class="ttile" data-i="${i+1}" style="--oc:${ownCol(x)}">
         <div class="row"><span class="ty ty-${x.ty}">${icon(TY[x.ty][0])}</span><span class="when"><b>${x.time||"—"}</b>${dl(x)}</span></div>
         <div class="bot"><div class="w">${esc(x.title)}</div><div class="k">${whoLine(x)}</div>${x.kind === "event" ? evLineHTML(x.ref) : ""}</div>
       </button>`).join("")}</div>` : "")
