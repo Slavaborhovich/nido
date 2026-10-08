@@ -1133,7 +1133,7 @@ const Cloud = {
     else if (me && me !== u){ me = u; setSession(u); }
     this.listen();
     if (!this._notesOn){ this._notesOn = true; Notes.listen(); }
-    this.listenFamily(); this.presence(); Announce.listen();
+    this.listenFamily(); this.presence(); Announce.listen(); famAdminWelcome();
     Notes.refreshFab(); this.notesSentCheck();
     if (this._lastLimit !== meU().noteLimit){ this._lastLimit = meU().noteLimit; Notes.alreadySent().then(() => Notes.refreshFab()); }
     Push.refresh();
@@ -1759,6 +1759,27 @@ const Announce = {
   async send(title, text, target){ await Cloud.fb.addDoc(Cloud.fb.collection(Cloud.db, "announcements"), { title, text, target, at: Date.now(), by: Cloud.user.uid }); },
   async remove(id){ await Cloud.fb.deleteDoc(Cloud.fb.doc(Cloud.db, "announcements", id)); },
 };
+
+/* one-time welcome for someone who was just made a family admin */
+function famAdminWelcome(){
+  if (!CLOUD || Cloud.isSuper || roleOf() !== "admin" || !Cloud.user) return;
+  const k = "nido.famAdminHi." + Cloud.user.uid; try { if (localStorage.getItem(k)) return; } catch(e){ return; }
+  const go = () => {
+    if (!me || $("#app").hidden || document.getElementById("splash") || $("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim,.note-scrim")){ setTimeout(go, 1500); return; }
+    try { localStorage.setItem(k, "1"); } catch(e){}
+    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
+    w.innerHTML = `<div class="cfm upd" role="dialog" aria-modal="true" aria-labelledby="faT">
+      <div class="ic upd-ic">👑</div>
+      <h3 id="faT">שלום ${esc(meU().name)},</h3>
+      <p class="upd-p">מעכשיו אתה זה שלובש את המכנסים בבית.</p>
+      <p class="upd-p">הכוח בידיים שלך, אך תיזהר לא לעצבן את האישה 😏</p>
+      <p class="upd-p" style="font-size:13px;color:#A8917A">ניהול המשפחה נמצא בפרופיל שלך ← "ניהול המשפחה".</p>
+      <div class="row"><button type="button" class="go">קיבלתי</button></div></div>`;
+    document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    w.querySelector(".go").onclick = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 220); };
+  };
+  setTimeout(go, 1200);
+}
 
 /* ================= מסך ניהול (system admin only) ================= */
 const ago = t => { if (!t) return "עוד לא נכנס/ה"; const m = Math.round((Date.now() - t) / 60e3);
