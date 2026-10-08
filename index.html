@@ -830,7 +830,26 @@ body.admin-open .note-fab{display:none}
 .adm-row .t{flex:1;min-width:0}.adm-row .t b{display:block;font-weight:500;font-size:14.5px}.adm-row .t small{font-size:12px;color:#93806C}
 .adm-row .old{color:#F3A493}
 .adm-row .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,226,190,.15);flex:none}
-.adm-row .dot.on{background:#8FD3A8;box-shadow:0 0 0 3px rgba(143,211,168,.2)}.adm-row .dot.mid{background:#E8C46A}
+.adm-row .dot.on{background:#8FD3A8;box-shadow:0 0 0 3px rgba(143,211,168,.2)}.adm-row .dot.mid{background:#E8C46A}.adm-row .dot.off{background:#E8705A}
+.adm-row .t b small{font-weight:400;font-size:11.5px;color:#93806C}
+.adm-row .rank{width:24px;text-align:center;font-size:15px;color:#F2C48A;flex:none}
+.adm-row .ic-fam{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(242,182,107,.14);color:#F2C48A;flex:none}
+.adm-row .spark{direction:ltr;display:flex;align-items:flex-end;gap:2px;height:22px;width:58px;flex:none}
+.adm-row .spark i{flex:1;background:rgba(242,196,138,.55);border-radius:1px}
+.adm-warn{border-color:rgba(232,112,90,.35)}
+.adm-quota{height:8px;border-radius:99px;background:rgba(255,226,190,.08);overflow:hidden}
+.adm-quota i{display:block;height:100%;background:linear-gradient(90deg,#8FD3A8,#E8C46A);border-radius:99px}
+.adm-pill{font-size:11.5px;font-weight:500;padding:2px 9px;border-radius:99px;background:rgba(255,226,190,.1);color:#B9A48E}
+.adm-pill.on{background:rgba(143,211,168,.16);color:#8FD3A8}.adm-pill.mid{background:rgba(232,196,106,.16);color:#E8C46A}.adm-pill.off{background:rgba(232,112,90,.16);color:#F3A493}
+.adm-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.adm-mini div{padding:9px 4px;border-radius:12px;background:rgba(255,226,190,.05);text-align:center}
+.adm-mini b{display:block;font-size:16px;font-weight:500}.adm-mini small{font-size:10.5px;color:#93806C}
+.adm-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 2px;color:#B9A48E}.adm-kv b{font-weight:500;color:var(--text)}.adm-kv small{color:#93806C;font-weight:400}
+.adm-bars{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:12px;padding:0 2px;direction:ltr}
+.adm-bars i{flex:1;background:linear-gradient(180deg,#F2C48A,rgba(242,182,107,.45));border-radius:2px 2px 0 0}
+.adm-bars-l{display:flex;justify-content:space-between;font-size:10.5px;color:#7E6B58;margin:4px 2px 12px;direction:ltr}
+.adm-types{display:grid;grid-template-columns:1.4fr 1.3fr .7fr .7fr;gap:7px 8px;font-size:13px;padding-top:10px;border-top:1px solid rgba(255,214,170,.08)}
+.adm-types .h{font-size:11px;color:#7E6B58}
 .adm-fam{display:flex;align-items:center;gap:12px;width:100%;padding:14px;margin-bottom:8px;border-radius:18px;background:rgba(46,33,22,.6);border:1px solid rgba(255,214,170,.12);color:var(--text);text-align:start;font:inherit}
 .adm-fam.off{opacity:.55}
 .adm-fam .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:rgba(242,182,107,.14);color:#F2C48A;flex:none}
@@ -1127,7 +1146,7 @@ const Cloud = {
     if (this.isSuper && !qs.metadata.fromCache) this.tagFamilies(list);
     this.fam = mine.family || HOME_FAMILY;
     try { localStorage.setItem("nido.family", this.fam); } catch(e){}
-    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY, lastSeen:x.lastSeen||0, build:x.build||"", noteLimit:+x.noteLimit||1 });
+    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY, lastSeen:x.lastSeen||0, build:x.build||"", noteLimit:+x.noteLimit||1, lastAct:x.lastAct||0, act:Array.isArray(x.act)?x.act:[], created:x.created||0 });
     const map = {}, all = {};
     list.forEach(x => { if (!x.username) return; all[x.username] = toUser(x); if ((x.family || HOME_FAMILY) === this.fam) map[x.username] = all[x.username]; });
     Object.keys(ALLUSERS).forEach(k => delete ALLUSERS[k]); Object.assign(ALLUSERS, all);
@@ -1161,6 +1180,16 @@ const Cloud = {
   /* "last seen" + version for the admin overview — at most every 30 minutes */
   presence(){
     const u = this.user; if (!u) return;
+    // which days this person opened the app (last 30) — for the admin's activity view
+    const today = iso(new Date()), dk = "nido.actDay." + u.uid, mine = Object.values(ALLUSERS).find(x => x.uid === u.uid);
+    let dl = ""; try { dl = localStorage.getItem(dk) || ""; } catch(e){}
+    if (mine && dl !== today && !mine.act.includes(today)){
+      try { localStorage.setItem(dk, today); } catch(e){}
+      const from = iso(new Date(Date.now() - 30 * 864e5));
+      this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), { act: [...mine.act.filter(d => d > from), today], lastSeen: Date.now(), build: BUILD }).catch(() => {});
+      try { localStorage.setItem("nido.seenAt." + u.uid, Date.now()); } catch(e){}
+      return;
+    }
     const k = "nido.seenAt." + u.uid; let last = 0; try { last = +localStorage.getItem(k) || 0; } catch(e){}
     if (Date.now() - last < 30 * 60e3) return;
     try { localStorage.setItem(k, Date.now()); } catch(e){}
@@ -1189,6 +1218,20 @@ const Cloud = {
     Object.values(ALLUSERS).filter(u => u.family === id && u.uid !== BOOT_ADMIN_UID).forEach(u => b.update(F.doc(this.db, "users", u.uid), { active: on }));
     b.set(F.doc(this.db, "families", id), { active: on }, { merge:true });
     await b.commit();
+  },
+  /* system admin: remove a whole family — its people, content, notes, settings and counters */
+  async deleteFamily(fid){
+    if (!fid || fid === HOME_FAMILY) throw { code:"missing" };
+    const F = this.fb, refs = [];
+    const all = async (...path) => { try { (await F.getDocs(F.collection(this.db, ...path))).docs.forEach(d => refs.push(d.ref)); } catch(e){ console.warn("[delete family]", path.join("/"), e); throw e; } };
+    for (const env of ["prod", "test"]) for (const c of COLS) await all("families", fid, "envs", env, c);
+    await all("families", fid, "notes"); await all("families", fid, "meta");
+    Object.entries(ALLUSERS).filter(([, u]) => u.family === fid && u.uid !== BOOT_ADMIN_UID).forEach(([k, u]) => { refs.push(F.doc(this.db, "users", u.uid)); refs.push(F.doc(this.db, "logins", k)); });
+    Announce.list.filter(a => a.target === fid).forEach(a => refs.push(F.doc(this.db, "announcements", a.id)));
+    refs.push(F.doc(this.db, "stats", fid));
+    for (let i = 0; i < refs.length; i += 400){ const b = F.writeBatch(this.db); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
+    await F.deleteDoc(F.doc(this.db, "families", fid));
+    return refs.length;
   },
   async bootstrap(){
     const F = this.fb, uid = this.user.uid, b = F.writeBatch(this.db);
@@ -1290,7 +1333,7 @@ const Cloud = {
     if (first) this.loaded.add(c);
     if (first && this.loaded.size === COLS.length && ENV === "test" && COLS.every(k => !DB[k].length)) return this.seedTest();
     if (changed){ cacheLocal(); softRender(); }
-    if (first && this.loaded.size === COLS.length) Notify.schedule();
+    if (first && this.loaded.size === COLS.length){ Notify.schedule(); Stats.loaded(); }
   },
   seedTest(){
     const s = seed(); s.shop.forEach(i => { if (!i.list) i.list = "super"; });
@@ -1301,7 +1344,7 @@ const Cloud = {
     if (!this.fb || !this.user){ this.dirty = true; return; }
     const F = this.fb; let batch = F.writeBatch(this.db), n = 0; const commits = [];
     const add = fn => { fn(batch); if (++n >= 400){ commits.push(batch.commit()); batch = F.writeBatch(this.db); n = 0; } };
-    const changes = [];
+    const changes = []; let dels = 0;
     for (const c of COLS){
       const snap = this.snap[c] || (this.snap[c] = new Map()), ord = this.order[c] || (this.order[c] = new Map());
       let max = 0; ord.forEach(v => { if (v > max) max = v; });
@@ -1318,11 +1361,11 @@ const Cloud = {
           add(b => b.set(this.ref(c, it.id), data));
         }
       }
-      if (!force) for (const id of [...snap.keys()]) if (!seen.has(id)){ snap.delete(id); ord.delete(id); add(b => b.delete(this.ref(c, id))); }
+      if (!force) for (const id of [...snap.keys()]) if (!seen.has(id)){ snap.delete(id); ord.delete(id); dels++; add(b => b.delete(this.ref(c, id))); }
     }
     if (n) commits.push(batch.commit());
     Promise.all(commits).catch(err => this.fail(err));
-    if (!force && !this.seeding) Notify.changes(changes);
+    if (!force && !this.seeding){ Notify.changes(changes); if (changes.length || dels){ const adds = {}; changes.forEach(x => { if (!x.before) adds[x.c] = (adds[x.c] || 0) + 1; }); Stats.record(adds, changes.length + dels); } }
     if (changes.length) Notify.schedule();
   },
   fail(err){
@@ -1589,7 +1632,7 @@ const Notes = {
       all.push({ ...note, id: this.docId(this.count() + 1), from: me, to: toKeys });
       localStorage.setItem("nido.notes", JSON.stringify(all));
     }
-    this.markSent();
+    this.markSent(); Stats.record({ notes: 1 }, 1);
   },
   async ack(n){
     if (CLOUD){
@@ -1787,17 +1830,98 @@ function famAdminWelcome(){
   setTimeout(go, 1200);
 }
 
+/* ================= usage counters (for the system admin) =================
+   Only numbers and dates: how many things were added / changed per type and per day, and how big the family's data is.
+   Never what's written in them. Sent in small bundles so it barely costs anything. */
+const Stats = {
+  pend:null, t:null,
+  on(){ return CLOUD && ENV === "prod" && !!(Cloud.user && Cloud.fb && Cloud.fam); },
+  record(adds, acts){
+    if (!this.on() || !acts) return;
+    const p = this.pend || (this.pend = { adds:{}, acts:0 });
+    Object.keys(adds).forEach(c => p.adds[c] = (p.adds[c] || 0) + adds[c]); p.acts += acts;
+    clearTimeout(this.t); this.t = setTimeout(() => this.flush(), 40e3);
+  },
+  /* once everything is loaded: refresh the size numbers, at most twice a day */
+  loaded(){
+    if (!this.on()) return;
+    const k = "nido.sized." + Cloud.fam; let last = 0; try { last = +localStorage.getItem(k) || 0; } catch(e){}
+    if (Date.now() - last > 12 * 36e5) setTimeout(() => this.flush(true), 4000);
+  },
+  async flush(sizeOnly){
+    clearTimeout(this.t); this.t = null;
+    if (!this.on()) return;
+    const p = sizeOnly ? null : this.pend; if (!sizeOnly) this.pend = null;
+    if (!p && !sizeOnly) return;
+    const F = Cloud.fb, now = Date.now(), fam = Cloud.fam, items = {}, bytes = {};
+    COLS.forEach(c => { const a = DB[c] || []; items[c] = a.length; bytes[c] = JSON.stringify(a).length; });
+    const data = { items, bytes, sizedAt: now };
+    if (p){
+      data.lastAct = now; data.days = { [iso(new Date())]: F.increment(p.acts) };
+      data.adds = {}; data.last = {};
+      Object.keys(p.adds).forEach(c => { data.adds[c] = F.increment(p.adds[c]); data.last[c] = now; });
+    }
+    try {
+      await F.setDoc(F.doc(Cloud.db, "stats", fam), data, { merge:true });
+      try { localStorage.setItem("nido.sized." + fam, now); } catch(e){}
+      if (p) F.updateDoc(F.doc(Cloud.db, "users", Cloud.user.uid), { lastAct: now }).catch(() => {});
+    } catch(e){
+      console.warn("[stats]", e);
+      if (p && !this.pend) this.pend = p;      // try again with the next change
+    }
+  },
+};
+document.addEventListener("visibilitychange", () => { if (document.hidden && Stats.pend) Stats.flush(); });
+
 /* ================= מסך ניהול (system admin only) ================= */
 const ago = t => { if (!t) return "עוד לא נכנס/ה"; const m = Math.round((Date.now() - t) / 60e3);
   return m < 2 ? "עכשיו" : m < 60 ? `לפני ${m} דק׳` : m < 1440 ? `לפני ${Math.round(m / 60)} שע׳` : m < 2880 ? "אתמול" : `לפני ${Math.round(m / 1440)} ימים`; };
 const famName = id => id === HOME_FAMILY ? "המשפחה שלנו" : "משפחת " + (FAMILIES[id]?.name || id);
+const DAYMS = 864e5;
+const lastUse = u => Math.max(u.lastSeen || 0, u.lastAct || 0);
+const health = t => !t ? "never" : Date.now() - t <= 3 * DAYMS ? "on" : Date.now() - t <= 14 * DAYMS ? "mid" : "off";
+const HEALTH = { on:"פעיל", mid:"דועך", off:"רדום", never:"לא התחיל" };
+const STAT_TYPES = [["tasks","משימות"],["events","אירועים ביומן"],["shop","פריטי קניות"],["ideas","רעיונות"],["notes","פתקים"],["coupons","קופונים"],["survey","סקרים"]];
+const fmtSize = b => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(b < 10240 ? 1 : 0)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+const dateHe = t => t ? new Date(t).toLocaleDateString("he-IL", { day:"numeric", month:"numeric", year:"2-digit" }) + " " + new Date(t).toLocaleTimeString("he-IL", { hour:"2-digit", minute:"2-digit" }) : "—";
 const Admin = {
+  stats:{}, statsUnsub:null,
   open(tab){
     if (!(CLOUD && Cloud.isSuper)) return openAdmin();
     closeSheet(); S.adminTab = tab || S.adminTab || "over"; S.adminFam = null;
-    $("#admin").hidden = false; document.body.classList.add("admin-open"); this.render();
+    $("#admin").hidden = false; document.body.classList.add("admin-open"); this.render(); this.listenStats();
   },
-  close(){ $("#admin").hidden = true; document.body.classList.remove("admin-open"); S.adminTab = null; Announce.next(); },
+  close(){ $("#admin").hidden = true; document.body.classList.remove("admin-open"); S.adminTab = null; if (this.statsUnsub){ try { this.statsUnsub(); } catch(e){} this.statsUnsub = null; } Announce.next(); },
+  listenStats(){
+    if (this.statsUnsub) return;
+    const F = Cloud.fb;
+    this.statsUnsub = F.onSnapshot(F.collection(Cloud.db, "stats"), qs => {
+      this.stats = {}; const old = iso(new Date(Date.now() - 40 * DAYMS));
+      qs.docs.forEach(d => {
+        const x = this.stats[d.id] = d.data();
+        // keep the per-day counters short
+        const drop = Object.keys(x.days || {}).filter(k => k < old);
+        if (drop.length && !qs.metadata.fromCache){ const patch = {}; drop.forEach(k => patch["days." + k] = F.deleteField()); F.updateDoc(d.ref, patch).catch(() => {}); }
+      });
+      if (!uiBusy()) this.render();
+    }, e => console.warn("[stats]", e));
+  },
+  actDays(u){ const from = iso(new Date(Date.now() - 30 * DAYMS)); return (u.act || []).filter(d => d > from).length; },
+  /* everything we know about a family's activity — numbers and dates only */
+  info(fid){
+    const people = this.people(fid).map(k => ALLUSERS[k]), st = this.stats[fid] || {}, days = st.days || {};
+    const seen = Math.max(0, ...people.map(u => u.lastSeen || 0)), act = Math.max(st.lastAct || 0, ...people.map(u => u.lastAct || 0));
+    const series = []; for (let i = 29; i >= 0; i--){ const d = iso(new Date(Date.now() - i * DAYMS)); series.push([d, +days[d] || 0]); }
+    const bytes = Object.values(st.bytes || {}).reduce((a, b) => a + (+b || 0), 0) + people.reduce((a, u) => a + (u.photo || "").length + 300, 0);
+    const items = Object.values(st.items || {}).reduce((a, b) => a + (+b || 0), 0);
+    const use = Math.max(seen, act);
+    return { people, st, seen, act, use, status: FAMILIES[fid]?.active === false ? "off" : health(use), series, acts30: series.reduce((a, x) => a + x[1], 0),
+      bytes, items, sized: !!st.sizedAt, active: people.filter(u => lastUse(u) > Date.now() - 14 * DAYMS).length };
+  },
+  userLine(u){
+    const t = lastUse(u), h = health(t);
+    return `${!u.lastSeen ? "עוד לא נכנס/ה אף פעם" : "נכנס/ה " + esc(ago(u.lastSeen))} · ${this.actDays(u)}/30 ימים${u.lastAct ? " · פעולה אחרונה " + esc(ago(u.lastAct)) : ""}`;
+  },
   famIds(){ const ids = new Set(Object.keys(FAMILIES)); Object.values(ALLUSERS).forEach(u => ids.add(u.family)); return [...ids].sort((a, b) => a === HOME_FAMILY ? -1 : b === HOME_FAMILY ? 1 : famName(a).localeCompare(famName(b), "he")); },
   people(fid){ return Object.keys(ALLUSERS).filter(k => ALLUSERS[k].family === fid).sort((a, b) => (ALLUSERS[b].lastSeen || 0) - (ALLUSERS[a].lastSeen || 0)); },
   render(){
@@ -1815,22 +1939,45 @@ const Admin = {
     this.bind(el);
   },
   overview(){
-    const users = Object.values(ALLUSERS), week = Date.now() - 7 * 864e5, day = Date.now() - 864e5;
-    const active = users.filter(u => u.lastSeen > week).length, today = users.filter(u => u.lastSeen > day).length;
+    const users = Object.values(ALLUSERS), week = Date.now() - 7 * DAYMS, day = Date.now() - DAYMS;
+    const active = users.filter(u => lastUse(u) > week).length, today = users.filter(u => lastUse(u) > day).length;
     const outdated = users.filter(u => u.build && u.build !== BUILD).length;
+    const fams = this.famIds().map(fid => ({ fid, ...this.info(fid) }));
+    const total = fams.reduce((a, f) => a + f.bytes, 0), quota = 1073741824;
+    // who's not using it: families dormant / never started, people dormant / never signed in (after 3 days)
+    const old = t => !t || Date.now() - t > 3 * DAYMS;
+    const famFlag = fams.filter(f => f.fid !== HOME_FAMILY && (f.status === "off" || (f.status === "never" && old(FAMILIES[f.fid]?.created))));
+    const userFlag = users.filter(u => u.uid !== BOOT_ADMIN_UID && !famFlag.some(f => f.fid === u.family) && (health(lastUse(u)) === "off" || (!u.lastSeen && old(u.created))))
+      .sort((a, b) => lastUse(a) - lastUse(b));
+    const key = u => Object.keys(ALLUSERS).find(k => ALLUSERS[k] === u);
+    const rank = [...fams].sort((a, b) => b.acts30 - a.acts30 || b.use - a.use);
     return `<div class="adm-stats">
-        <div><b class="tabular">${this.famIds().length}</b><small>משפחות</small></div>
+        <div><b class="tabular">${fams.length}</b><small>משפחות</small></div>
         <div><b class="tabular">${users.length}</b><small>משתמשים</small></div>
-        <div><b class="tabular">${today}</b><small>נכנסו היום</small></div>
+        <div><b class="tabular">${today}</b><small>פעילים היום</small></div>
         <div><b class="tabular">${active}</b><small>פעילים השבוע</small></div>
       </div>
-      <p class="adm-note">גרסה נוכחית: <b dir="ltr">${esc(BUILD)}</b>${outdated ? ` · ${outdated} עדיין בגרסה ישנה` : " · כולם מעודכנים"}</p>
-      ${this.famIds().map(fid => `<section class="adm-card"><h3>${esc(famName(fid))}${FAMILIES[fid]?.active === false ? ` <span class="role-badge viewer">מושבתת</span>` : ""}</h3>
-        ${this.people(fid).map(k => { const u = ALLUSERS[k], old = u.build && u.build !== BUILD; return `<div class="adm-row ${u.active === false ? "off" : ""}">
+      <section class="adm-card"><h3>נפח במסד הנתונים</h3>
+        <div class="adm-quota"><i style="width:${Math.max(1, Math.min(100, total / quota * 100)).toFixed(1)}%"></i></div>
+        <p class="adm-note" style="margin-bottom:0">כ-<b>${fmtSize(total)}</b> מתוך 1 GB במנוי החינמי (הערכה). ${fams.filter(f => !f.sized).length ? `למשפחות שעוד לא פתחו את האפליקציה מאז העדכון אין עדיין מדידה.` : ""}</p></section>
+      <section class="adm-card ${famFlag.length || userFlag.length ? "adm-warn" : ""}"><h3>דורש תשומת לב</h3>
+        ${famFlag.map(f => `<button type="button" class="adm-row" data-fam="${esc(f.fid)}">
+          <span class="ic-fam">${icon("home")}</span>
+          <span class="t"><b>${esc(famName(f.fid))}</b><small>${FAMILIES[f.fid]?.active === false ? "מושבתת · " : ""}${f.use ? "שימוש אחרון " + esc(ago(f.use)) : "אף אחד עוד לא נכנס"} · ${f.people.length} משתמשים${f.sized ? " · " + fmtSize(f.bytes) : ""}</small></span>
+          <i class="dot ${f.status}"></i></button>`).join("")}
+        ${userFlag.map(u => `<button type="button" class="adm-row" data-u="${esc(key(u))}">
           <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
-          <span class="t"><b>${esc(u.name)}</b><small>${esc(ago(u.lastSeen))}${u.build ? ` · <span dir="ltr" class="${old ? "old" : ""}">${esc(u.build)}</span>` : ""}</small></span>
-          <i class="dot ${u.lastSeen > day ? "on" : u.lastSeen > week ? "mid" : ""}"></i></div>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}</section>`).join("")}
-      <p class="adm-note">רואים רק מתי כל אחד נכנס ובאיזו גרסה, לא את התוכן שלהם.</p>`;
+          <span class="t"><b>${esc(u.name)} <small>· ${esc(famName(u.family))}</small></b><small>${this.userLine(u)}</small></span>
+          <i class="dot ${health(lastUse(u))}"></i></button>`).join("")}
+        ${famFlag.length || userFlag.length ? `<p class="adm-note" style="margin-bottom:0">רדום = 14 יום בלי שימוש. לחיצה פותחת — משם אפשר למחוק.</p>` : `<p class="adm-note" style="margin:0">כולם משתמשים 🎉 אין משפחות או משתמשים רדומים.</p>`}</section>
+      <section class="adm-card"><h3>דירוג משפחות · 30 יום אחרונים</h3>
+        ${rank.map((f, i) => `<button type="button" class="adm-row" data-fam="${esc(f.fid)}">
+          <span class="rank tabular">${i + 1}</span>
+          <span class="t"><b>${esc(famName(f.fid))}</b><small>${f.acts30} פעולות · ${f.active}/${f.people.length} פעילים · ${f.use ? esc(ago(f.use)) : "לא התחילה"}</small></span>
+          <span class="spark">${f.series.slice(-14).map(x => `<i style="height:${x[1] ? Math.max(15, Math.min(100, x[1] / Math.max(1, ...f.series.map(y => y[1])) * 100)) : 4}%"></i>`).join("")}</span>
+          <i class="dot ${f.status}"></i></button>`).join("")}</section>
+      <p class="adm-note">גרסה נוכחית: <b dir="ltr">${esc(BUILD)}</b>${outdated ? ` · ${outdated} עדיין בגרסה ישנה` : " · כולם מעודכנים"}</p>
+      <p class="adm-note">🟢 עד 3 ימים · 🟡 עד 14 יום · 🔴 יותר מ-14 יום. רואים רק מספרים ותאריכים, לא את התוכן. ספירת הפעולות התחילה עם העדכון הזה.</p>`;
   },
   families(){
     return `${this.famIds().map(fid => { const f = FAMILIES[fid] || {}, n = this.people(fid).length, city = (CITIES.find(c => c[0] === (f.city || "293397")) || [])[1] || "";
@@ -1842,11 +1989,12 @@ const Admin = {
     const f = FAMILIES[fid] || {}, feats = f.features || {}, home = fid === HOME_FAMILY;
     return `<button type="button" class="adm-back" data-back>${icon("prev")} כל המשפחות</button>
       <div class="adm-title"><h2>${esc(famName(fid))}</h2>${!home ? `<button type="button" class="secondary" data-rename>${icon("edit")}שם</button>` : ""}</div>
+      ${this.activity(fid)}
       <section class="adm-card"><h3>משתמשים</h3>
         ${this.people(fid).map(k => { const u = ALLUSERS[k]; return `<button type="button" class="adm-row" data-u="${esc(k)}">
           <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
-          <span class="t"><b>${esc(u.name)}${k === me ? " (אני)" : ""}</b><small dir="ltr">@${esc(k)}</small></span>
-          ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor", u.uid)}</button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
+          <span class="t"><b>${esc(u.name)}${k === me ? " (אני)" : ""} <small dir="ltr">@${esc(k)}</small></b><small>${this.userLine(u)}</small></span>
+          ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor", u.uid)}<i class="dot ${health(lastUse(u))}"></i></button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
         <button type="button" class="secondary adm-add" data-newuser>${icon("plus")} משתמש חדש</button></section>
       <section class="adm-card"><h3>מנהלי המשפחה ומכסה</h3>
         <p class="adm-note" style="margin-top:0">${(() => { const a = this.people(fid).filter(k => ALLUSERS[k].role === "admin" && ALLUSERS[k].uid !== BOOT_ADMIN_UID); return a.length ? "מנהל משפחה: " + a.map(k => esc(ALLUSERS[k].name)).join(", ") + " — יכול להוסיף ולמחוק משתמשים במשפחה." : "אין מנהל משפחה. כדי למנות — פתח משתמש ובחר הרשאה \"מנהל משפחה\"."; })()}</p>
@@ -1857,7 +2005,29 @@ const Admin = {
         ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>`).join("")}</section>
       ${!home ? `<section class="adm-card danger-zone"><h3>השבתת המשפחה</h3>
         <p class="adm-note">${f.active === false ? "המשפחה מושבתת — אף אחד ממנה לא יכול להיכנס." : "כל המשתמשים של המשפחה ייחסמו. הנתונים שלהם נשמרים, ואפשר להחזיר בכל רגע."}</p>
-        <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>` : ""}`;
+        <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>
+      <section class="adm-card danger-zone"><h3>מחיקת המשפחה לצמיתות</h3>
+        <p class="adm-note">מוחק את כל המשתמשים שלה ואת כל התוכן — משימות, יומן, קניות, רעיונות, פתקים ותמונות. מפנה מקום במסד הנתונים. אין דרך חזרה.</p>
+        <button type="button" class="danger" data-delfam>${icon("trash")} מחיקת ${esc(famName(fid))}</button></section>` : ""}`;
+  },
+  activity(fid){
+    const x = this.info(fid), st = x.st, max = Math.max(1, ...x.series.map(y => y[1]));
+    return `<section class="adm-card"><h3>פעילות <span class="adm-pill ${x.status}">${FAMILIES[fid]?.active === false ? "מושבתת" : HEALTH[x.status]}</span></h3>
+        <div class="adm-mini">
+          <div><b class="tabular">${x.acts30}</b><small>פעולות ב-30 יום</small></div>
+          <div><b class="tabular">${x.active}/${x.people.length}</b><small>משתמשים פעילים</small></div>
+          <div><b class="tabular">${x.sized ? x.items : "—"}</b><small>פריטים</small></div>
+          <div><b class="tabular">${x.sized ? fmtSize(x.bytes) : "—"}</b><small>נפח</small></div>
+        </div>
+        <div class="adm-kv"><span>כניסה אחרונה</span><b>${x.seen ? esc(dateHe(x.seen)) + ` <small>(${esc(ago(x.seen))})</small>` : "אף אחד עוד לא נכנס"}</b></div>
+        <div class="adm-kv"><span>פעולה אחרונה</span><b>${x.act ? esc(dateHe(x.act)) + ` <small>(${esc(ago(x.act))})</small>` : "—"}</b></div>
+        <div class="adm-bars" title="פעולות ביום">${x.series.map(([d, n]) => `<i style="height:${n ? Math.max(8, n / max * 100) : 3}%" title="${d}: ${n}"></i>`).join("")}</div>
+        <div class="adm-bars-l"><span>לפני 30 יום</span><span>היום</span></div>
+        <div class="adm-types">
+          <span class="h">סוג</span><span class="h">נוסף לאחרונה</span><span class="h">נוספו</span><span class="h">כרגע</span>
+          ${STAT_TYPES.map(([k, l]) => `<span>${l}</span><span>${st.last?.[k] ? esc(ago(st.last[k])) : "—"}</span><span class="tabular">${+(st.adds?.[k]) || 0}</span><span class="tabular">${k === "notes" ? "—" : st.items ? (+st.items[k] || 0) : "—"}</span>`).join("")}
+        </div>
+        <p class="adm-note" style="margin-bottom:0">"נוספו" נספר מאז העדכון הזה. "כרגע" ונפח מתעדכנים כשמישהו מהמשפחה פותח את האפליקציה${st.sizedAt ? ` (נמדד ${esc(ago(st.sizedAt))})` : ""}.</p></section>`;
   },
   messages(){
     const list = [...Announce.list].sort((a, b) => b.at - a.at);
@@ -1874,7 +2044,7 @@ const Admin = {
   },
   bind(el){
     const q = s => el.querySelector(s);
-    el.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => { S.adminFam = b.dataset.fam; this.render(); el.scrollTop = 0; });
+    el.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => { S.adminTab = "fams"; S.adminFam = b.dataset.fam; this.render(); el.scrollTop = 0; });
     q("[data-back]")?.addEventListener("click", () => { S.adminFam = null; this.render(); });
     q("[data-newfam]")?.addEventListener("click", () => openFamilyForm(null));
     q("[data-rename]")?.addEventListener("click", () => openFamilyForm(S.adminFam));
@@ -1890,6 +2060,14 @@ const Admin = {
       const on = e.currentTarget.dataset.active === "on", fid = S.adminFam;
       if (!on && !await askConfirm(`להשבית את ${famName(fid)}?`, "כל המשתמשים שלה לא יוכלו להיכנס עד שתפעיל מחדש. שום דבר לא נמחק.", "השבתה")) return;
       try { await Cloud.setFamilyActive(fid, on); toast(on ? "המשפחה הופעלה" : "המשפחה הושבתה"); } catch(x){ toast(errText(x)); }
+    });
+    q("[data-delfam]")?.addEventListener("click", async e => {
+      const fid = S.adminFam, x = this.info(fid);
+      if (!await askConfirm(`למחוק את ${famName(fid)}?`, `${x.people.length} משתמשים${x.sized ? `, ${x.items} פריטים (${fmtSize(x.bytes)})` : ""} יימחקו לצמיתות.`, "המשך")) return;
+      if (!await askConfirm("בטוח לגמרי?", "אין דרך לשחזר את המשפחה או את התוכן שלה אחרי המחיקה.", "מחיקה לצמיתות")) return;
+      const b = e.currentTarget; busyBtn(b, true, "מוחק…");
+      try { const n = await Cloud.deleteFamily(fid); S.adminFam = null; toast(`המשפחה נמחקה (${n} רשומות)`); this.render(); }
+      catch(x){ busyBtn(b, false); toast(errText(x)); }
     });
     q("[data-send]")?.addEventListener("click", async e => {
       const title = q("[data-title]").value.trim(), text = q("[data-text]").value.trim(), target = q("[data-target]").value;
