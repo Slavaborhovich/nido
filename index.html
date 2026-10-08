@@ -838,7 +838,25 @@ body.admin-open .note-fab{display:none}
 .adm-row .spark i{flex:1;background:rgba(242,196,138,.55);border-radius:1px}
 .adm-warn{border-color:rgba(232,112,90,.35)}
 .adm-quota{height:8px;border-radius:99px;background:rgba(255,226,190,.08);overflow:hidden}
-.adm-quota i{display:block;height:100%;background:linear-gradient(90deg,#8FD3A8,#E8C46A);border-radius:99px}
+.adm-quota i{display:block;height:100%;background:#8FD3A8;border-radius:99px}
+.adm-quota.mid i{background:#E8C46A}.adm-quota.hi i{background:#D98A76}
+.adm-health{padding:16px;border-radius:20px;margin-bottom:12px;background:rgba(46,33,22,.6);border:1px solid rgba(255,214,170,.14)}
+.adm-health.green{border-color:rgba(143,211,168,.28)}.adm-health.amber{border-color:rgba(232,196,106,.32)}.adm-health.red{border-color:rgba(217,138,118,.45)}
+.hh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hh-top h2{margin:0;font-size:20px;font-weight:500}.hh-top p{margin:3px 0 0;font-size:12.5px;color:#93806C}
+.hh-refresh{height:34px;padding:0 12px;font-size:13px;white-space:nowrap;flex:none}
+.hh-status{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.hh-badge{font-size:15px;font-weight:500}.hh-status small{font-size:12px;color:#93806C}
+.adm-sec{margin:22px 4px 10px;font-size:12px;font-weight:500;letter-spacing:.06em;color:#93806C}
+.adm-alert{align-items:flex-start}.adm-alert .al-ic{width:24px;text-align:center;flex:none;padding-top:1px}
+.adm-alert.low .t b{color:#B9A48E}
+.hh-meter .hh-ml{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:8px;color:#B9A48E}.hh-ml b{font-weight:500;color:var(--text)}
+.hh-meter small{display:block;margin-top:5px;font-size:11.5px;color:#93806C}
+.hh-ph{border-style:dashed}.hh-ph-t{margin:0 0 6px;font-size:14px;color:#E8C46A}
+.hh-svc{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-top:1px solid rgba(255,214,170,.08);font-size:14px}
+.adm-card h3 + .hh-svc{border-top:0}
+.hh-svc b{font-weight:500;font-size:13px;color:#93806C}.hh-svc b.ok{color:#8FD3A8}.hh-svc b.hi{color:#F3A493}
+#adm-dormant summary{cursor:pointer;color:#F2C48A;font-size:13.5px;padding:2px 0 6px}
 .adm-pill{font-size:11.5px;font-weight:500;padding:2px 9px;border-radius:99px;background:rgba(255,226,190,.1);color:#B9A48E}
 .adm-pill.on{background:rgba(143,211,168,.16);color:#8FD3A8}.adm-pill.mid{background:rgba(232,196,106,.16);color:#E8C46A}.adm-pill.off{background:rgba(232,112,90,.16);color:#F3A493}
 .adm-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
@@ -1370,6 +1388,7 @@ const Cloud = {
   },
   fail(err){
     console.error("[nido cloud]", err);
+    Stats.error();
     if (this.failedOnce) return; this.failedOnce = true; setTimeout(() => this.failedOnce = false, 15000);
     const code = String(err && err.code || "");
     toast(code.includes("permission") ? "אין הרשאה לשמור — נסה להתחבר מחדש" : code.includes("exhausted") || code.includes("too-large") || /size|bytes/i.test(err && err.message || "") ? "הפריט גדול מדי — נסה תמונה קטנה יותר" : "השמירה לענן נכשלה — ננסה שוב");
@@ -1838,9 +1857,16 @@ const Stats = {
   on(){ return CLOUD && ENV === "prod" && !!(Cloud.user && Cloud.fb && Cloud.fam); },
   record(adds, acts){
     if (!this.on() || !acts) return;
-    const p = this.pend || (this.pend = { adds:{}, acts:0 });
+    const p = this.pend || (this.pend = { adds:{}, acts:0, errs:0 });
     Object.keys(adds).forEach(c => p.adds[c] = (p.adds[c] || 0) + adds[c]); p.acts += acts;
     clearTimeout(this.t); this.t = setTimeout(() => this.flush(), 40e3);
+  },
+  /* a database error happened — only the count per day, never the message */
+  error(){
+    if (!this.on()) return;
+    const p = this.pend || (this.pend = { adds:{}, acts:0, errs:0 });
+    p.errs++;
+    if (!this.t) this.t = setTimeout(() => this.flush(), 40e3);
   },
   /* once everything is loaded: refresh the size numbers, at most twice a day */
   loaded(){
@@ -1856,7 +1882,8 @@ const Stats = {
     const F = Cloud.fb, now = Date.now(), fam = Cloud.fam, items = {}, bytes = {};
     COLS.forEach(c => { const a = DB[c] || []; items[c] = a.length; bytes[c] = JSON.stringify(a).length; });
     const data = { items, bytes, sizedAt: now };
-    if (p){
+    if (p && p.errs) data.errs = { [iso(new Date())]: F.increment(p.errs) };
+    if (p && p.acts){
       data.lastAct = now; data.days = { [iso(new Date())]: F.increment(p.acts) };
       data.adds = {}; data.last = {};
       Object.keys(p.adds).forEach(c => { data.adds[c] = F.increment(p.adds[c]); data.last[c] = now; });
@@ -1864,7 +1891,7 @@ const Stats = {
     try {
       await F.setDoc(F.doc(Cloud.db, "stats", fam), data, { merge:true });
       try { localStorage.setItem("nido.sized." + fam, now); } catch(e){}
-      if (p) F.updateDoc(F.doc(Cloud.db, "users", Cloud.user.uid), { lastAct: now }).catch(() => {});
+      if (p && p.acts) F.updateDoc(F.doc(Cloud.db, "users", Cloud.user.uid), { lastAct: now }).catch(() => {});
     } catch(e){
       console.warn("[stats]", e);
       if (p && !this.pend) this.pend = p;      // try again with the next change
@@ -1885,26 +1912,33 @@ const STAT_TYPES = [["tasks","משימות"],["events","אירועים ביומ�
 const fmtSize = b => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(b < 10240 ? 1 : 0)} KB` : `${(b / 1048576).toFixed(1)} MB`;
 const dateHe = t => t ? new Date(t).toLocaleDateString("he-IL", { day:"numeric", month:"numeric", year:"2-digit" }) + " " + new Date(t).toLocaleTimeString("he-IL", { hour:"2-digit", minute:"2-digit" }) : "—";
 const Admin = {
-  stats:{}, statsUnsub:null,
+  stats:{}, loadedAt:0, loadErr:null, timer:null,
   open(tab){
     if (!(CLOUD && Cloud.isSuper)) return openAdmin();
     closeSheet(); S.adminTab = tab || S.adminTab || "over"; S.adminFam = null;
-    $("#admin").hidden = false; document.body.classList.add("admin-open"); this.render(); this.listenStats();
+    $("#admin").hidden = false; document.body.classList.add("admin-open"); this.render(); this.loadStats();
+    clearInterval(this.timer); this.timer = setInterval(() => { if (!document.hidden && !$("#admin").hidden) this.loadStats(); }, 60e3);
   },
-  close(){ $("#admin").hidden = true; document.body.classList.remove("admin-open"); S.adminTab = null; if (this.statsUnsub){ try { this.statsUnsub(); } catch(e){} this.statsUnsub = null; } Announce.next(); },
-  listenStats(){
-    if (this.statsUnsub) return;
+  close(){ $("#admin").hidden = true; document.body.classList.remove("admin-open"); S.adminTab = null; clearInterval(this.timer); this.timer = null; Announce.next(); },
+  /* the counters are read once when the screen opens, on "רענן", and at most every 10 minutes while it stays open */
+  async loadStats(force){
+    if (!force && this.loadedAt && Date.now() - this.loadedAt < 10 * 60e3) return;
+    if (this._loading) return; this._loading = true;
     const F = Cloud.fb;
-    this.statsUnsub = F.onSnapshot(F.collection(Cloud.db, "stats"), qs => {
+    try {
+      const qs = await F.getDocs(F.collection(Cloud.db, "stats"));
       this.stats = {}; const old = iso(new Date(Date.now() - 40 * DAYMS));
       qs.docs.forEach(d => {
         const x = this.stats[d.id] = d.data();
         // keep the per-day counters short
-        const drop = Object.keys(x.days || {}).filter(k => k < old);
-        if (drop.length && !qs.metadata.fromCache){ const patch = {}; drop.forEach(k => patch["days." + k] = F.deleteField()); F.updateDoc(d.ref, patch).catch(() => {}); }
+        const patch = {};
+        ["days", "errs"].forEach(f => Object.keys(x[f] || {}).filter(k => k < old).forEach(k => patch[f + "." + k] = F.deleteField()));
+        if (Object.keys(patch).length && !qs.metadata.fromCache) F.updateDoc(d.ref, patch).catch(() => {});
       });
-      if (!uiBusy()) this.render();
-    }, e => console.warn("[stats]", e));
+      this.loadErr = qs.metadata.fromCache ? "offline" : null; this.loadedAt = Date.now();
+    } catch(e){ console.warn("[stats]", e); this.loadErr = String(e && e.code || "error"); this.loadedAt = Date.now(); }
+    this._loading = false;
+    if (!$("#admin").hidden && !uiBusy()) this.render();
   },
   actDays(u){ const from = iso(new Date(Date.now() - 30 * DAYMS)); return (u.act || []).filter(d => d > from).length; },
   /* everything we know about a family's activity — numbers and dates only */
@@ -1938,38 +1972,87 @@ const Admin = {
     el.querySelector(".adm-tabs").onclick = e => { const b = e.target.closest("[data-t]"); if (b){ S.adminTab = b.dataset.t; S.adminFam = null; this.render(); el.scrollTop = 0; } };
     this.bind(el);
   },
-  overview(){
-    const users = Object.values(ALLUSERS), week = Date.now() - 7 * DAYMS, day = Date.now() - DAYMS;
-    const active = users.filter(u => lastUse(u) > week).length, today = users.filter(u => lastUse(u) > day).length;
-    const outdated = users.filter(u => u.build && u.build !== BUILD).length;
+  /* "בריאות המערכת" — everything here comes from data we really have; nothing is estimated as Firebase usage */
+  health(){
+    const now = Date.now(), today = iso(new Date()), users = Object.values(ALLUSERS);
     const fams = this.famIds().map(fid => ({ fid, ...this.info(fid) }));
-    const total = fams.reduce((a, f) => a + f.bytes, 0), quota = 1073741824;
-    // who's not using it: families dormant / never started, people dormant / never signed in (after 3 days)
-    const old = t => !t || Date.now() - t > 3 * DAYMS;
-    const famFlag = fams.filter(f => f.fid !== HOME_FAMILY && (f.status === "off" || (f.status === "never" && old(FAMILIES[f.fid]?.created))));
-    const userFlag = users.filter(u => u.uid !== BOOT_ADMIN_UID && !famFlag.some(f => f.fid === u.family) && (health(lastUse(u)) === "off" || (!u.lastSeen && old(u.created))))
-      .sort((a, b) => lastUse(a) - lastUse(b));
+    const quota = 1073741824, total = fams.reduce((a, f) => a + f.bytes, 0), pct = total / quota * 100;
+    const olderThan3 = t => !t || now - t > 3 * DAYMS;
     const key = u => Object.keys(ALLUSERS).find(k => ALLUSERS[k] === u);
-    const rank = [...fams].sort((a, b) => b.acts30 - a.acts30 || b.use - a.use);
-    return `<div class="adm-stats">
-        <div><b class="tabular">${fams.length}</b><small>משפחות</small></div>
-        <div><b class="tabular">${users.length}</b><small>משתמשים</small></div>
+    // dormant: same rule as before — 14 days without use, or never signed in 3 days after being created
+    const dormant = users.filter(u => u.uid !== BOOT_ADMIN_UID && (health(lastUse(u)) === "off" || (!u.lastSeen && olderThan3(u.created))))
+      .sort((a, b) => lastUse(a) - lastUse(b));
+    const famDormant = fams.filter(f => f.fid !== HOME_FAMILY && (f.status === "off" || (f.status === "never" && olderThan3(FAMILIES[f.fid]?.created))));
+    // database errors counted by the app today
+    const errs = fams.map(f => ({ fid:f.fid, n: +((f.st.errs || {})[today]) || 0 })).filter(x => x.n);
+    const errToday = errs.reduce((a, x) => a + x.n, 0);
+    // unusual: today's actions more than 3× the family's daily average of the previous 14 days (and at least 30)
+    const unusual = fams.map(f => {
+      const d = f.st.days || {}, n = +d[today] || 0; let sum = 0;
+      for (let i = 1; i <= 14; i++) sum += +d[iso(new Date(now - i * DAYMS))] || 0;
+      const avg = sum / 14; return { fid:f.fid, n, avg };
+    }).filter(x => x.n >= 30 && x.n > 3 * x.avg);
+    // missing data: a family with people but no size measurement, or one older than 7 days (dormant families are already listed)
+    const missing = fams.filter(f => f.people.length && !famDormant.some(g => g.fid === f.fid) && (!f.st.sizedAt || now - f.st.sizedAt > 7 * DAYMS));
+    const red = !!this.loadErr || errToday >= 10 || pct > 80;
+    const items = famDormant.length + (dormant.length ? 1 : 0) + errs.length + unusual.length + missing.length;
+    return { now, users, fams, total, pct, dormant, famDormant, errs, errToday, unusual, missing, key,
+      status: red ? "red" : items ? "amber" : "green", items };
+  },
+  overview(){
+    const h = this.health(), week = h.now - 7 * DAYMS, day = h.now - DAYMS;
+    const active = h.users.filter(u => lastUse(u) > week).length, today = h.users.filter(u => lastUse(u) > day).length;
+    const outdated = h.users.filter(u => u.build && u.build !== BUILD).length;
+    const ST = { green:["🟢","תקין"], amber:["🟡","דורש תשומת לב"], red:["🔴","חריגה"] }[h.status];
+    const lvl = p => p < 50 ? "ok" : p < 80 ? "mid" : "hi";
+    const rank = [...h.fams].sort((a, b) => b.acts30 - a.acts30 || b.use - a.use);
+    const daysSince = u => lastUse(u) ? Math.floor((h.now - lastUse(u)) / DAYMS) : null;
+    const alert = (cls, ic, title, text, attr = "") => `<${attr ? "button type=\"button\"" : "div"} class="adm-row adm-alert ${cls}" ${attr}><span class="al-ic">${ic}</span><span class="t"><b>${title}</b><small>${text}</small></span></${attr ? "button" : "div"}>`;
+    const alerts = [
+      ...(this.loadErr ? [alert("hi", "🔴", "טעינת הנתונים נכשלה", `לא ניתן לקרוא את מוני הפעילות (${esc(this.loadErr)}). נסה "רענן נתונים".`)] : []),
+      ...h.errs.map(x => alert(x.n >= 10 ? "hi" : "mid", x.n >= 10 ? "🔴" : "🟡", `שגיאות מסד נתונים · ${esc(famName(x.fid))}`, `${x.n} שגיאות היום (שמירה או טעינה שנכשלו).`, `data-fam="${esc(x.fid)}"`)),
+      ...h.unusual.map(x => alert("mid", "🟡", `פעילות חריגה · ${esc(famName(x.fid))}`, `${x.n} פעולות היום, לעומת ממוצע של ${x.avg.toFixed(1)} ביום בשבועיים האחרונים.`, `data-fam="${esc(x.fid)}"`)),
+      ...h.famDormant.map(f => alert("mid", "🟡", esc(famName(f.fid)), `${FAMILIES[f.fid]?.active === false ? "מושבתת · " : ""}${f.use ? `לא הייתה פעילות ${Math.floor((h.now - f.use) / DAYMS)} ימים` : "אף אחד עוד לא נכנס"} · ${f.people.length} משתמשים${f.sized ? " · " + fmtSize(f.bytes) : ""}`, `data-fam="${esc(f.fid)}"`)),
+      ...(h.dormant.length ? [alert("mid", "🟡", `${h.dormant.length} משתמשים רדומים`, "14 יום ללא שימוש, או שלא נכנסו מאז שנוצרו. הרשימה למטה.", `data-jump="dormant"`)] : []),
+      ...h.missing.map(f => alert("low", "⚪", `נתונים חסרים · ${esc(famName(f.fid))}`, f.st.sizedAt ? `המדידה האחרונה לפני ${Math.floor((h.now - f.st.sizedAt) / DAYMS)} ימים.` : "עוד לא נמדד נפח — יתעדכן כשמישהו מהמשפחה יפתח את האפליקציה.", `data-fam="${esc(f.fid)}"`)),
+    ];
+    const fsOk = !this.loadErr && this.loadedAt;
+    return `<section class="adm-health ${h.status}">
+        <div class="hh-top"><div><h2>בריאות המערכת</h2><p>ניטור מצב NIDO והשימוש במשאבי Firebase</p></div>
+          <button type="button" class="secondary hh-refresh" data-refresh ${this._loading ? "disabled" : ""}>↻ רענן נתונים</button></div>
+        <div class="hh-status"><span class="hh-badge">${ST[0]} ${ST[1]}</span><small>${this.loadedAt ? `עודכן לאחרונה: ${esc(ago(this.loadedAt))}` : "טוען…"}</small></div>
+      </section>
+      <div class="adm-stats">
+        <div><b class="tabular">${h.fams.length}</b><small>משפחות</small></div>
+        <div><b class="tabular">${h.users.length}</b><small>משתמשים</small></div>
         <div><b class="tabular">${today}</b><small>פעילים היום</small></div>
         <div><b class="tabular">${active}</b><small>פעילים השבוע</small></div>
       </div>
-      <section class="adm-card"><h3>נפח במסד הנתונים</h3>
-        <div class="adm-quota"><i style="width:${Math.max(1, Math.min(100, total / quota * 100)).toFixed(1)}%"></i></div>
-        <p class="adm-note" style="margin-bottom:0">כ-<b>${fmtSize(total)}</b> מתוך 1 GB במנוי החינמי (הערכה). ${fams.filter(f => !f.sized).length ? `למשפחות שעוד לא פתחו את האפליקציה מאז העדכון אין עדיין מדידה.` : ""}</p></section>
-      <section class="adm-card ${famFlag.length || userFlag.length ? "adm-warn" : ""}"><h3>דורש תשומת לב</h3>
-        ${famFlag.map(f => `<button type="button" class="adm-row" data-fam="${esc(f.fid)}">
-          <span class="ic-fam">${icon("home")}</span>
-          <span class="t"><b>${esc(famName(f.fid))}</b><small>${FAMILIES[f.fid]?.active === false ? "מושבתת · " : ""}${f.use ? "שימוש אחרון " + esc(ago(f.use)) : "אף אחד עוד לא נכנס"} · ${f.people.length} משתמשים${f.sized ? " · " + fmtSize(f.bytes) : ""}</small></span>
-          <i class="dot ${f.status}"></i></button>`).join("")}
-        ${userFlag.map(u => `<button type="button" class="adm-row" data-u="${esc(key(u))}">
+      <section class="adm-card ${alerts.length ? "adm-warn" : ""}"><h3>דורש תשומת לב</h3>
+        ${alerts.join("") || `<p class="adm-note" style="margin:0">הכול תקין 🎉 אין שגיאות, חריגות או משתמשים רדומים.</p>`}</section>
+
+      <h4 class="adm-sec">Firebase</h4>
+      <section class="adm-card"><h3>💾 מסד הנתונים</h3>
+        <div class="hh-meter"><div class="hh-ml"><span>נפח אחסון (הערכה)</span><b class="tabular" dir="ltr">${fmtSize(h.total)} / 1 GB</b></div>
+          <div class="adm-quota ${lvl(h.pct)}"><i style="width:${Math.max(1, Math.min(100, h.pct)).toFixed(1)}%"></i></div>
+          <small class="tabular">${h.pct < 0.01 ? "פחות מ-0.01%" : h.pct.toFixed(2) + "%"}</small></div>
+        <p class="adm-note" style="margin-bottom:0">מחושב באפליקציה לפי גודל הנתונים של כל משפחה — לא מספר רשמי של Firebase.</p></section>
+      <section class="adm-card hh-ph"><h3>📖 נתוני שימוש מפורטים</h3>
+        <p class="hh-ph-t">נדרש חיבור ל-Google Cloud Monitoring</p>
+        <p class="adm-note" style="margin:0">Reads, Writes ו-Deletes של Firebase אינם זמינים מהדפדפן בארכיטקטורה הנוכחית, ולכן לא מוצגים כאן מספרים. אפשר לראות אותם ב-Firebase Console ← Firestore ← Usage.</p></section>
+      <section class="adm-card"><h3>🔐 שירותים</h3>
+        <div class="hh-svc"><span>🗄 Firestore</span><b class="${fsOk ? "ok" : this.loadedAt ? "hi" : ""}">${fsOk ? "תקין" : this.loadedAt ? "דורש תשומת לב" : "בודק…"}</b></div>
+        <div class="hh-svc"><span>🔐 Authentication</span><b class="${Cloud.user ? "ok" : "hi"}">${Cloud.user ? "תקין · מחובר" : "לא מחובר"}</b></div>
+        <div class="hh-svc"><span>📦 Storage</span><b>לא בשימוש</b></div>
+        <div class="hh-svc"><span>🌐 Hosting</span><b>לא בשימוש · GitHub Pages</b></div>
+        <p class="adm-note" style="margin-bottom:0">הסטטוס נקבע לפי החיבור של האפליקציה שלך, לא לפי דף הסטטוס של Google.</p></section>
+
+      <h4 class="adm-sec">משפחות ומשתמשים</h4>
+      <section class="adm-card" id="adm-dormant"><h3>משתמשים רדומים <span class="adm-pill ${h.dormant.length ? "off" : "on"}">${h.dormant.length}</span></h3>
+        ${h.dormant.length ? `<details><summary>הצג את הרשימה</summary>${h.dormant.map(u => { const d = daysSince(u); return `<button type="button" class="adm-row" data-u="${esc(h.key(u))}">
           <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
-          <span class="t"><b>${esc(u.name)} <small>· ${esc(famName(u.family))}</small></b><small>${this.userLine(u)}</small></span>
-          <i class="dot ${health(lastUse(u))}"></i></button>`).join("")}
-        ${famFlag.length || userFlag.length ? `<p class="adm-note" style="margin-bottom:0">רדום = 14 יום בלי שימוש. לחיצה פותחת — משם אפשר למחוק.</p>` : `<p class="adm-note" style="margin:0">כולם משתמשים 🎉 אין משפחות או משתמשים רדומים.</p>`}</section>
+          <span class="t"><b>${esc(u.name)} <small>· ${esc(famName(u.family))}</small></b><small>${d === null ? `לא נכנס/ה מעולם${u.created ? ` · נוצר/ה לפני ${Math.floor((h.now - u.created) / DAYMS)} ימים` : ""}` : `${d} ימים ללא פעילות`}</small></span>
+          <i class="dot ${health(lastUse(u))}"></i></button>`; }).join("")}</details>` : `<p class="adm-note" style="margin:0">אין משתמשים רדומים.</p>`}</section>
       <section class="adm-card"><h3>דירוג משפחות · 30 יום אחרונים</h3>
         ${rank.map((f, i) => `<button type="button" class="adm-row" data-fam="${esc(f.fid)}">
           <span class="rank tabular">${i + 1}</span>
@@ -1977,7 +2060,7 @@ const Admin = {
           <span class="spark">${f.series.slice(-14).map(x => `<i style="height:${x[1] ? Math.max(15, Math.min(100, x[1] / Math.max(1, ...f.series.map(y => y[1])) * 100)) : 4}%"></i>`).join("")}</span>
           <i class="dot ${f.status}"></i></button>`).join("")}</section>
       <p class="adm-note">גרסה נוכחית: <b dir="ltr">${esc(BUILD)}</b>${outdated ? ` · ${outdated} עדיין בגרסה ישנה` : " · כולם מעודכנים"}</p>
-      <p class="adm-note">🟢 עד 3 ימים · 🟡 עד 14 יום · 🔴 יותר מ-14 יום. רואים רק מספרים ותאריכים, לא את התוכן. ספירת הפעולות התחילה עם העדכון הזה.</p>`;
+      <p class="adm-note">🟢 עד 3 ימים · 🟡 עד 14 יום · 🔴 יותר מ-14 יום. רואים רק מספרים ותאריכים, לא את התוכן.</p>`;
   },
   families(){
     return `${this.famIds().map(fid => { const f = FAMILIES[fid] || {}, n = this.people(fid).length, city = (CITIES.find(c => c[0] === (f.city || "293397")) || [])[1] || "";
@@ -2061,6 +2144,8 @@ const Admin = {
       if (!on && !await askConfirm(`להשבית את ${famName(fid)}?`, "כל המשתמשים שלה לא יוכלו להיכנס עד שתפעיל מחדש. שום דבר לא נמחק.", "השבתה")) return;
       try { await Cloud.setFamilyActive(fid, on); toast(on ? "המשפחה הופעלה" : "המשפחה הושבתה"); } catch(x){ toast(errText(x)); }
     });
+    q("[data-refresh]")?.addEventListener("click", () => { this.loadStats(true); this.render(); });
+    q("[data-jump]")?.addEventListener("click", () => { const d = el.querySelector("#adm-dormant"); d?.querySelector("details")?.setAttribute("open", ""); d?.scrollIntoView({ behavior:"smooth", block:"start" }); });
     q("[data-delfam]")?.addEventListener("click", async e => {
       const fid = S.adminFam, x = this.info(fid);
       if (!await askConfirm(`למחוק את ${famName(fid)}?`, `${x.people.length} משתמשים${x.sized ? `, ${x.items} פריטים (${fmtSize(x.bytes)})` : ""} יימחקו לצמיתות.`, "המשך")) return;

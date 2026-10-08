@@ -78,7 +78,7 @@ service cloud.firestore {
     match /stats/{fid} {
       allow read, delete: if boot();
       allow create, update: if (inFamily(fid) || boot())
-        && request.resource.data.keys().hasOnly(['items', 'bytes', 'sizedAt', 'lastAct', 'days', 'adds', 'last']);
+        && request.resource.data.keys().hasOnly(['items', 'bytes', 'sizedAt', 'lastAct', 'days', 'adds', 'last', 'errs']);
     }
 
     // announcements from the system admin: to everyone or to one family
