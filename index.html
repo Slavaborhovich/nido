@@ -180,6 +180,10 @@ li+li .up{border-top:1px solid var(--line)}
 .ttile .w{font-size:15px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ttile .k{margin-top:4px;font-size:12px;color:var(--faint)}
 .ttile .bot{margin-top:auto}
+.item .box{position:relative}
+.item .box::after{content:"";position:absolute;inset:-12px}
+.item.pending .box{box-shadow:0 0 0 3px rgba(242,182,107,.25)}
+.shop-tip{font-size:12px;color:var(--faint)}
 .ttile{position:relative;overflow:hidden}
 .ttile::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px 2px 0 0;background:linear-gradient(90deg,transparent,var(--oc,transparent),transparent);opacity:.85;pointer-events:none}
 .ttile .when b{color:var(--oc,var(--text))}
@@ -285,6 +289,10 @@ li+li .item{border-top:1px solid var(--line)}
 .takebar .row{max-width:432px;margin:0 auto;display:flex;gap:10px}
 .takebar .primary{flex:1}
 .takebar .secondary{height:52px}
+.takebar .row{background:rgba(36,25,17,.94) !important;border-color:rgba(255,214,170,.16) !important}
+.takebar .primary{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.takebar .primary svg{width:18px;height:18px}
+body:has(.takebar) .note-fab{display:none}
 .hint{font-size:14px;color:var(--muted);margin:0 4px 12px}
 
 
@@ -2515,7 +2523,7 @@ function renderToday(){
       if (t.buy) syncBuy(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); return;
     }
     const x = items[+b.dataset.i];
-    if (x.kind==="event"){ S.calSel=x.date; const d=parse(x.date); S.calMonth=new Date(d.getFullYear(),d.getMonth(),1); S.calWeek=iso(startOfWeek(d)); go("cal"); }
+    if (x.kind==="event"){ eventView(x.ref); }
     else if (x.ty==="sh") go("shop");
     else { S.taskView="active"; go("tasks"); }
   });
@@ -2695,8 +2703,8 @@ function renderShop(){
   const takeable = items.some(i => !i.takenBy || i.takenBy===me);
   $("#screen").innerHTML = `
     <header class="top"><h1>קניות</h1></header>
-    ${S.take ? "" : listsSeg()}
-    ${S.take ? `<p class="hint">${S.shopList==="home"?"לבית":"סופר"} · סמן מה אתה לוקח על עצמך. זה נכנס למשימת הקניות האחת שלך, והפריטים נשארים ברשימה עד שהקניות יושלמו.</p>` : `
+    ${listsSeg()}
+    ${`
     <form id="af">
       <div class="addrow">
         <input class="input" name="name" placeholder="＋ הוסף פריט" autocomplete="off" aria-label="שם הפריט">
@@ -2709,23 +2717,25 @@ function renderShop(){
     </form>`}
     <div class="shop-head">
       <h3 class="section-title">${items.length ? `${items.length} פריטים ברשימה` : "הרשימה"}</h3>
-      ${!S.take && takeable ? `<button class="add-btn" id="takeBtn">${icon("hand")}אני לוקח</button>` : ""}
+      ${takeable && !S.take ? `<span class="shop-tip">סמנו ✓ מה שאתם לוקחים</span>` : ""}
     </div>
     <ul class="panel" id="slist">${ items.length ? items.map(i => {
       const mine = i.takenBy===me, other = i.takenBy && !mine;
-      const on = S.take ? S.takeSel.has(i.id) : !!i.takenBy;
       const sub = [i.qty, i.note].filter(Boolean).map(esc).join(" · ");
-      return `<li><button class="item" data-id="${i.id}" ${S.take && other ? "disabled" : ""}>
-        <span class="box ${on && !(other) ? "on" : other ? "other" : ""}">${icon("tick")}</span>
+      const was = mine, now = S.take ? S.takeSel.has(i.id) : mine;
+      return `<li><button class="item ${S.take && was !== now ? "pending" : ""}" data-id="${i.id}">
+        <span class="box ${other ? "other" : now ? "on" : ""}" ${other ? "" : 'role="checkbox"'} aria-checked="${now}" aria-label="${now ? "ביטול" : "אני לוקח"}">${icon("tick")}</span>
         <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}</span>
         ${i.takenBy && USERS[i.takenBy] ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i style="${avaStyle(USERS[i.takenBy])}">${initial(USERS[i.takenBy])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
       </button></li>`;
     }).join("") : `<li class="empty">הרשימה ריקה. ראית שחסר משהו? הוסף אותו כאן.</li>` }</ul>
-    ${S.take ? `<div class="takebar"><div class="row">
+    ${S.take ? (() => { const mineNow = new Set(items.filter(i => i.takenBy===me).map(i => i.id));
+        const add = [...S.takeSel].filter(id => !mineNow.has(id)).length, drop = [...mineNow].filter(id => !S.takeSel.has(id)).length;
+        return `<div class="takebar"><div class="row">
       <button class="secondary" id="takeCancel">ביטול</button>
-      <button class="primary" id="takeOk">אישור (${S.takeSel.size})</button></div></div>` : ""}`;
+      <button class="primary" id="takeOk">${icon("hand")}${add ? `אני לוקח (${add})` : `לא לוקח (${drop})`}</button></div></div>`; })() : ""}`;
 
-  if (!S.take){
+  {
     const f = $("#af");
     f.name.oninput = () => { f.querySelector(".go").disabled = !f.name.value.trim(); if (f.name.value.trim() && !S.addMore){ S.addMore=true; f.querySelector(".addmore").hidden=false; } };
     f.onsubmit = e => {
@@ -2733,19 +2743,26 @@ function renderShop(){
       DB.shop.push({ id:uid(), name, qty:f.qty.value.trim(), note:f.note.value.trim(), takenBy:null, taskId:null, list:S.shopList });
       save(); S.addMore=false; renderShop(); $("#af").name.focus();
     };
-    const tb = $("#takeBtn"); if (tb) tb.onclick = () => {
-      S.take = true; S.takeSel = new Set(DB.shop.filter(i=>i.takenBy===me && i.list===S.shopList).map(i=>i.id)); renderShop();
-    };
     bindSeg();
-  } else {
-    $("#takeCancel").onclick = () => { S.take=false; renderShop(); };
+  }
+  if (S.take){
+    $("#takeCancel").onclick = () => { S.take=false; S.takeSel=new Set(); renderShop(); };
     $("#takeOk").onclick = confirmTake;
   }
   $("#slist").onclick = e => {
-    const b = e.target.closest(".item"); if (!b || b.disabled) return;
-    const id = b.dataset.id;
-    if (S.take){ S.takeSel.has(id) ? S.takeSel.delete(id) : S.takeSel.add(id); renderShop(); }
-    else itemSheet(DB.shop.find(i=>i.id===id));
+    const b = e.target.closest(".item"); if (!b) return;
+    const id = b.dataset.id, it = DB.shop.find(i=>i.id===id); if (!it) return;
+    // the checkbox: mark / unmark right away; "אני לוקח" at the bottom confirms. The name opens the item.
+    if (e.target.closest(".box")){
+      if (it.takenBy && it.takenBy !== me){ toast(`${USERS[it.takenBy] ? USERS[it.takenBy].name : "מישהו"} כבר לוקח את זה`); return; }
+      if (!canEdit()) return;
+      const mineNow = new Set(DB.shop.filter(i=>i.takenBy===me && i.list===S.shopList).map(i=>i.id));
+      if (!S.take){ S.take = true; S.takeSel = new Set(mineNow); }
+      S.takeSel.has(id) ? S.takeSel.delete(id) : S.takeSel.add(id);
+      if (S.takeSel.size === mineNow.size && [...mineNow].every(x => S.takeSel.has(x))){ S.take = false; S.takeSel = new Set(); }
+      renderShop(); return;
+    }
+    itemSheet(it);
   };
 }
 function confirmTake(){
@@ -2761,7 +2778,8 @@ function confirmTake(){
   }
   if (task && !DB.shop.some(i=>i.taskId===task.id)) DB.tasks = DB.tasks.filter(t=>t.id!==task.id);
   save(); S.take=false; renderShop();
-  if (S.takeSel.size) toast(existed ? "משימת הקניות שלך עודכנה" : "נוצרה משימת קניות");
+  toast(S.takeSel.size ? (existed ? "משימת הקניות שלך עודכנה" : "נוצרה משימת קניות 🛒") : "הפריטים חזרו לרשימה");
+  S.takeSel = new Set();
 }
 function releaseItem(i){
   const tid = i.taskId; i.takenBy=null; i.taskId=null;
