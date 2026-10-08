@@ -815,6 +815,8 @@ body.admin-open .note-fab{display:none}
 .adm-card .lbl{display:block;margin:10px 0 6px}
 .adm-card .input,.adm-card .textarea{width:100%;background:#2C2016;border-color:rgba(255,214,170,.14)}
 .adm-card .toggle-row{margin-bottom:8px}
+.adm-limit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 10px;padding:8px 14px;border-radius:14px;background:rgba(255,226,190,.04);font-size:14px}
+.adm-limit .input{width:84px;height:40px;text-align:center}
 .adm-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 2px;border:0;border-top:1px solid rgba(255,214,170,.08);background:none;color:var(--text);text-align:start;font:inherit}
 .adm-card h3 + .adm-row{border-top:0}
 .adm-row.off{opacity:.5}
@@ -930,7 +932,7 @@ const ALLUSERS = {};                   // every family's people — only the sys
 const FAMILIES = {};                   // id → { name, city, features, active }
 const CITIES = [["293397","תל אביב"],["281184","ירושלים"],["294801","חיפה"],["295530","באר שבע"],["293703","ראשון לציון"],["293918","פתח תקווה"],["294071","נתניה"],["295629","אשדוד"],["294751","חולון"],["293788","רמת גן"],["294778","הרצליה"]];
 const FEATURES = [["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
-let FAM = { city:"293397", features:{} };   // the current family's settings
+let FAM = { city:"293397", features:{}, noteLimit:1 };   // the current family's settings
 const feat = k => !(FAM.features && FAM.features[k] === false);   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
@@ -1145,8 +1147,8 @@ const Cloud = {
     this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
       const x = d.exists() ? d.data() : {};
       const before = JSON.stringify(FAM);
-      FAM = { city: x.city || "293397", features: x.features || {} };
-      if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
+      FAM = { city: x.city || "293397", features: x.features || {}, noteLimit: Math.max(1, +x.noteLimit || 1) };
+      if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); Notes.alreadySent().then(() => Notes.refreshFab()); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
     }, () => {});
   },
   /* "last seen" + version for the admin overview — at most every 30 minutes */
@@ -1261,7 +1263,7 @@ const Cloud = {
       await Promise.all(commits);
     } catch(e){ console.error("[migrate]", e); }
   },
-  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{} }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{}, noteLimit:1 }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -1539,9 +1541,13 @@ const Updates = {
 /* One little note per person per day. No inbox, no history: it pops up for the recipient until they say "קיבלתי". */
 const NOTE_COLORS = { yellow:"#FBE7A6", pink:"#F9CFD3", blue:"#CFE3F7", green:"#D5EBC5", white:"#FBF6EC" };
 const Notes = {
-  queue: [], showing: false, sentKey: () => `nido.noteSent.${ENV}.${me}`,
+  queue: [], showing: false, sentKey: () => `nido.noteCount.${ENV}.${me}`,
+  limit(){ return CLOUD ? (FAM.noteLimit || 1) : 1; },
+  count(){ try { const c = JSON.parse(localStorage.getItem(this.sentKey())); return c && c.day === this.today() ? c.n : 0; } catch(e){ return 0; } },
+  setCount(n){ try { localStorage.setItem(this.sentKey(), JSON.stringify({ day: this.today(), n })); } catch(e){} this.refreshFab(); },
+  left(){ return Math.max(0, this.limit() - this.count()); },
   today: () => iso(new Date()),
-  sentToday(){ try { return localStorage.getItem(this.sentKey()) === this.today(); } catch(e){ return false; } },
+  sentToday(){ return this.left() <= 0; },
   others(){ return people().filter(k => k !== me); },
   refreshFab(){
     const f = $("#noteFab"); if (!f) return;
@@ -1549,22 +1555,31 @@ const Notes = {
     f.hidden = !show;
   },
   /* ---- storage: Firestore in the cloud app, localStorage in the demo ---- */
-  docId(){ return `${ENV}_${this.today()}_${CLOUD ? Cloud.user.uid : me}`; },
+  /* note #1 of the day keeps the original id; #2, #3… get a suffix — so the daily limit lives in the database too */
+  docId(seq){ const base = `${ENV}_${this.today()}_${CLOUD ? Cloud.user.uid : me}`; return seq > 1 ? `${base}_${seq}` : base; },
   async alreadySent(){
     if (this.sentToday()) return true;
     if (!CLOUD || !Cloud.user) return false;
-    try { const d = await Cloud.fb.getDoc(Cloud.fb.doc(Cloud.db, "families", Cloud.fam, "notes", this.docId())); if (d.exists()){ this.markSent(); return true; } } catch(e){}
-    return false;
+    let n = this.count();
+    try {
+      while (n < this.limit()){
+        const d = await Cloud.fb.getDoc(Cloud.fb.doc(Cloud.db, "families", Cloud.fam, "notes", this.docId(n + 1)));
+        if (!d.exists()) break; n++;
+      }
+    } catch(e){}
+    if (n !== this.count()) this.setCount(n);
+    return n >= this.limit();
   },
-  markSent(){ try { localStorage.setItem(this.sentKey(), this.today()); } catch(e){} this.refreshFab(); },
+  markSent(){ this.setCount(this.count() + 1); },
   async send(toKeys, text, color){
     const note = { env: ENV, day: this.today(), text, color, at: Date.now(), fromName: meU().name, readBy: {} };
     if (CLOUD){
       const F = Cloud.fb;
-      await F.setDoc(F.doc(Cloud.db, "families", Cloud.fam, "notes", this.docId()), { ...note, from: Cloud.user.uid, to: toKeys.map(k => USERS[k].uid).filter(Boolean) });
+      const seq = this.count() + 1;
+      await F.setDoc(F.doc(Cloud.db, "families", Cloud.fam, "notes", this.docId(seq)), { ...note, seq, from: Cloud.user.uid, to: toKeys.map(k => USERS[k].uid).filter(Boolean) });
     } else {
       const all = JSON.parse(localStorage.getItem("nido.notes") || "[]");
-      all.push({ ...note, id: this.docId(), from: me, to: toKeys });
+      all.push({ ...note, id: this.docId(this.count() + 1), from: me, to: toKeys });
       localStorage.setItem("nido.notes", JSON.stringify(all));
     }
     this.markSent();
@@ -1628,7 +1643,7 @@ const Notes = {
   },
   /* ---- composing ---- */
   async compose(){
-    if (await this.alreadySent()){ toast("כבר השארת פתק היום. מחר אפשר שוב ❤️"); return; }
+    if (await this.alreadySent()){ toast(this.limit() > 1 ? "השארת היום את כל הפתקים. מחר אפשר שוב ❤️" : "כבר השארת פתק היום. מחר אפשר שוב ❤️"); return; }
     const others = this.others(); if (!others.length) return;
     const st = { to: others.length === 1 ? [others[0]] : [], color: "yellow" };
     const w = document.createElement("div"); w.className = "note-scrim";
@@ -1637,7 +1652,7 @@ const Notes = {
       <span class="magnet"></span>
       <div class="whom">${whom()}</div>
       <textarea maxlength="160" placeholder="משהו קטן…" aria-label="הפתק"></textarea>
-      <div class="papers"><div class="cs">${Object.entries(NOTE_COLORS).map(([k, c]) => `<button type="button" data-c="${k}" class="${k === "yellow" ? "on" : ""}" style="background:${c}" aria-label="צבע פתק"></button>`).join("")}</div><small>פתק אחד ביום</small></div>
+      <div class="papers"><div class="cs">${Object.entries(NOTE_COLORS).map(([k, c]) => `<button type="button" data-c="${k}" class="${k === "yellow" ? "on" : ""}" style="background:${c}" aria-label="צבע פתק"></button>`).join("")}</div><small>${this.limit() > 1 ? (this.left() === 1 ? "הפתק האחרון להיום" : `עוד ${this.left()} פתקים היום`) : "פתק אחד ביום"}</small></div>
       <div class="send"><button type="button" class="x">ביטול</button><button type="button" class="ok">להדביק על המקרר 🧲</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
     const note = w.querySelector(".fnote"), ta = w.querySelector("textarea");
@@ -1662,7 +1677,7 @@ const Notes = {
       if (!text){ ta.focus(); return; }
       const b = w.querySelector(".send .ok"); b.disabled = true; b.textContent = "מדביק…";
       try {
-        if (await this.alreadySent()){ close(); toast("כבר השארת פתק היום ❤️"); return; }
+        if (await this.alreadySent()){ close(); toast("השארת היום את כל הפתקים ❤️"); return; }
         await this.send(st.to, text, st.color);
         const fab = $("#noteFab"); fab.classList.add("bye");
         close(); setTimeout(() => { fab.classList.remove("bye"); this.refreshFab(); }, 300);
@@ -1808,7 +1823,8 @@ const Admin = {
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
       <section class="adm-card"><h3>פיצ׳רים</h3>
-        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>`).join("")}</section>
+        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>
+          ${k === "notes" && feats.notes !== false ? `<div class="adm-limit"><span>פתקים ביום לכל משתמש</span><select class="input" data-notelimit>${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+f.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>` : ""}`).join("")}</section>
       ${!home ? `<section class="adm-card danger-zone"><h3>השבתת המשפחה</h3>
         <p class="adm-note">${f.active === false ? "המשפחה מושבתת — אף אחד ממנה לא יכול להיכנס." : "כל המשתמשים של המשפחה ייחסמו. הנתונים שלהם נשמרים, ואפשר להחזיר בכל רגע."}</p>
         <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>` : ""}`;
@@ -1834,6 +1850,7 @@ const Admin = {
     q("[data-rename]")?.addEventListener("click", () => openFamilyForm(S.adminFam));
     q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
     el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
+    q("[data-notelimit]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { noteLimit: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
       const f = { ...((FAMILIES[S.adminFam] || {}).features || {}) }; f[c.dataset.feat] = c.checked;
