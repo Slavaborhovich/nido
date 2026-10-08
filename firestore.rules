@@ -57,8 +57,14 @@ service cloud.firestore {
                        && request.resource.data.get('family', 'home') == resource.data.get('family', 'home')
                        && (request.resource.data.role != 'admin' || resource.data.get('family', 'home') == 'home');
       allow update: if member() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif', 'lastSeen', 'build']);
       allow delete: if boot() || famAdmin(resource.data.get('family', 'home'));
+    }
+
+    // announcements from the system admin: to everyone or to one family
+    match /announcements/{id} {
+      allow read:   if boot() || (member() && (resource.data.target == 'all' || resource.data.target == myFamily()));
+      allow write:  if boot();
     }
 
     // username -> e-mail lookup, needed before signing in (names are unique across all families)

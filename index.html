@@ -762,38 +762,84 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .note-fab.bye{transform:scale(.4) rotate(-20deg);opacity:0}
 .note-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:26px;background:rgba(12,7,3,.5);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
 .note-scrim.show{opacity:1}
-.note{--paper:#FBE7A6;--ink:#4A3518;position:relative;width:100%;max-width:330px;padding:34px 24px 20px;color:var(--ink);
+.fnote{--paper:#FBE7A6;--ink:#4A3518;position:relative;width:100%;max-width:330px;padding:34px 24px 20px;color:var(--ink);
   background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 40%),var(--paper);border-radius:3px 3px 18px 3px;
   box-shadow:0 2px 0 rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.45),inset 0 -12px 18px rgba(120,80,20,.08);
   transform:rotate(-2.2deg) translateY(30px) scale(.94);transition:transform .45s cubic-bezier(.2,.9,.3,1.3)}
-.note-scrim.show .note{transform:rotate(-2.2deg)}
-.note.pink{--paper:#F9CFD3}.note.blue{--paper:#CFE3F7}.note.green{--paper:#D5EBC5}.note.white{--paper:#FBF6EC}
-.note::after{content:"";position:absolute;left:0;bottom:0;width:26px;height:26px;background:linear-gradient(45deg,rgba(0,0,0,.08) 50%,rgba(255,255,255,.4) 50%);border-radius:0 10px 0 0}
-.note .magnet{position:absolute;top:-14px;left:50%;width:30px;height:30px;margin-left:-15px;border-radius:50%;
+.note-scrim.show .fnote{transform:rotate(-2.2deg)}
+.fnote.pink{--paper:#F9CFD3}.fnote.blue{--paper:#CFE3F7}.fnote.green{--paper:#D5EBC5}.fnote.white{--paper:#FBF6EC}
+.fnote::after{content:"";position:absolute;left:0;bottom:0;width:26px;height:26px;background:linear-gradient(45deg,rgba(0,0,0,.08) 50%,rgba(255,255,255,.4) 50%);border-radius:0 10px 0 0}
+.fnote .magnet{position:absolute;top:-14px;left:50%;width:30px;height:30px;margin-left:-15px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#FF9E85,#D9573F 60%,#A93C2A);box-shadow:0 4px 8px rgba(0,0,0,.35)}
-.note .to{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:20px;opacity:.75;margin:0 0 6px}
-.note .txt{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:27px;line-height:1.35;margin:0;white-space:pre-wrap;word-break:break-word}
-.note .sig{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:22px;text-align:left;margin:12px 0 0}
-.note .acts{display:flex;justify-content:center;margin-top:16px}
-.note .ok{height:42px;padding:0 22px;border-radius:999px;border:0;background:rgba(74,53,24,.88);color:#FFF4DE;font-size:15px;font-weight:500;font-family:var(--font)}
-.note .later{border:0;background:none;color:var(--ink);opacity:.6;font-size:13px;margin-top:6px;width:100%;font-family:var(--font)}
+.fnote .to{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:20px;opacity:.75;margin:0 0 6px}
+.fnote .txt{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:27px;line-height:1.35;margin:0;white-space:pre-wrap;word-break:break-word}
+.fnote .sig{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:22px;text-align:left;margin:12px 0 0}
+.fnote .acts{display:flex;justify-content:center;margin-top:16px}
+.fnote .ok{height:42px;padding:0 22px;border-radius:999px;border:0;background:rgba(74,53,24,.88);color:#FFF4DE;font-size:15px;font-weight:500;font-family:var(--font)}
+.fnote .later{border:0;background:none;color:var(--ink);opacity:.6;font-size:13px;margin-top:6px;width:100%;font-family:var(--font)}
 .note-hint{position:absolute;top:-58px;left:0;right:0;text-align:center;color:#FFE9C9;font-size:15px;text-shadow:0 2px 10px rgba(0,0,0,.6)}
 /* composer */
-.note textarea{width:100%;min-height:118px;resize:none;border:0;background:repeating-linear-gradient(transparent 0 35px,rgba(120,80,20,.16) 35px 36px);
+.fnote textarea{width:100%;min-height:118px;resize:none;border:0;background:repeating-linear-gradient(transparent 0 35px,rgba(120,80,20,.16) 35px 36px);
   outline:none;color:var(--ink);font-family:"Gveret Levin","Amatic SC",var(--font);font-size:26px;line-height:36px;padding:0}
-.note textarea::placeholder{color:rgba(74,53,24,.42)}
-.note .whom{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;align-items:center;font-size:14px}
-.note .whom > span{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:21px;margin-inline-end:2px}
-.note .whom button{height:30px;padding:0 12px;border-radius:999px;border:1.5px solid rgba(74,53,24,.35);background:transparent;color:var(--ink);font-family:var(--font);font-size:13.5px}
-.note .whom button.on{background:rgba(74,53,24,.88);border-color:transparent;color:#FFF4DE}
-.note .papers{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
-.note .papers .cs{display:flex;gap:7px}
-.note .papers .cs button{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(74,53,24,.3);padding:0}
-.note .papers .cs button.on{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px rgba(74,53,24,.7)}
-.note .papers small{font-size:12px;opacity:.55;font-family:var(--font)}
-.note .send{display:flex;gap:8px;margin-top:14px}
-.note .send .ok{flex:1}
-.note .send .x{height:42px;padding:0 16px;border-radius:999px;border:1.5px solid rgba(74,53,24,.3);background:transparent;color:var(--ink);font-family:var(--font);font-size:14px}
+.fnote textarea::placeholder{color:rgba(74,53,24,.42)}
+.fnote .whom{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;align-items:center;font-size:14px}
+.fnote .whom > span{font-family:"Gveret Levin","Amatic SC",var(--font);font-size:21px;margin-inline-end:2px}
+.fnote .whom button{height:30px;padding:0 12px;border-radius:999px;border:1.5px solid rgba(74,53,24,.35);background:transparent;color:var(--ink);font-family:var(--font);font-size:13.5px}
+.fnote .whom button.on{background:rgba(74,53,24,.88);border-color:transparent;color:#FFF4DE}
+.fnote .papers{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
+.fnote .papers .cs{display:flex;gap:7px}
+.fnote .papers .cs button{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(74,53,24,.3);padding:0}
+.fnote .papers .cs button.on{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px rgba(74,53,24,.7)}
+.fnote .papers small{font-size:12px;opacity:.55;font-family:var(--font)}
+.fnote .send{display:flex;gap:8px;margin-top:14px}
+.fnote .send .ok{flex:1}
+.fnote .send .x{height:42px;padding:0 16px;border-radius:999px;border:1.5px solid rgba(74,53,24,.3);background:transparent;color:var(--ink);font-family:var(--font);font-size:14px}
+/* ---------- admin screen ---------- */
+#admin{position:fixed;inset:0;z-index:35;overflow-y:auto;background:linear-gradient(180deg,rgba(20,13,8,.97),rgba(14,9,5,.99));padding:env(safe-area-inset-top,0) 0 calc(30px + env(safe-area-inset-bottom,0))}
+body.admin-open{overflow:hidden}
+body.admin-open .note-fab{display:none}
+.adm-wrap{max-width:520px;margin:0 auto;padding:0 18px}
+.adm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px}
+.adm-head small{font-size:12px;color:#93806C;letter-spacing:.08em}
+.adm-head h1{margin:0;font-size:26px;font-weight:300}
+.adm-tabs{position:sticky;top:0;z-index:2;display:flex;gap:4px;padding:4px;margin-bottom:14px;border-radius:14px;background:rgba(36,25,17,.95);border:1px solid rgba(255,214,170,.12)}
+.adm-tabs button{flex:1;height:36px;border:0;border-radius:10px;background:none;color:#B9A48E;font-size:14px}
+.adm-tabs button[aria-selected="true"]{background:rgba(255,226,190,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,214,170,.18)}
+.adm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.adm-stats div{padding:12px 8px;border-radius:16px;background:rgba(46,33,22,.7);border:1px solid rgba(255,214,170,.12);text-align:center}
+.adm-stats b{display:block;font-size:24px;font-weight:500;line-height:1.1}
+.adm-stats small{font-size:11px;color:#A8917A}
+.adm-note{font-size:12.5px;color:#93806C;margin:6px 2px 14px;line-height:1.5}
+.adm-card{padding:14px;border-radius:18px;background:rgba(46,33,22,.6);border:1px solid rgba(255,214,170,.12);margin-bottom:12px}
+.adm-card h3{margin:0 0 10px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.adm-card .lbl{display:block;margin:10px 0 6px}
+.adm-card .input,.adm-card .textarea{width:100%;background:#2C2016;border-color:rgba(255,214,170,.14)}
+.adm-card .toggle-row{margin-bottom:8px}
+.adm-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 2px;border:0;border-top:1px solid rgba(255,214,170,.08);background:none;color:var(--text);text-align:start;font:inherit}
+.adm-card h3 + .adm-row{border-top:0}
+.adm-row.off{opacity:.5}
+.adm-row .u-ava{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:600;color:#1E140C;flex:none}
+.adm-row .t{flex:1;min-width:0}.adm-row .t b{display:block;font-weight:500;font-size:14.5px}.adm-row .t small{font-size:12px;color:#93806C}
+.adm-row .old{color:#F3A493}
+.adm-row .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,226,190,.15);flex:none}
+.adm-row .dot.on{background:#8FD3A8;box-shadow:0 0 0 3px rgba(143,211,168,.2)}.adm-row .dot.mid{background:#E8C46A}
+.adm-fam{display:flex;align-items:center;gap:12px;width:100%;padding:14px;margin-bottom:8px;border-radius:18px;background:rgba(46,33,22,.6);border:1px solid rgba(255,214,170,.12);color:var(--text);text-align:start;font:inherit}
+.adm-fam.off{opacity:.55}
+.adm-fam .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:rgba(242,182,107,.14);color:#F2C48A;flex:none}
+.adm-fam .t{flex:1}.adm-fam .t b{display:block;font-weight:500}.adm-fam .t small{font-size:12px;color:#93806C}
+.adm-fam > svg{opacity:.5}
+.adm-back{border:0;background:none;color:#F2C48A;font-size:14px;display:inline-flex;align-items:center;gap:4px;padding:4px 0 10px}
+.adm-back svg{width:16px;height:16px}
+.adm-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.adm-title h2{margin:0;font-size:22px;font-weight:500}
+.adm-add{width:100%;justify-content:center;margin-top:8px}
+.danger-zone{border-color:rgba(232,112,90,.3)}
+.danger-zone .danger{border:1px solid rgba(232,112,90,.4);border-radius:12px;width:100%;justify-content:center}
+.adm-msg{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(255,214,170,.08)}
+.adm-card h3 + .adm-msg{border-top:0}
+.adm-msg .t{flex:1}.adm-msg b{display:block;font-weight:500}.adm-msg small{font-size:11.5px;color:#93806C}.adm-msg p{margin:4px 0 0;font-size:13.5px;color:#D9C9B6;white-space:pre-wrap}
+.ann-from{display:block;font-size:12px;color:#A8917A;margin-bottom:2px}
+.ann-txt{white-space:pre-wrap}
 .env-badge{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:8px;z-index:9999;font:700 10px/1 Heebo,sans-serif;letter-spacing:.06em;padding:5px 8px;border-radius:99px;background:#E8705A;color:#fff;opacity:.9;pointer-events:none}
 .cloud .demo,.cloud #phaseDemo{display:none!important}
 #loginBtn[disabled]{opacity:.65}
@@ -858,6 +904,7 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 <button type="button" id="noteFab" class="note-fab" aria-label="פתק על המקרר" hidden>
   <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="8" width="18" height="19" rx="2.5" transform="rotate(-6 16 17)" fill="#FBE7A6"/><path d="M11 15.5h9.5M11.4 19.5h7" stroke="#A7834A" stroke-width="1.6" stroke-linecap="round" transform="rotate(-6 16 17)"/><circle cx="16" cy="8.6" r="3.4" fill="#E8705A"/><circle cx="15" cy="7.7" r="1" fill="#fff" opacity=".6"/></svg>
 </button>
+<div id="admin" hidden></div>
 <div id="sheetRoot"></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -880,7 +927,11 @@ const PALETTE = ["#7FB0FF","#C3B1FF","#F2B66B","#8FD3A8","#F59AB0","#6FD0D9","#E
 const BOOT_ADMIN_UID = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
 const HOME_FAMILY = "home";            // the first family (ours). Other families get their own id.
 const ALLUSERS = {};                   // every family's people — only the system admin sees this
-const FAMILIES = {};                   // id → { name }   // first admin (slava) — can always get in to set things up
+const FAMILIES = {};                   // id → { name, city, features, active }
+const CITIES = [["293397","תל אביב"],["281184","ירושלים"],["294801","חיפה"],["295530","באר שבע"],["293703","ראשון לציון"],["293918","פתח תקווה"],["294071","נתניה"],["295629","אשדוד"],["294751","חולון"],["293788","רמת גן"],["294778","הרצליה"]];
+const FEATURES = [["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
+let FAM = { city:"293397", features:{} };   // the current family's settings
+const feat = k => !(FAM.features && FAM.features[k] === false);   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
 const ENV = /\/test(\/|$)/.test(location.pathname) ? "test" : "prod";
@@ -1036,7 +1087,7 @@ const Cloud = {
       q = F.collection(this.db, "users");
       this.famUnsub = F.onSnapshot(F.collection(this.db, "families"), qs => {
         Object.keys(FAMILIES).forEach(k => delete FAMILIES[k]);
-        qs.docs.forEach(d => FAMILIES[d.id] = { name: d.data().name || d.id });
+        qs.docs.forEach(d => FAMILIES[d.id] = { ...d.data(), name: d.data().name || d.id });
         refreshOpenPanels();
       }, () => {});
     } else {
@@ -1068,7 +1119,7 @@ const Cloud = {
     if (this.isSuper && !qs.metadata.fromCache) this.tagFamilies(list);
     this.fam = mine.family || HOME_FAMILY;
     try { localStorage.setItem("nido.family", this.fam); } catch(e){}
-    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY });
+    const toUser = x => ({ name:x.name||x.username, color:x.color||"#F2B66B", role:x.role||"editor", photo:x.photo||"", active:x.active!==false, uid:x.uid, notif:x.notif||{}, family:x.family||HOME_FAMILY, lastSeen:x.lastSeen||0, build:x.build||"" });
     const map = {}, all = {};
     list.forEach(x => { if (!x.username) return; all[x.username] = toUser(x); if ((x.family || HOME_FAMILY) === this.fam) map[x.username] = all[x.username]; });
     Object.keys(ALLUSERS).forEach(k => delete ALLUSERS[k]); Object.assign(ALLUSERS, all);
@@ -1080,10 +1131,31 @@ const Cloud = {
     else if (me && me !== u){ me = u; setSession(u); }
     this.listen();
     if (!this._notesOn){ this._notesOn = true; Notes.listen(); }
+    this.listenFamily(); this.presence(); Announce.listen();
     Notes.refreshFab(); this.notesSentCheck();
     Push.refresh();
     document.documentElement.classList.toggle("ro", !canEdit());
     refreshOpenPanels(); softRender();
+  },
+  /* this family's settings (city, features) */
+  listenFamily(){
+    if (this.famDocUnsub && this._famFor === this.fam) return;
+    if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} }
+    this._famFor = this.fam;
+    this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
+      const x = d.exists() ? d.data() : {};
+      const before = JSON.stringify(FAM);
+      FAM = { city: x.city || "293397", features: x.features || {} };
+      if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
+    }, () => {});
+  },
+  /* "last seen" + version for the admin overview — at most every 30 minutes */
+  presence(){
+    const u = this.user; if (!u) return;
+    const k = "nido.seenAt." + u.uid; let last = 0; try { last = +localStorage.getItem(k) || 0; } catch(e){}
+    if (Date.now() - last < 30 * 60e3) return;
+    try { localStorage.setItem(k, Date.now()); } catch(e){}
+    this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), { lastSeen: Date.now(), build: BUILD }).catch(() => {});
   },
   async notesSentCheck(){ if (this._nsc === Notes.today()) return; this._nsc = Notes.today(); await Notes.alreadySent(); Notes.refreshFab(); },
   deny(msg){ this.user = null; this.signOut(); this.stop(); if (me) logout(true); $("#err") && ($("#err").textContent = msg); toast(msg); },
@@ -1101,6 +1173,14 @@ const Cloud = {
     return id;
   },
   async renameFamily(id, name){ await this.fb.setDoc(this.fb.doc(this.db, "families", id), { name }, { merge:true }); },
+  async saveFamily(id, patch){ await this.fb.setDoc(this.fb.doc(this.db, "families", id), patch, { merge:true }); },
+  /* disabling a family = disabling all its people (the database rules already block inactive users) */
+  async setFamilyActive(id, on){
+    const F = this.fb, b = F.writeBatch(this.db);
+    Object.values(ALLUSERS).filter(u => u.family === id && u.uid !== BOOT_ADMIN_UID).forEach(u => b.update(F.doc(this.db, "users", u.uid), { active: on }));
+    b.set(F.doc(this.db, "families", id), { active: on }, { merge:true });
+    await b.commit();
+  },
   async bootstrap(){
     const F = this.fb, uid = this.user.uid, b = F.writeBatch(this.db);
     b.set(F.doc(this.db, "users", uid), { username:"slava", name:"סלבה", color:"#7FB0FF", role:"admin", active:true, photo:"", family:HOME_FAMILY, created:Date.now() });
@@ -1181,7 +1261,7 @@ const Cloud = {
       await Promise.all(commits);
     } catch(e){ console.error("[migrate]", e); }
   },
-  stop(){ this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{} }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -1463,7 +1543,7 @@ const Notes = {
   others(){ return people().filter(k => k !== me); },
   refreshFab(){
     const f = $("#noteFab"); if (!f) return;
-    const show = !!me && !$("#app").hidden && !this.sentToday() && this.others().length > 0;
+    const show = !!me && !$("#app").hidden && feat("notes") && !this.sentToday() && this.others().length > 0;
     f.hidden = !show;
   },
   /* ---- storage: Firestore in the cloud app, localStorage in the demo ---- */
@@ -1530,7 +1610,7 @@ const Notes = {
     const from = n.fromName || (Object.values(USERS).find(u => u.uid === n.from) || {}).name || "מישהו";
     const when = new Date(n.at), day = iso(when) === this.today() ? `היום ב־${pad(when.getHours())}:${pad(when.getMinutes())}` : dayLabel(iso(when));
     const w = document.createElement("div"); w.className = "note-scrim";
-    w.innerHTML = `<div class="note ${esc(n.color || "yellow")}" role="dialog" aria-modal="true" aria-label="פתק מ${esc(from)}">
+    w.innerHTML = `<div class="fnote ${esc(n.color || "yellow")}" role="dialog" aria-modal="true" aria-label="פתק מ${esc(from)}">
       <div class="note-hint">מישהו השאיר לך משהו קטן ❤️</div>
       <span class="magnet"></span>
       <p class="to">${esc(day)}</p>
@@ -1551,14 +1631,14 @@ const Notes = {
     const st = { to: others.length === 1 ? [others[0]] : [], color: "yellow" };
     const w = document.createElement("div"); w.className = "note-scrim";
     const whom = () => `<span>ל־</span>${others.length > 1 ? `<button type="button" data-all class="${st.to.length === others.length ? "on" : ""}">כולם</button>` : ""}${others.map(k => `<button type="button" data-k="${esc(k)}" class="${st.to.includes(k) ? "on" : ""}">${esc(USERS[k].name)}</button>`).join("")}`;
-    w.innerHTML = `<div class="note yellow" role="dialog" aria-modal="true" aria-label="פתק על המקרר">
+    w.innerHTML = `<div class="fnote yellow" role="dialog" aria-modal="true" aria-label="פתק על המקרר">
       <span class="magnet"></span>
       <div class="whom">${whom()}</div>
       <textarea maxlength="160" placeholder="משהו קטן…" aria-label="הפתק"></textarea>
       <div class="papers"><div class="cs">${Object.entries(NOTE_COLORS).map(([k, c]) => `<button type="button" data-c="${k}" class="${k === "yellow" ? "on" : ""}" style="background:${c}" aria-label="צבע פתק"></button>`).join("")}</div><small>פתק אחד ביום</small></div>
       <div class="send"><button type="button" class="x">ביטול</button><button type="button" class="ok">להדביק על המקרר 🧲</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
-    const note = w.querySelector(".note"), ta = w.querySelector("textarea");
+    const note = w.querySelector(".fnote"), ta = w.querySelector("textarea");
     setTimeout(() => ta.focus(), 350);
     const close = () => { w.classList.remove("show"); setTimeout(() => { w.remove(); this.next(); }, 320); };
     w.querySelector(".x").onclick = close;
@@ -1571,7 +1651,7 @@ const Notes = {
     };
     w.querySelector(".cs").onclick = e => {
       const b = e.target.closest("[data-c]"); if (!b) return;
-      st.color = b.dataset.c; note.className = "note " + st.color;
+      st.color = b.dataset.c; note.className = "fnote " + st.color;
       w.querySelectorAll(".cs button").forEach(x => x.classList.toggle("on", x === b));
     };
     w.querySelector(".send .ok").onclick = async () => {
@@ -1624,6 +1704,157 @@ const Notes = {
 /* the day changed while the app was open → the button comes back */
 setInterval(() => Notes.refreshFab(), 60e3);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) Notes.refreshFab(); });
+
+/* ================= הודעה מהמנהל ================= */
+/* announcements/{id}: { title, text, target: "all" | familyId, at }. Each person sees each one once. */
+const Announce = {
+  list: [], unsubs: [],
+  seenKey: () => "nido.ann.seen." + (Cloud.user ? Cloud.user.uid : ""),
+  seen(){ try { return JSON.parse(localStorage.getItem(this.seenKey())) || []; } catch(e){ return []; } },
+  markSeen(id){ const s = this.seen(); if (!s.includes(id)){ s.push(id); try { localStorage.setItem(this.seenKey(), JSON.stringify(s.slice(-200))); } catch(e){} } },
+  listen(){
+    if (!CLOUD || this.unsubs.length || !Cloud.user) return;
+    const F = Cloud.fb, col = F.collection(Cloud.db, "announcements"), got = {};
+    const apply = () => { this.list = Object.values(got).flat().sort((a, b) => a.at - b.at); this.next(); if (S.adminTab === "msgs") Admin.render(); };
+    if (Cloud.isSuper){
+      this.unsubs.push(F.onSnapshot(col, qs => { got.all = qs.docs.map(d => ({ id:d.id, ...d.data() })); apply(); }, () => {}));
+    } else {
+      for (const t of ["all", Cloud.fam]) this.unsubs.push(F.onSnapshot(F.query(col, F.where("target", "==", t)), qs => { got[t] = qs.docs.map(d => ({ id:d.id, ...d.data() })); apply(); }, () => {}));
+    }
+  },
+  stop(){ this.unsubs.forEach(f => { try { f(); } catch(e){} }); this.unsubs = []; this.list = []; },
+  next(){
+    const seen = this.seen();
+    const n = this.list.find(a => !seen.includes(a.id) && (a.target === "all" || a.target === Cloud.fam) && a.by !== (Cloud.user && Cloud.user.uid));
+    if (!n || document.querySelector(".ann-scrim")) return;
+    if (!me || $("#app").hidden || document.getElementById("splash") || $("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim,.note-scrim,#admin:not([hidden])")){ clearTimeout(this._t); this._t = setTimeout(() => this.next(), 1500); return; }
+    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim ann-scrim";
+    w.innerHTML = `<div class="cfm upd" role="dialog" aria-modal="true" aria-labelledby="annT">
+      <div class="ic upd-ic">📣</div><small class="ann-from">הודעה מ־Nido</small>
+      <h3 id="annT"></h3><p class="upd-p ann-txt"></p>
+      <div class="row"><button type="button" class="go">הבנתי</button></div></div>`;
+    w.querySelector("h3").textContent = n.title || "עדכון";
+    w.querySelector(".ann-txt").textContent = n.text || "";
+    document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    w.querySelector(".go").onclick = () => { this.markSeen(n.id); w.classList.remove("show"); setTimeout(() => { w.remove(); this.next(); }, 220); };
+  },
+  async send(title, text, target){ await Cloud.fb.addDoc(Cloud.fb.collection(Cloud.db, "announcements"), { title, text, target, at: Date.now(), by: Cloud.user.uid }); },
+  async remove(id){ await Cloud.fb.deleteDoc(Cloud.fb.doc(Cloud.db, "announcements", id)); },
+};
+
+/* ================= מסך ניהול (system admin only) ================= */
+const ago = t => { if (!t) return "עוד לא נכנס/ה"; const m = Math.round((Date.now() - t) / 60e3);
+  return m < 2 ? "עכשיו" : m < 60 ? `לפני ${m} דק׳` : m < 1440 ? `לפני ${Math.round(m / 60)} שע׳` : m < 2880 ? "אתמול" : `לפני ${Math.round(m / 1440)} ימים`; };
+const famName = id => id === HOME_FAMILY ? "המשפחה שלנו" : "משפחת " + (FAMILIES[id]?.name || id);
+const Admin = {
+  open(tab){
+    if (!(CLOUD && Cloud.isSuper)) return openAdmin();
+    closeSheet(); S.adminTab = tab || S.adminTab || "over"; S.adminFam = null;
+    $("#admin").hidden = false; document.body.classList.add("admin-open"); this.render();
+  },
+  close(){ $("#admin").hidden = true; document.body.classList.remove("admin-open"); S.adminTab = null; Announce.next(); },
+  famIds(){ const ids = new Set(Object.keys(FAMILIES)); Object.values(ALLUSERS).forEach(u => ids.add(u.family)); return [...ids].sort((a, b) => a === HOME_FAMILY ? -1 : b === HOME_FAMILY ? 1 : famName(a).localeCompare(famName(b), "he")); },
+  people(fid){ return Object.keys(ALLUSERS).filter(k => ALLUSERS[k].family === fid).sort((a, b) => (ALLUSERS[b].lastSeen || 0) - (ALLUSERS[a].lastSeen || 0)); },
+  render(){
+    const el = $("#admin"); if (el.hidden) return;
+    const tab = S.adminTab;
+    const tabs = [["over","סקירה"],["fams","משפחות"],["msgs","הודעות"]];
+    let body = "";
+    if (tab === "over") body = this.overview(); else if (tab === "fams") body = S.adminFam ? this.family(S.adminFam) : this.families(); else body = this.messages();
+    el.innerHTML = `<div class="adm-wrap">
+      <header class="adm-head"><div><small>Nido</small><h1>ניהול מערכת</h1></div><button type="button" class="icon-btn" data-x aria-label="סגירה">${icon("close")}</button></header>
+      <div class="adm-tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-t="${k}" aria-selected="${tab === k}">${l}</button>`).join("")}</div>
+      <div class="adm-body">${body}</div></div>`;
+    el.querySelector("[data-x]").onclick = () => this.close();
+    el.querySelector(".adm-tabs").onclick = e => { const b = e.target.closest("[data-t]"); if (b){ S.adminTab = b.dataset.t; S.adminFam = null; this.render(); el.scrollTop = 0; } };
+    this.bind(el);
+  },
+  overview(){
+    const users = Object.values(ALLUSERS), week = Date.now() - 7 * 864e5, day = Date.now() - 864e5;
+    const active = users.filter(u => u.lastSeen > week).length, today = users.filter(u => u.lastSeen > day).length;
+    const outdated = users.filter(u => u.build && u.build !== BUILD).length;
+    return `<div class="adm-stats">
+        <div><b class="tabular">${this.famIds().length}</b><small>משפחות</small></div>
+        <div><b class="tabular">${users.length}</b><small>משתמשים</small></div>
+        <div><b class="tabular">${today}</b><small>נכנסו היום</small></div>
+        <div><b class="tabular">${active}</b><small>פעילים השבוע</small></div>
+      </div>
+      <p class="adm-note">גרסה נוכחית: <b dir="ltr">${esc(BUILD)}</b>${outdated ? ` · ${outdated} עדיין בגרסה ישנה` : " · כולם מעודכנים"}</p>
+      ${this.famIds().map(fid => `<section class="adm-card"><h3>${esc(famName(fid))}${FAMILIES[fid]?.active === false ? ` <span class="role-badge viewer">מושבתת</span>` : ""}</h3>
+        ${this.people(fid).map(k => { const u = ALLUSERS[k], old = u.build && u.build !== BUILD; return `<div class="adm-row ${u.active === false ? "off" : ""}">
+          <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
+          <span class="t"><b>${esc(u.name)}</b><small>${esc(ago(u.lastSeen))}${u.build ? ` · <span dir="ltr" class="${old ? "old" : ""}">${esc(u.build)}</span>` : ""}</small></span>
+          <i class="dot ${u.lastSeen > day ? "on" : u.lastSeen > week ? "mid" : ""}"></i></div>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}</section>`).join("")}
+      <p class="adm-note">רואים רק מתי כל אחד נכנס ובאיזו גרסה, לא את התוכן שלהם.</p>`;
+  },
+  families(){
+    return `${this.famIds().map(fid => { const f = FAMILIES[fid] || {}, n = this.people(fid).length, city = (CITIES.find(c => c[0] === (f.city || "293397")) || [])[1] || "";
+      return `<button type="button" class="adm-fam ${f.active === false ? "off" : ""}" data-fam="${esc(fid)}">
+        <span class="ic">${icon("home")}</span><span class="t"><b>${esc(famName(fid))}</b><small>${n} ${n === 1 ? "משתמש" : "משתמשים"} · ${esc(city)}${f.active === false ? " · מושבתת" : ""}</small></span>${icon("next")}</button>`; }).join("")}
+      <button type="button" class="primary" data-newfam>${icon("plus")} משפחה חדשה</button>`;
+  },
+  family(fid){
+    const f = FAMILIES[fid] || {}, feats = f.features || {}, home = fid === HOME_FAMILY;
+    return `<button type="button" class="adm-back" data-back>${icon("prev")} כל המשפחות</button>
+      <div class="adm-title"><h2>${esc(famName(fid))}</h2>${!home ? `<button type="button" class="secondary" data-rename>${icon("edit")}שם</button>` : ""}</div>
+      <section class="adm-card"><h3>משתמשים</h3>
+        ${this.people(fid).map(k => { const u = ALLUSERS[k]; return `<button type="button" class="adm-row" data-u="${esc(k)}">
+          <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
+          <span class="t"><b>${esc(u.name)}${k === me ? " (אני)" : ""}</b><small dir="ltr">@${esc(k)}</small></span>
+          ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor")}</button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
+        <button type="button" class="secondary adm-add" data-newuser>${icon("plus")} משתמש חדש</button></section>
+      <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
+        <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
+      <section class="adm-card"><h3>פיצ׳רים</h3>
+        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>`).join("")}</section>
+      ${!home ? `<section class="adm-card danger-zone"><h3>השבתת המשפחה</h3>
+        <p class="adm-note">${f.active === false ? "המשפחה מושבתת — אף אחד ממנה לא יכול להיכנס." : "כל המשתמשים של המשפחה ייחסמו. הנתונים שלהם נשמרים, ואפשר להחזיר בכל רגע."}</p>
+        <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>` : ""}`;
+  },
+  messages(){
+    const list = [...Announce.list].sort((a, b) => b.at - a.at);
+    return `<section class="adm-card"><h3>הודעה חדשה</h3>
+        <span class="lbl">למי</span>
+        <select class="input" data-target><option value="all">כל המשפחות</option>${this.famIds().map(fid => `<option value="${esc(fid)}">${esc(famName(fid))}</option>`).join("")}</select>
+        <span class="lbl">כותרת</span><input class="input" data-title maxlength="60" placeholder="למשל: תחזוקה הלילה">
+        <span class="lbl">תוכן</span><textarea class="textarea" data-text rows="4" maxlength="400" placeholder="מה רוצים להגיד?"></textarea>
+        <p class="adm-note">ההודעה תקפוץ לכל אחד פעם אחת, בפעם הבאה שהוא באפליקציה.</p>
+        <button type="button" class="primary" data-send>${icon("plus")} שליחה</button></section>
+      <section class="adm-card"><h3>נשלחו</h3>
+        ${list.map(a => `<div class="adm-msg"><div class="t"><b>${esc(a.title || "")}</b><small>${esc(a.target === "all" ? "כל המשפחות" : famName(a.target))} · ${esc(ago(a.at))}</small><p>${esc(a.text || "")}</p></div>
+          <button type="button" class="icon-btn" data-delmsg="${esc(a.id)}" aria-label="מחיקה">${icon("trash")}</button></div>`).join("") || `<p class="adm-note">עוד לא נשלחו הודעות.</p>`}</section>`;
+  },
+  bind(el){
+    const q = s => el.querySelector(s);
+    el.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => { S.adminFam = b.dataset.fam; this.render(); el.scrollTop = 0; });
+    q("[data-back]")?.addEventListener("click", () => { S.adminFam = null; this.render(); });
+    q("[data-newfam]")?.addEventListener("click", () => openFamilyForm(null));
+    q("[data-rename]")?.addEventListener("click", () => openFamilyForm(S.adminFam));
+    q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
+    el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
+    q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
+    el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
+      const f = { ...((FAMILIES[S.adminFam] || {}).features || {}) }; f[c.dataset.feat] = c.checked;
+      try { await Cloud.saveFamily(S.adminFam, { features: f }); toast("נשמר"); } catch(x){ c.checked = !c.checked; toast(errText(x)); }
+    });
+    q("[data-active]")?.addEventListener("click", async e => {
+      const on = e.currentTarget.dataset.active === "on", fid = S.adminFam;
+      if (!on && !await askConfirm(`להשבית את ${famName(fid)}?`, "כל המשתמשים שלה לא יוכלו להיכנס עד שתפעיל מחדש. שום דבר לא נמחק.", "השבתה")) return;
+      try { await Cloud.setFamilyActive(fid, on); toast(on ? "המשפחה הופעלה" : "המשפחה הושבתה"); } catch(x){ toast(errText(x)); }
+    });
+    q("[data-send]")?.addEventListener("click", async e => {
+      const title = q("[data-title]").value.trim(), text = q("[data-text]").value.trim(), target = q("[data-target]").value;
+      if (!title && !text){ toast("מה כותבים?"); return; }
+      const b = e.currentTarget; busyBtn(b, true, "שולח…");
+      try { await Announce.send(title, text, target); toast("ההודעה נשלחה 📣"); q("[data-title]").value = ""; q("[data-text]").value = ""; }
+      catch(x){ toast(errText(x)); } busyBtn(b, false); b.innerHTML = `${icon("plus")} שליחה`;
+    });
+    el.querySelectorAll("[data-delmsg]").forEach(b => b.onclick = async () => {
+      if (!await askConfirm("למחוק את ההודעה?", "מי שעוד לא ראה אותה לא יקבל אותה.", "מחיקה")) return;
+      try { await Announce.remove(b.dataset.delmsg); } catch(x){ toast(errText(x)); }
+    });
+  },
+};
 
 /* re-render after a remote change, but never under the user's fingers */
 function uiBusy(){
@@ -1891,11 +2122,13 @@ function myShopTask(){ return DB.tasks.find(t => t.kind==="shop" && !t.done && t
 const LISTS = [["super","סופר","cart"],["home","לבית","home"],["survey","סקר שוק","bulb"],["coupons","קופונים","gift"]];
 function listsSeg(){
   const n = k => k==="survey" ? DB.survey.length : k==="coupons" ? DB.coupons.filter(c=>!c.archived && !cpExpired(c)).length : DB.shop.filter(i=>i.list===k).length;
-  return `<div class="seg lists" role="tablist">${LISTS.map(([k,l,ic]) =>
+  if (!feat(S.shopList)) S.shopList = "super";
+  return `<div class="seg lists" role="tablist">${LISTS.filter(([k]) => feat(k)).map(([k,l,ic]) =>
     `<button role="tab" data-list="${k}" aria-pressed="${S.shopList===k}">${icon(ic)}${l} <span class="n">${n(k)}</span></button>`).join("")}</div>`;
 }
 function bindSeg(){ $("#screen").querySelectorAll("[data-list]").forEach(b => b.onclick = () => { S.shopList = b.dataset.list; S.take = false; S.surveyOpen = null; renderShop(); }); }
 function renderShop(){
+  if ((S.shopList === "survey" || S.shopList === "coupons") && !feat(S.shopList)) S.shopList = "super";
   if (S.shopList==="survey") return renderSurvey();
   if (S.shopList==="coupons") return renderCoupons();
   const items = DB.shop.filter(i => i.list===S.shopList);
@@ -2244,11 +2477,12 @@ const Hol = {
   KEY: "nido.hebcal.v1", data: null, loading: false,
   load(){
     if (!this.data){ try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch(e){} }
-    const fresh = this.data && Date.now() - this.data.at < 864e5 && this.data.from <= iso(addDays(new Date(), -40));
+    const city = FAM.city || "293397";
+    const fresh = this.data && this.data.city === city && Date.now() - this.data.at < 864e5 && this.data.from <= iso(addDays(new Date(), -40));
     if (fresh || this.loading || !navigator.onLine) return;
     this.loading = true;
     const from = iso(addDays(new Date(), -60)), to = iso(addDays(new Date(), 420));
-    fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&ss=on&mf=on&c=on&geo=geoname&geonameid=293397&M=on&s=off&lg=he&start=${from}&end=${to}`)
+    fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&ss=on&mf=on&c=on&geo=geoname&geonameid=${city}&M=on&s=off&lg=he&start=${from}&end=${to}`)
       .then(r => r.json()).then(j => {
         const by = {};
         const add = (d, x) => (by[d] = by[d] || []).push(x);
@@ -2261,7 +2495,7 @@ const Hol = {
             add(d, { k: it.subcat === "major" ? "major" : "minor", n: name.replace(/\s*\(.*?\)\s*/g, " ").trim() });
           } else if (it.category === "roshchodesh") add(d, { k:"rc", n: name });
         }
-        this.data = { at: Date.now(), from, by };
+        this.data = { at: Date.now(), from, by, city };
         try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch(e){}
         if (S.tab === "cal" && !uiBusy()) renderCal();
       }).catch(() => {}).finally(() => { this.loading = false; });
@@ -3119,6 +3353,7 @@ const UsersAPI = {
 };
 function afterUsersChange(){ document.documentElement.classList.toggle("ro", !canEdit()); refreshOpenPanels(); softRender(); }
 function refreshOpenPanels(){
+  if (!$("#admin").hidden && !$("#admin").contains(document.activeElement)) Admin.render();
   if (S.panel === "admin" && $("#sheetRoot .sheet") && !$("#sheetRoot").contains(document.activeElement)) openAdmin(true);
 }
 const errText = e => {
@@ -3167,7 +3402,7 @@ function openProfile(){
     <div class="pf-links">
       ${CLOUD && PUSH_READY?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
       <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
-      ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}ניהול משתמשים<span class="go">${icon("next")}</span></button>`:""}
+      ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}${CLOUD && Cloud.isSuper ? "ניהול מערכת" : "ניהול משתמשים"}<span class="go">${icon("next")}</span></button>`:""}
       <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
     </div>`);
   bindSwatches(sh, st);
@@ -3182,7 +3417,7 @@ function openProfile(){
   });
   sh.querySelector("#pwBtn").onclick = openPassword;
   sh.querySelector("#ntBtn")?.addEventListener("click", openNotifications);
-  sh.querySelector("#adminBtn")?.addEventListener("click", () => openAdmin());
+  sh.querySelector("#adminBtn")?.addEventListener("click", () => CLOUD && Cloud.isSuper ? Admin.open() : openAdmin());
   sh.querySelector("#outBtn").onclick = async () => { if (await askConfirm("יציאה מהחשבון", "תצטרך להתחבר שוב עם שם משתמש וסיסמה.", "יציאה")) { S.panel = null; logout(); } };
 }
 
@@ -3244,7 +3479,7 @@ function openPassword(){
 const isSuperAdmin = () => CLOUD ? !!Cloud.isSuper : roleOf() === "admin";
 function openAdmin(refresh){
   if (!isAdmin()) return;
-  if (CLOUD && Cloud.isSuper) return openFamilies(refresh);
+  if (CLOUD && Cloud.isSuper){ if (!$("#admin").hidden){ closeSheet(); Admin.render(); return; } return openFamilies(refresh); }
   const keys = Object.keys(USERS).sort((a,b) => (USERS[b].active!==false) - (USERS[a].active!==false) || (a===me?-1:b===me?1:0) || USERS[a].name.localeCompare(USERS[b].name, "he"));
   const html = `${head("ניהול משתמשים")}
     <p class="note">${keys.length} משתמשים · רק מנהל רואה את המסך הזה.</p>
