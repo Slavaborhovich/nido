@@ -1,0 +1,7 @@
+{
+  "name": "nido-push",
+  "private": true,
+  "type": "module",
+  "description": "Nido push server — Cloudflare Workers FREE plan only. Not deployed.",
+  "scripts": { "test": "node test/worker.test.mjs" }
+}

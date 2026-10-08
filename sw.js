@@ -53,12 +53,20 @@ self.addEventListener("push", e => {
   }));
 });
 
+/* a window belongs to this app only if it is inside this scope and not inside the nested test app (/nido/ vs /nido/test/) */
+function sameApp(u){
+  try {
+    const scope = new URL(self.registration.scope).pathname, p = new URL(u).pathname;
+    if (!p.startsWith(scope)) return false;
+    return scope.endsWith("/test/") || !p.startsWith(scope + "test/");
+  } catch (_) { return false; }
+}
 self.addEventListener("notificationclick", e => {
   e.notification.close();
   const tab = (e.notification.data || {}).tab || "";
   const url = self.registration.scope + (tab ? "?tab=" + tab : "");
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
-    for (const c of list) if (c.url.startsWith(self.registration.scope)) { c.postMessage({ tab }); return c.focus(); }
+    for (const c of list) if (sameApp(c.url)) { c.postMessage({ tab }); return c.focus(); }
     return self.clients.openWindow(url);
   }));
 });

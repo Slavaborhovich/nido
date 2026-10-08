@@ -1425,6 +1425,7 @@ const Cloud = {
     Object.values(ALLUSERS).filter(u => u.family === id && u.uid !== BOOT_ADMIN_UID).forEach(u => b.update(F.doc(this.db, "users", u.uid), { active: on }));
     b.set(F.doc(this.db, "families", id), { active: on }, { merge:true });
     await b.commit();
+    pushRoster(id);
   },
   /* system admin: remove a whole family — its people, content, notes, settings and counters */
   async deleteFamily(fid){
@@ -1438,6 +1439,7 @@ const Cloud = {
     refs.push(F.doc(this.db, "stats", fid));
     for (let i = 0; i < refs.length; i += 400){ const b = F.writeBatch(this.db); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     await F.deleteDoc(F.doc(this.db, "families", fid));
+    pushRoster(fid);                                          // the push server drops the family's devices and reminders
     return refs.length;
   },
   async bootstrap(){
@@ -1478,12 +1480,14 @@ const Cloud = {
   async updateUser(username, patch){
     const u = ALLUSERS[username] || USERS[username]; if (!u || !u.uid) throw { code:"missing" };
     await this.fb.updateDoc(this.fb.doc(this.db, "users", u.uid), patch);
+    if ("active" in patch || "role" in patch || "family" in patch) pushRoster(u.family);
   },
   async deleteUser(username){
     const u = ALLUSERS[username] || USERS[username]; if (!u || !u.uid) throw { code:"missing" };
     const F = this.fb, b = F.writeBatch(this.db);
     b.delete(F.doc(this.db, "users", u.uid)); b.delete(F.doc(this.db, "logins", username));
     await b.commit();
+    pushRoster(u.family);
   },
   async changePassword(current, next){
     const F = this.fb, user = this.auth.currentUser;
@@ -1595,11 +1599,15 @@ const NOTIF_KINDS = [
   ["remind",   "תזכורות",                     "שעה לפני אירוע או משימה עם שעה, וסיכום בוקר ב־8:00"],
 ];
 async function pushApi(path, body){
+  if (!PUSH_READY || !Cloud.auth || !Cloud.auth.currentUser) throw { code: "push-off" };
   const token = await Cloud.auth.currentUser.getIdToken();
   const r = await fetch(PUSH_URL + path, { method:"POST", headers:{ "content-type":"application/json", authorization:"Bearer " + token }, body: JSON.stringify({ env: ENV, ...body }) });
   if (!r.ok) throw { code: "push-" + r.status };
   return r.json();
 }
+/* after an admin disables / deletes / changes someone: the push server re-reads that family's members
+   (so disabled or deleted people stop getting notifications right away). No-op while notifications are off. */
+function pushRoster(fam){ if (CLOUD && PUSH_READY) pushApi("/roster", fam ? { fam } : {}).catch(e => console.warn("[push roster]", e && e.code)); }
 const Push = {
   KEY: "nido.push." + ENV,
   supported(){ return CLOUD && PUSH_READY && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window; },
@@ -1628,6 +1636,10 @@ const Push = {
     if (ep) try { await pushApi("/unsubscribe", { endpoint: ep }); } catch(e){}
   },
   test(){ return pushApi("/test", {}); },
+  async dropLocal(){
+    try { localStorage.removeItem(this.KEY); } catch(e){}
+    try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch(e){}
+  },
   /* subscriptions can change — re-register quietly on every start */
   async refresh(){
     if (!this.on() || this._refreshed) return; this._refreshed = true;
@@ -1638,40 +1650,33 @@ const Push = {
 
 /* What to tell whom. Runs on the phone that made the change; never notifies the person who did it. */
 const Notify = {
-  ADDED: { tasks:"משימה חדשה", ideas:"רעיון חדש", events:"אירוע חדש ביומן", shop:"נוסף לקניות", coupons:"קופון חדש", survey:"מוצר חדש בסקר שוק" },
-  TAB:   { tasks:"tasks", ideas:"ideas", events:"cal", shop:"shop", coupons:"shop", survey:"shop" },
+  /* only a kind code is sent; the push server turns it into a fixed, generic text (nothing personal on the lock screen) */
+  KIND: { tasks:"task", ideas:"idea", events:"event", shop:"shop", coupons:"shop", survey:"shop" },
   wants: (k, kind) => !(USERS[k] && USERS[k].notif && USERS[k].notif[kind] === false),
   others(kind){ return people().filter(k => k !== me && USERS[k].uid && this.wants(k, kind)); },
-  send(keys, msg){
-    const uids = keys.map(k => USERS[k] && USERS[k].uid).filter(Boolean);
-    if (!uids.length || !navigator.onLine) return;
-    pushApi("/send", { uids, ...msg }).catch(e => console.warn("[notify]", e));
+  send(keys, kind){
+    const uids = [...new Set(keys.map(k => USERS[k] && USERS[k].uid).filter(Boolean))];
+    if (!uids.length || !navigator.onLine || !canEdit()) return;
+    pushApi("/send", { uids, kind }).catch(e => console.warn("[notify]", e && e.code));
   },
   changes(list){
     if (!CLOUD || !PUSH_READY || !me || !list.length || list.length > 12) return;      // bulk changes (imports, seeding) stay quiet
-    const who = meU().name;
     for (const { c, before, after } of list){
-      const label = after.title || after.name || "";
       if (!before){
         if (c === "tasks" && (after.spawned || after.kind === "idea" || after.kind === "survey")) continue;
-        if (c === "tasks" && after.kind === "shop"){
-          this.send(this.others("done"), { title:"יוצאים לקניות 🛒", body:`${who} לוקח/ת את הקניות`, tag:"shop-take", tab:"shop" }); continue;
-        }
+        if (c === "tasks" && after.kind === "shop"){ this.send(this.others("done"), "shop"); continue; }
         let skip = null;
         if (c === "tasks" && after.assignee && after.assignee !== me && USERS[after.assignee]){
           skip = after.assignee;
-          if (this.wants(skip, "assigned")) this.send([skip], { title:"שובצה לך משימה", body:`${label} · מ${who}`, tag:`t-${after.id}`, tab:"tasks" });
+          if (this.wants(skip, "assigned")) this.send([skip], "task");
         }
-        this.send(this.others("added").filter(k => k !== skip), { title: this.ADDED[c] || "נוסף משהו חדש", body:`${who}: ${label}`, tag: c === "shop" ? "shop-add" : `n-${after.id}`, tab: this.TAB[c] });
+        this.send(this.others("added").filter(k => k !== skip), this.KIND[c] || "task");
         continue;
       }
       if (c === "tasks"){
         if (after.assignee && after.assignee !== before.assignee && after.assignee !== me && USERS[after.assignee] && this.wants(after.assignee, "assigned"))
-          this.send([after.assignee], { title:"שובצה לך משימה", body:`${label} · מ${who}`, tag:`t-${after.id}`, tab:"tasks" });
-        if (after.done && !before.done){
-          const shop = after.kind === "shop";
-          this.send(this.others("done"), { title: shop ? "הקניות הושלמו ✓" : "משימה הושלמה ✓", body: shop ? `${who} סיים/ה את הקניות` : `${who}: ${label}`, tag:`d-${after.id}`, tab:"tasks" });
-        }
+          this.send([after.assignee], "task");
+        if (after.done && !before.done) this.send(this.others("done"), after.kind === "shop" ? "shop" : "task");
       }
     }
   },
@@ -1687,12 +1692,12 @@ const Notify = {
     const uidsOf = ks => ks.map(k => USERS[k].uid);
     for (const e of DB.events) if (e.date && e.time){
       const t = at(e.date, e.time) - 60*60e3;
-      if (t > now && t < until) jobs.push({ id:`e_${e.id}_${e.date}_${e.time}`, at:t, uids: uidsOf(remind), title:`בעוד שעה: ${e.title}`, body:`${e.time}${e.place ? " · " + e.place : ""}`, tag:`r-${e.id}`, tab:"cal" });
+      if (t > now && t < until && remind.length) jobs.push({ at:t, uids: uidsOf(remind), kind:"remind" });
     }
     for (const k of DB.tasks) if (!k.done && k.date && k.time){
       const t = at(k.date, k.time) - 60*60e3;
       const to = k.assignee && USERS[k.assignee] ? remind.filter(x => x === k.assignee) : remind;
-      if (t > now && t < until && to.length) jobs.push({ id:`k_${k.id}_${k.date}_${k.time}`, at:t, uids: uidsOf(to), title:`תזכורת: ${k.title}`, body:`בעוד שעה · ${k.time}`, tag:`r-${k.id}`, tab:"tasks" });
+      if (t > now && t < until && to.length) jobs.push({ at:t, uids: uidsOf(to), kind:"remind" });
     }
     for (let i = 0; i < 7; i++){
       const day = iso(addDays(new Date(), i)), t = at(day, "08:00");
@@ -1703,14 +1708,15 @@ const Notify = {
           ...DB.tasks.filter(k => !k.done && k.date === day && (!k.assignee || k.assignee === u)).map(k => (k.time ? k.time + " " : "") + k.title),
         ];
         if (!items.length) continue;
-        jobs.push({ id:`d_${day}_${USERS[u].uid}`, at:t, uids:[USERS[u].uid], title:`בוקר טוב ${USERS[u].name} ☀️ ${items.length === 1 ? "דבר אחד היום" : items.length + " דברים היום"}`,
-          body: items.slice(0, 4).join(" · ") + (items.length > 4 ? " …" : ""), tag:"digest", tab:"today" });
+        jobs.push({ at:t, uids:[USERS[u].uid], kind:"digest" });
       }
     }
-    jobs.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+    if (!canEdit()) return;                                                                   // viewers can't change the family's plan
+    jobs.splice(120);
+    jobs.sort((a, b) => a.at - b.at || a.kind.localeCompare(b.kind) || a.uids.join().localeCompare(b.uids.join()));
     const sig = JSON.stringify(jobs), key = "nido.jobs." + ENV;
     try { if (localStorage.getItem(key) === sig) return; } catch(e){}
-    pushApi("/jobs", { jobs }).then(() => { try { localStorage.setItem(key, sig); } catch(e){} }).catch(e => console.warn("[jobs]", e));
+    pushApi("/jobs", { jobs }).then(() => { try { localStorage.setItem(key, sig); } catch(e){} }).catch(e => console.warn("[jobs]", e && e.code));
   },
 };
 /* a tap on a notification opens the right tab */
@@ -1883,6 +1889,7 @@ const Notes = {
       localStorage.setItem("nido.notes", JSON.stringify(all));
     }
     this.markSent(); Stats.record({ notes: 1 }, 1);
+    if (CLOUD) Notify.send(toKeys, "note");                     // generic "פתק חדש על המקרר" — the note itself stays in the app
   },
   async ack(n){
     if (CLOUD){
@@ -4751,6 +4758,7 @@ function enter(u){ me=u; Back.init(); document.documentElement.classList.toggle(
 function logout(fromCloud){
   // a shared phone must stop getting this person's notifications — unregister it while we still have their sign-in
   if (CLOUD && !fromCloud && Push.on() && !logout._busy){ logout._busy = true; Push.disable().catch(() => {}).finally(() => { logout._busy = false; logout(fromCloud); }); return; }
+  if (CLOUD && fromCloud && Push.on()) Push.dropLocal();     // signed out remotely (disabled/removed): stop this device without the server
   if (CLOUD){ if (!fromCloud) Cloud.signOut(); Cloud.stop(); Object.assign(DB, emptyDB()); try{ localStorage.removeItem(STORE); }catch(e){} } closeSheet(); document.documentElement.classList.remove("ro"); hideAmbient(); setSession(null); me=null; Notes.stop(); Notes.refreshFab(); $("#pass").value=""; $("#app").hidden=true; $("#login").hidden=false; showLogin(); }
 function doLogin(){
   const u=$("#user").value.trim().toLowerCase(), p=$("#pass").value, err=$("#err");
