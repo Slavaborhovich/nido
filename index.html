@@ -921,7 +921,7 @@ const DEFAULT_USERS = {
 };
 const USERS = {};
 const ROLES = {
-  admin:  { label:"מנהל מערכת",    short:"מנהל",  desc:"רואה ועורך הכול, ומנהל משתמשים" },
+  admin:  { label:"מנהל משפחה",    short:"מנהל",  desc:"רואה ועורך הכול, ומוסיף/מוחק משתמשים במשפחה" },
   editor: { label:"צפייה ועריכה",  short:"עורך",  desc:"רואה ועורך את כל התוכן" },
   viewer: { label:"צפייה בלבד",    short:"צופה",  desc:"רואה הכול, לא יכול לשנות" },
 };
@@ -932,7 +932,7 @@ const ALLUSERS = {};                   // every family's people — only the sys
 const FAMILIES = {};                   // id → { name, city, features, active }
 const CITIES = [["293397","תל אביב"],["281184","ירושלים"],["294801","חיפה"],["295530","באר שבע"],["293703","ראשון לציון"],["293918","פתח תקווה"],["294071","נתניה"],["295629","אשדוד"],["294751","חולון"],["293788","רמת גן"],["294778","הרצליה"]];
 const FEATURES = [["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
-let FAM = { city:"293397", features:{} };   // the current family's settings
+let FAM = { city:"293397", features:{}, maxUsers:0 };   // the current family's settings
 const feat = k => !(FAM.features && FAM.features[k] === false);   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
 const CLOUD = /\.github\.io$/.test(location.hostname) || /[?&]cloud=1\b/.test(location.search);
@@ -1148,7 +1148,7 @@ const Cloud = {
     this.famDocUnsub = this.fb.onSnapshot(this.fb.doc(this.db, "families", this.fam), d => {
       const x = d.exists() ? d.data() : {};
       const before = JSON.stringify(FAM);
-      FAM = { city: x.city || "293397", features: x.features || {} };
+      FAM = { city: x.city || "293397", features: x.features || {}, maxUsers: +x.maxUsers || 0 };
       if (JSON.stringify(FAM) !== before){ Notes.refreshFab(); Notes.alreadySent().then(() => Notes.refreshFab()); if (Hol.data && Hol.data.city !== FAM.city) Hol.data = null; softRender(); }
     }, () => {});
   },
@@ -1264,7 +1264,7 @@ const Cloud = {
       await Promise.all(commits);
     } catch(e){ console.error("[migrate]", e); }
   },
-  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{} }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
+  stop(){ if (this.famDocUnsub){ try { this.famDocUnsub(); } catch(e){} this.famDocUnsub = null; this._famFor = null; } Announce.stop(); FAM = { city:"293397", features:{}, maxUsers:0 }; this._notesOn = false; this._nsc = null; Notes.stop(); if (this.famUnsub){ try{ this.famUnsub(); }catch(e){} this.famUnsub = null; } if (this.myDocUnsub){ try{ this.myDocUnsub(); }catch(e){} this.myDocUnsub = null; } this.myDoc = undefined; this._lastQs = null; this._tagged = false; if (this.usersUnsub){ try{ this.usersUnsub(); }catch(e){} this.usersUnsub = null; } this.usersReady = null; this.unsubs.forEach(f => { try{ f(); }catch(e){} }); this.unsubs = []; this.snap = {}; this.order = {}; this.loaded = new Set(); },
   apply(c, qs){
     const snap = this.snap[c] = new Map(), ord = this.order[c] = new Map();
     const local = new Map((DB[c] || []).map(o => [o.id, o]));
@@ -1819,8 +1819,11 @@ const Admin = {
         ${this.people(fid).map(k => { const u = ALLUSERS[k]; return `<button type="button" class="adm-row" data-u="${esc(k)}">
           <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
           <span class="t"><b>${esc(u.name)}${k === me ? " (אני)" : ""}</b><small dir="ltr">@${esc(k)}</small></span>
-          ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor")}</button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
+          ${u.active === false ? `<span class="role-badge viewer">מושבת</span>` : roleBadge(u.role || "editor", u.uid)}</button>`; }).join("") || `<p class="adm-note">אין עדיין משתמשים</p>`}
         <button type="button" class="secondary adm-add" data-newuser>${icon("plus")} משתמש חדש</button></section>
+      <section class="adm-card"><h3>מנהלי המשפחה ומכסה</h3>
+        <p class="adm-note" style="margin-top:0">${(() => { const a = this.people(fid).filter(k => ALLUSERS[k].role === "admin" && ALLUSERS[k].uid !== BOOT_ADMIN_UID); return a.length ? "מנהל משפחה: " + a.map(k => esc(ALLUSERS[k].name)).join(", ") + " — יכול להוסיף ולמחוק משתמשים במשפחה." : "אין מנהל משפחה. כדי למנות — פתח משתמש ובחר הרשאה \"מנהל משפחה\"."; })()}</p>
+        <div class="adm-limit"><span>מקסימום משתמשים במשפחה</span><select class="input" data-maxusers><option value="0" ${!(+f.maxUsers) ? "selected" : ""}>ללא</option>${[2,3,4,5,6,8,10,12].map(n => `<option value="${n}" ${n === +f.maxUsers ? "selected" : ""}>${n}</option>`).join("")}</select></div></section>
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
       <section class="adm-card"><h3>פיצ׳רים</h3>
@@ -1850,6 +1853,7 @@ const Admin = {
     q("[data-rename]")?.addEventListener("click", () => openFamilyForm(S.adminFam));
     q("[data-newuser]")?.addEventListener("click", () => openUserEdit(null, S.adminFam));
     el.querySelectorAll(".adm-body [data-u]").forEach(b => b.onclick = () => openUserEdit(b.dataset.u));
+    q("[data-maxusers]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { maxUsers: +e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     q("[data-city]")?.addEventListener("change", async e => { try { await Cloud.saveFamily(S.adminFam, { city: e.target.value }); toast("נשמר"); } catch(x){ toast(errText(x)); } });
     el.querySelectorAll("[data-feat]").forEach(c => c.onchange = async () => {
       const f = { ...((FAMILIES[S.adminFam] || {}).features || {}) }; f[c.dataset.feat] = c.checked;
@@ -3385,7 +3389,8 @@ const errText = e => {
   if (c.includes("network") || !navigator.onLine) return "אין חיבור לאינטרנט.";
   return "משהו השתבש. נסה שוב.";
 };
-const roleBadge = r => `<span class="role-badge ${r}">${esc(ROLES[r]?.label || r)}</span>`;
+const roleBadge = (r, uid) => uid && uid === BOOT_ADMIN_UID ? `<span class="role-badge admin">מנהל מערכת</span>` : `<span class="role-badge ${r}">${esc(ROLES[r]?.label || r)}</span>`;
+const amSuper = () => CLOUD ? !!Cloud.isSuper : roleOf() === "admin";
 const swatches = sel => `<div class="swatches" role="radiogroup" aria-label="צבע">${PALETTE.map(c => `<button type="button" data-c="${c}" class="${c===sel?"on":""}" style="background:${c}" aria-label="צבע"></button>`).join("")}</div>`;
 function bindSwatches(root, state){
   root.querySelector(".swatches").addEventListener("click", e => {
@@ -3409,7 +3414,7 @@ function openProfile(){
   const sh = openSheet(`${head("הפרופיל שלי")}
     <div class="pf-top">
       <div class="pf-ava" id="pfAva" style="${ava()}">${initial(u)}<span class="cam">${icon("image")}</span><input type="file" accept="image/*" id="pfFile" aria-label="תמונת פרופיל"></div>
-      <p class="pf-name">${esc(u.name)}</p>${roleBadge(roleOf())}
+      <p class="pf-name">${esc(u.name)}</p>${roleBadge(roleOf(), u.uid)}
     </div>
     <form id="pf" class="pf-form">
       <span class="lbl">שם תצוגה</span><input class="input" name="name" value="${esc(u.name)}" maxlength="24" autocomplete="off">
@@ -3420,7 +3425,7 @@ function openProfile(){
     <div class="pf-links">
       ${CLOUD && PUSH_READY?`<button type="button" class="secondary" id="ntBtn">${icon("bell")}התראות<span class="go">${Push.on()?"פועל":"כבוי"} ${icon("next")}</span></button>`:""}
       <button type="button" class="secondary" id="pwBtn">${icon("edit")}החלפת סיסמה<span class="go">${icon("next")}</span></button>
-      ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}${CLOUD && Cloud.isSuper ? "ניהול מערכת" : "ניהול משתמשים"}<span class="go">${icon("next")}</span></button>`:""}
+      ${isAdmin()?`<button type="button" class="secondary" id="adminBtn">${icon("user")}${CLOUD && Cloud.isSuper ? "ניהול מערכת" : "ניהול המשפחה"}<span class="go">${icon("next")}</span></button>`:""}
       <button type="button" class="danger" id="outBtn">${icon("out")}יציאה מהחשבון</button>
     </div>`);
   bindSwatches(sh, st);
@@ -3499,19 +3504,23 @@ function openAdmin(refresh){
   if (!isAdmin()) return;
   if (CLOUD && Cloud.isSuper){ if (!$("#admin").hidden){ closeSheet(); Admin.render(); return; } return openFamilies(refresh); }
   const keys = Object.keys(USERS).sort((a,b) => (USERS[b].active!==false) - (USERS[a].active!==false) || (a===me?-1:b===me?1:0) || USERS[a].name.localeCompare(USERS[b].name, "he"));
-  const html = `${head("ניהול משתמשים")}
-    <p class="note">${keys.length} משתמשים · רק מנהל רואה את המסך הזה.</p>
+  const max = CLOUD ? (FAM.maxUsers || 0) : 0, full = max && keys.length >= max;
+  const html = `${head("ניהול המשפחה")}
+    <p class="note">${keys.length}${max ? ` מתוך ${max}` : ""} משתמשים · ${CLOUD ? "המסך הזה גלוי רק למנהל המשפחה." : "רק מנהל רואה את המסך הזה."}</p>
     <ul class="ulist">${keys.map(k => { const u = USERS[k]; return `<li><button type="button" data-u="${esc(k)}" class="${u.active===false?"off":""}">
       <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
-      <span class="u-txt"><b>${esc(u.name)}${k===me?" (אני)":""}</b><small>@${esc(k)}</small></span>
-      ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor")}</button></li>`; }).join("")}</ul>
-    <button type="button" class="primary" id="newUser">${icon("plus")} משתמש חדש</button>`;
+      <span class="u-txt"><b>${esc(u.name)}${k===me?" (אני)":""}</b><small>${CLOUD ? esc(ago(u.lastSeen)) : "@" + esc(k)}</small></span>
+      ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor", u.uid)}</button></li>`; }).join("")}</ul>
+    ${full ? `<p class="note">הגעתם למכסת המשתמשים של המשפחה. כדי להוסיף עוד — פנה למנהל המערכת.</p>` : `<button type="button" class="primary" id="newUser">${icon("plus")} משתמש חדש</button>`}`;
   let sh;
   if (refresh && $("#sheetRoot .sheet .inner")){ sh = $("#sheetRoot .sheet"); sh.querySelector(".inner").innerHTML = `<div class="grab"></div>${html}`; sh.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheet); }
   else sh = openSheet(html);
   S.panel = "admin";
-  sh.querySelector(".ulist").onclick = e => { const b = e.target.closest("[data-u]"); if (b) openUserEdit(b.dataset.u); };
-  sh.querySelector("#newUser").onclick = () => openUserEdit(null);
+  sh.querySelector(".ulist").onclick = e => { const b = e.target.closest("[data-u]"); if (!b) return;
+    const k = b.dataset.u, u = USERS[k];
+    if (!amSuper() && k !== me && (u.role === "admin" || u.uid === BOOT_ADMIN_UID)){ toast("את מנהלי המשפחה מנהל רק מנהל המערכת"); return; }
+    openUserEdit(k); };
+  sh.querySelector("#newUser")?.addEventListener("click", () => openUserEdit(null));
 }
 
 /* system admin: every family, its people, and new families */
@@ -3526,7 +3535,7 @@ function openFamilies(refresh){
       <ul class="ulist">${ks.map(k => { const u = ALLUSERS[k]; return `<li><button type="button" data-u="${esc(k)}" class="${u.active===false?"off":""}">
         <span class="u-ava" style="background:${u.color};${avaStyle(u)}">${initial(u)}</span>
         <span class="u-txt"><b>${esc(u.name)}${k===me?" (אני)":""}</b><small>@${esc(k)}</small></span>
-        ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor")}</button></li>`; }).join("")}</ul>
+        ${u.active===false?`<span class="role-badge viewer">מושבת</span>`:roleBadge(u.role||"editor", u.uid)}</button></li>`; }).join("")}</ul>
       <button type="button" class="secondary fam-add" data-fnew="${esc(id)}">${icon("plus")} משתמש ל${id === HOME_FAMILY ? "משפחה שלנו" : "משפחת " + esc(fams[id].name)}</button>
     </section>`; }).join("")}
     <button type="button" class="primary" id="newFam">${icon("plus")} משפחה חדשה</button>`;
@@ -3570,7 +3579,7 @@ function openUserEdit(key, forFamily){
   const famCount = Object.values(pool).filter(x => (x.family || HOME_FAMILY) === family).length;
   const isNew = !key, u = isNew ? { name:"", color:PALETTE[famCount % PALETTE.length], role:"editor", active:true } : pool[key];
   const self = key === me, st = { color:u.color };
-  const roleOpts = Object.entries(ROLES).filter(([k]) => k !== "admin" || family === HOME_FAMILY).map(([k,r]) => [k, r.label]);
+  const roleOpts = Object.entries(ROLES).filter(([k]) => k !== "admin" || amSuper()).map(([k,r]) => [k, r.label]);
   const famLabel = CLOUD && Cloud.isSuper && family !== HOME_FAMILY ? `<p class="note">${icon("home")} משפחת ${esc(FAMILIES[family]?.name || family)}</p>` : "";
   const sh = openSheet(`${head(isNew ? "משתמש חדש" : "עריכת משתמש")}
     ${famLabel}
@@ -3581,9 +3590,9 @@ function openUserEdit(key, forFamily){
         <p class="note">המשתמש יוכל להחליף את הסיסמה בעצמו מהפרופיל.</p>`
         : `<p class="note">שם משתמש: <b dir="ltr">@${esc(key)}</b></p>`}
       <span class="lbl">הרשאה</span>
-      ${self ? `<p class="note">${roleBadge(u.role)} — אי אפשר לשנות את ההרשאה של עצמך.</p>` : `${radios("role", roleOpts, u.role || "editor")}<p class="role-desc" id="roleDesc">${esc(ROLES[u.role||"editor"].desc)}</p>`}
+      ${self ? `<p class="note">${roleBadge(u.role, u.uid)} — אי אפשר לשנות את ההרשאה של עצמך.</p>` : `${radios("role", roleOpts, u.role || "editor")}<p class="role-desc" id="roleDesc">${esc(ROLES[u.role||"editor"].desc)}</p>`}
       <span class="lbl">צבע</span>${swatches(u.color)}
-      <div class="adm-limit"><span>📝 פתקים על המקרר ביום</span><select class="input" name="noteLimit">${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+u.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+      ${amSuper() ? `<div class="adm-limit"><span>📝 פתקים על המקרר ביום</span><select class="input" name="noteLimit">${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+u.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>` : ""}
       ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
       <p class="error" id="ueErr" role="alert"></p>
       ${!isNew && !self && pool[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
@@ -3608,10 +3617,11 @@ function openUserEdit(key, forFamily){
         const username = f.username.value.trim().toLowerCase(), password = f.password.value;
         if (!/^[a-z][a-z0-9._-]{2,19}$/.test(username)){ throw { msg:"שם משתמש: 3–20 תווים באנגלית, מתחיל באות." }; }
         if (password.length < 6) throw { msg:"הסיסמה קצרה מדי — לפחות 6 תווים." };
-        await UsersAPI.create({ username, name, password, role, color:st.color, family, noteLimit: +f.noteLimit.value || 1 });
+        if (!amSuper() && CLOUD && FAM.maxUsers && Object.keys(USERS).length >= FAM.maxUsers) throw { msg:"הגעתם למכסת המשתמשים של המשפחה." };
+        await UsersAPI.create({ username, name, password, role, color:st.color, family, noteLimit: f.noteLimit ? (+f.noteLimit.value || 1) : 1 });
         toast(`${name} נוסף/ה ✓`);
       } else {
-        const patch = { name, color:st.color, noteLimit: +f.noteLimit.value || 1 };
+        const patch = { name, color:st.color }; if (f.noteLimit) patch.noteLimit = +f.noteLimit.value || 1;
         if (!self){ patch.role = role; patch.active = f.active.checked; }
         await UsersAPI.update(key, patch);
         toast("נשמר");
