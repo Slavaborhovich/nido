@@ -1,10 +1,10 @@
 /* Nido push server — Cloudflare Worker, FREE plan only (no card, no paid add-ons, nothing that bills).
 
    Uses only:  Workers Free (HTTP + 1 cron "* * * * *")  ·  one Workers KV namespace bound as NIDO.
-   Secrets (set once with `wrangler secret put`, never in code/GitHub/Firestore): VAPID_PUBLIC, VAPID_PRIVATE.
+   Secrets (set once, never in code/GitHub/Firestore): VAPID_PUBLIC, VAPID_PRIVATE.
    Free-plan limits this code is built around (see README.md for links):
      100k requests/day · 10 ms CPU per invocation · 50 subrequests per invocation (fetch + every KV call)
-     KV: 100k reads · 1k writes · 1k deletes per day. Over a limit → errors, never charges.
+     KV: 100k reads · 1k writes · 1k deletes · 1k lists per day · 1 write/second per key. Over a limit → errors.
 
    SECURITY
    • Every POST needs the caller's Firebase ID token. The worker reads the caller's OWN profile from Firestore
@@ -12,38 +12,31 @@
      that profile — never from the request. No token cache: role/active are checked on every request.
    • Roles: viewers may only manage their own device (subscribe / unsubscribe / test). Only editors and
      admins may send notifications or replace the family's reminder plan.
-   • Recipients are filtered against the family roster (users of the caller's family, read from Firestore with
-     the caller's token, stored in KV as uid → {active, role}). Disabled/deleted users never get notifications.
+   • Recipients are filtered against the family roster (read from Firestore with the caller's token).
    • All storage is keyed by env AND family; a caller can only touch their own family's keys.
 
    PER-FAMILY PERMISSION — a family gets notifications only if the system admin turned them on
-   (families/{fid}.push === true in Firestore; only he may write it — firestore.rules) AND the family is not frozen
+   (families/{fid}.push === true; only he may write it — firestore.rules) AND it is not frozen
    (families/{fid}.active !== false). New families have no 'push' field → off. The cron cannot read Firestore (no
-   service key by design), so the setting is copied into KV (pol:{fid}) only by authenticated calls that read it
-   from Firestore themselves: the system admin's /policy (on every change in the admin screen, and when his app
-   opens) and the family's own members (at most every 6 h). Missing, invalid or older-than-8-days → not allowed.
-   The check happens BEFORE any of the family's notification data is read or written, in HTTP and in the cron.
-   Primary family = the system admin's own family, taken from his Firestore profile; it is served first.
+   service key, by design), so authenticated calls that read Firestore themselves copy the setting into KV:
+     pol:{fid}  — on/active + time; written by /policy (system admin) and by the family's own members (hourly).
+     allow      — { primary, fams } written ONLY by /policy. primary = the family in the system admin's own
+                  Firestore profile (no default — a profile without a family stops all sending).
+   A setting older than policyMaxAgeMs (48 h) counts as NOT allowed (fail closed). After a confirmed /policy
+   change the next cron run that reads it applies it (KV may serve an older value for ~60 s in other locations).
 
-   PRIVACY — notifications are generic. The client sends only a kind code (e.g. "task"); the text comes from
-   the fixed table below. KV stores uids, times and kind codes — no names, titles, places, tasks or items.
+   SENDING — nothing is pushed from HTTP. /send and /test write one queue item (its own key, never modified,
+   expires by itself) and a hint; the cron delivers. See "CRON" below for how crashes, overlaps and stale reads
+   turn into (rare, bounded) duplicates instead of losses.
 
-   RELIABILITY
-   • Reminders are minute-aligned and spread: each job is shifted by a stable offset (digests over 30 min,
-     reminders over 3 min) so the morning summaries don't all land in one run.
-   • ONE budget per cron run for prod and test together (subrequests and pushes, counted per DEVICE). Work that
-     doesn't fit is written to the carry list BEFORE sending and sent by the next run. /send sends a couple of
-     devices at once and queues the rest for the cron. A crash mid-run can lose a notification, never duplicate one.
-   • Each family is processed inside its own try/catch (primary first, then a rotating order), so one family's
-     failure or size never blocks the others.
-   • Dead subscriptions (404/410, or keys that can't be used) are removed; temporary errors (429/5xx/network)
-     get at most one retry and the subscription is kept. */
+   PRIVACY — notifications are generic. The client sends only a kind code; the text comes from the fixed table.
+   KV stores uids, times and kind codes — no names, titles, places, tasks or items. */
 
 const PROJECT = "nido-family-72346";
 const ORIGIN = "https://slavaborhovich.github.io";
 const SUBJECT = "https://slavaborhovich.github.io/nido/";
 const ENVS = ["prod", "test"];
-const HOME = "home";
+const HOME = "home";                                              // the database rules allow the test environment only for this family id
 const SUPER = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";                    // the system admin (same as the database rules)
 
 /* ---------- limits (conservative for the free plan) ---------- */
@@ -52,28 +45,34 @@ export const LIMITS = {
   uidsPerCall: 20,               // recipients per /send or per job
   jobsPerFamily: 120,            // reminders in a family's plan (7 days)
   devicesPerUser: 6,
-  // daily KV write budgets (UTC day) — counted inside the values we write anyway, so they cost no extra writes
+  // daily KV write budgets (UTC day) — counted inside values that are written anyway
   planWritesPerFamily: 48, planWritesPerUser: 24,
   subWritesPerFamily: 30, subWritesPerUser: 10,
-  rosterMaxAgeMs: 8 * 864e5,     // older roster → that family's scheduled notifications are skipped (fail closed)
-  rosterRefreshMs: 6 * 3600e3,   // refresh the roster from Firestore at most this often (unless forced)
-  // per invocation. CPU: a local Node estimate is ≈1.1–1.2 ms per push incl. all processing — NOT measured on
-  // Cloudflare; these caps are deliberately far below the 10 ms Free limit and must be verified there before prod.
-  subreqBudget: 30,              // of 50 allowed — ONE budget per cron run, shared by prod and test
+  queuedPerUserPerDay: 60,       // /send + /test items per person per day (soft: counted in the hint)
+  rosterMaxAgeMs: 8 * 864e5,     // older roster → that family's notifications are skipped (fail closed)
+  rosterRefreshMs: 6 * 3600e3,
+  // per invocation. CPU: NOT measured on Cloudflare — local Node figures only (see README). Keep these small.
+  subreqBudget: 30,              // of 50 allowed — ONE budget per invocation; the cron shares it between prod and test
   pushesPerRun: 3,               // devices per cron run, prod + test together
-  pushesPerRunTest: 1,           // test gets at most this many, and only from what prod left over
-  pushesPerSend: 2,              // devices sent right away by /send and /test; /send queues the rest (outbox)
-  sendsPerMinutePerUser: 6,      // in-memory, per worker instance only (best effort, not global)
-  carryMax: 200,
+  pushesPerRunTest: 1,           // test gets at most this many, only from what prod left over
+  queueItemsPerRun: 3,           // new queue items read per run (the rest stay queued for the next run)
+  fetchTimeoutMs: 10e3,          // every outgoing request — keeps a run far shorter than a minute
+  sendsPerMinutePerUser: 6,      // in-memory, per worker instance only (best effort)
+  // queue + cron state
+  queueTtlSec: 2 * 3600,         // a queue item deletes itself after this (KV expiration — no delete operation)
+  hintWindowMs: 3 * 60e3,        // after a hint, the cron lists the queue for this long (KV lists can lag)
+  listEveryMin: 15,              // safety: list the prod queue every N minutes even without a hint
+  listEveryMinTest: 60,
+  jobWindowMs: 10 * 60e3,        // each run re-checks the last 10 minutes of reminders (done ids prevent repeats)
+  lateMs: 30 * 60e3,             // later than this → dropped and counted, never sent late
+  flyResendMs: 2 * 60e3,         // "in flight" from an earlier run for this long → that run died → send again
+  retryMax: 3, retryDelayMs: 60e3,
+  doneKeepMs: 3 * 3600e3,        // processed ids are remembered longer than a queue item can live
+  waitMax: 300,
   digestSpreadMin: 30, remindSpreadMin: 3,
-  // per-family notification permission (families/{fid}.push in Firestore, mirrored into KV by authenticated calls)
-  policyRefreshMs: 6 * 3600e3,   // a member's call re-reads their family's setting at most this often
-  policyMaxAgeMs: 8 * 864e5,     // an older (or missing) setting → the family is treated as NOT allowed (fail closed)
-  // queued /send overflow
-  outboxMax: 40, outWritesPerFamily: 120, outWritesPerUser: 40,
-  outboxMaxAgeMs: 60 * 60e3,     // older queued items are ignored (and pruned by the next /send)
-  doneKeepMs: 2 * 3600e3,        // the cron remembers processed outbox ids this long (longer than the max age)
-  lateMs: 30 * 60e3,             // a notification later than this is dropped (reported), not sent late
+  // permission
+  policyRefreshMs: 3600e3,       // a member's call re-reads their family's setting at most hourly
+  policyMaxAgeMs: 48 * 3600e3,   // older or missing → NOT allowed
 };
 
 /* ---------- generic texts: nothing personal ever reaches the lock screen ---------- */
@@ -90,6 +89,7 @@ export const KINDS = {
 const BODY = "פתחו את NIDO כדי לראות";
 const SEND_KINDS = ["task", "event", "idea", "shop", "note"];
 const JOB_KINDS = ["remind", "digest"];
+// tag = kind: a repeated delivery replaces the earlier notification on the phone instead of stacking
 export const messageOf = kind => { const k = KINDS[kind]; return k ? { title: k.title, body: BODY, tag: kind, tab: k.tab } : null; };
 
 /* ---------- helpers ---------- */
@@ -103,14 +103,17 @@ const isId = s => typeof s === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(s);
 const today = () => new Date().toISOString().slice(0, 10);
 const hash32 = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 async function sha(s) { return b64u(await crypto.subtle.digest("SHA-256", enc.encode(s))).slice(0, 32); }
+const timeout = () => (typeof AbortSignal !== "undefined" && AbortSignal.timeout) ? AbortSignal.timeout(LIMITS.fetchTimeoutMs) : undefined;
 const K = {
-  subs: (e, f) => `subs:${e}:${f}`,      // { day, w:{uid:n}, n, list:{ uid:[sub,…] } }
-  jobs: (e, f) => `jobs:${e}:${f}`,      // { day, w:{uid:n}, n, jobs:[{at,k,u:[uid]}] }
-  roster: (e, f) => `roster:${e}:${f}`,  // { at, users:{ uid:{a:1|0, r:"admin"|"editor"|"viewer"} } }
-  fams: e => `fams:${e}`,                // [fam, …] — families that have a plan or a queued send
-  carry: e => `carry:${e}`,              // { items:[ {f,k,at,u,e} device | {f,k,at,u:[uid]} entry | {f,scan,from,to} ], done:{outboxId:at} }
-  out: (e, f) => `out:${e}:${f}`,        // { day, w, n, items:[{ id, k, at, d:[[uid, endpoint]] }] } — /send overflow
-  pol: f => `pol:${f}`,                  // { on, act, p, at } — the family's push permission, read from Firestore
+  subs: (e, f) => `subs:${e}:${f}`,      // { day, w:{uid:n}, n, list:{ uid:[sub,…] } }   — /subscribe, /unsubscribe, cron (dead ones)
+  jobs: (e, f) => `jobs:${e}:${f}`,      // { day, w:{uid:n}, n, jobs:[{at,k,u:[uid]}] }   — /jobs
+  roster: (e, f) => `roster:${e}:${f}`,  // { at, users:{ uid:{a:1|0, r} } }               — roster refresh
+  pol: f => `pol:${f}`,                  // { on, act, at }                                — /policy, members (hourly)
+  allow: () => "allow",                  // { primary, fams:[fid], at }                    — /policy ONLY
+  q: (e, f, id) => `q:${e}:${f}:${id}`,  // { k, u:[uid], at, by }  never modified, expires — /send, /test
+  qPrefix: e => `q:${e}:`,
+  hint: e => `qhint:${e}`,               // { t, day, n:{uid:count} }                      — /send, /test
+  cron: e => `cron:${e}`,                // cron state (see runCron)                       — cron ONLY
   dev: h => `dev:${h}`,                  // { e, f, u }
 };
 /* A family may get notifications only when ALL of these hold — anything missing, invalid or old → not allowed. */
@@ -118,14 +121,15 @@ export const allowed = p => !!p && typeof p === "object" && p.on === true && p.a
   && typeof p.at === "number" && Date.now() - p.at < LIMITS.policyMaxAgeMs;
 class Fail extends Error { constructor(status, code) { super(code); this.status = status; this.code = code; } }
 
-/* budget per invocation: every fetch and every KV call is a subrequest on the free plan */
+/* budget per invocation: every fetch and every KV call (incl. list) is a subrequest on the free plan */
 function budget(limit = LIMITS.subreqBudget) {
-  return { used: 0, pushes: 0, take(n = 1) { if (this.used + n > limit) throw new Fail(503, "busy"); this.used += n; }, left() { return limit - this.used; } };
+  return { used: 0, take(n = 1) { if (this.used + n > limit) throw new Fail(503, "busy"); this.used += n; }, left() { return limit - this.used; } };
 }
 const kv = {
   async get(env, b, key) { b.take(); try { return await env.NIDO.get(key, "json"); } catch (e) { throw new Fail(503, "storage"); } },
-  async put(env, b, key, v) { b.take(); try { await env.NIDO.put(key, JSON.stringify(v)); } catch (e) { throw new Fail(503, "storage"); } },
+  async put(env, b, key, v, opt) { b.take(); try { await env.NIDO.put(key, JSON.stringify(v), opt); } catch (e) { throw new Fail(503, "storage"); } },
   async del(env, b, key) { b.take(); try { await env.NIDO.delete(key); } catch (e) { throw new Fail(503, "storage"); } },
+  async list(env, b, prefix) { b.take(); try { return (await env.NIDO.list({ prefix, limit: 100 })).keys.map(k => k.name); } catch (e) { throw new Fail(503, "storage"); } },
 };
 /* daily write counters live inside the value itself → enforcing the limit costs no extra writes */
 function charge(doc, uid, perUser, perFamily) {
@@ -135,7 +139,7 @@ function charge(doc, uid, perUser, perFamily) {
   doc.n = (doc.n || 0) + 1; doc.w = { ...(doc.w || {}), [uid]: ((doc.w || {})[uid] || 0) + 1 };
 }
 
-/* ---------- VAPID (from secrets only — no key is ever generated at request time) ---------- */
+/* ---------- VAPID (from secrets only — no key is ever generated here) ---------- */
 let SIGNKEY = null; const JWT = new Map();
 function vapidReady(env) { return typeof env.VAPID_PUBLIC === "string" && env.VAPID_PUBLIC.length > 40 && typeof env.VAPID_PRIVATE === "string" && env.VAPID_PRIVATE.length > 20; }
 async function vapidHeader(env, endpoint) {
@@ -174,78 +178,38 @@ async function encrypt(sub, text) {
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, cat(enc.encode(text), new Uint8Array([2]))));
   return cat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([asPub.length]), asPub, ct);
 }
-/* result: "ok" | "gone" (remove) | "temp" (keep) | "error" (keep) */
+/* ONE attempt (retries happen in later cron runs). result: "ok" | "gone" (remove) | "temp" (retry later) | "error" */
 async function pushOne(env, b, sub, msg) {
   let payload;
   try { payload = await encrypt(sub, JSON.stringify({ data: msg })); } catch (e) { return "gone"; }   // unusable keys: permanent
-  const attempt = async () => {
-    b.take();
-    try {
-      const r = await fetch(sub.endpoint, { method: "POST", headers: { TTL: "86400", Urgency: "normal", "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", Authorization: await vapidHeader(env, sub.endpoint) }, body: payload });
-      return r.status;
-    } catch (e) { return 0; }
-  };
-  b.pushes++;
-  let st = await attempt();
-  if ((st === 0 || st === 429 || st >= 500) && b.left() > 2) st = await attempt();               // one retry, only if budget allows
+  b.take();
+  let st = 0;
+  try {
+    const r = await fetch(sub.endpoint, { method: "POST", signal: timeout(), headers: { TTL: "86400", Urgency: "normal", "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", Authorization: await vapidHeader(env, sub.endpoint) }, body: payload });
+    st = r.status;
+  } catch (e) { st = 0; }                                                                         // network / timeout: may or may not have arrived
   if (st >= 200 && st < 300) return "ok";
   if (st === 404 || st === 410) return "gone";                                                    // RFC 8030: subscription expired/unsubscribed
   if (st === 0 || st === 429 || st >= 500) return "temp";
-  return "error";                                                                                 // 400/401/403/413…: kept, logged by count
+  return "error";                                                                                 // 400/401/403/413…: kept, counted
 }
 
-/* ---------- device-level delivery ----------
-   A "unit" is one device of one person: { f, k, at, u: uid, e: endpoint }. Limits count units (devices), not people.
-   The family's roster and devices are loaded once per invocation (cache). A stale roster → nothing is sent (fail closed). */
+/* ---------- a family's members and devices (one read each, cached per invocation) ---------- */
 async function famCtx(env, b, envName, fam, cache) {
   const key = envName + "|" + fam;
   if (key in cache) return cache[key];
   const roster = await kv.get(env, b, K.roster(envName, fam));
-  if (!roster || !roster.users || !(Date.now() - roster.at < LIMITS.rosterMaxAgeMs)) return (cache[key] = null);
+  if (!roster || !roster.users || !(Date.now() - roster.at < LIMITS.rosterMaxAgeMs)) return (cache[key] = null);   // fail closed
   const subs = (await kv.get(env, b, K.subs(envName, fam))) || { list: {} };
   return (cache[key] = { roster, subs, dead: [] });
 }
-/* the active members' devices for some uids; people who are disabled / not in the family are counted as skipped */
-function unitsFor(ctx, f, k, at, uids, out) {
-  const units = [];
-  for (const uid of new Set(uids)) {
-    const ru = ctx.roster.users[uid];
-    if (!ru || !ru.a) { out.skipped++; continue; }
-    for (const s of ctx.subs.list[uid] || []) units.push({ f, k, at, u: uid, e: s.endpoint });
-  }
-  return units;
-}
-/* the device must still belong to an active member right now */
+/* the device must belong to an active member right now */
 function subOf(ctx, unit) {
   const ru = ctx && ctx.roster.users[unit.u];
   if (!ru || !ru.a) return null;
-  return (ctx.subs.list[unit.u] || []).find(s => s.endpoint === unit.e) || null;
+  return ((ctx.subs.list || {})[unit.u] || []).find(s => s.endpoint === unit.e) || null;
 }
-async function sendUnit(env, b, ctx, unit, out) {
-  const s = subOf(ctx, unit), msg = messageOf(unit.k);
-  if (!s || !msg) { out.skipped++; return; }
-  const r = await pushOne(env, b, s, msg);
-  if (r === "ok") out.sent++; else out.failed++;
-  if (r === "gone") ctx.dead.push([unit.u, unit.e]);
-}
-async function removeDead(env, b, envName, fam, ctx, out) {
-  if (!ctx || !ctx.dead.length || b.left() < 1) return;
-  const doc = ctx.subs;
-  for (const [uid, ep] of ctx.dead) { doc.list[uid] = (doc.list[uid] || []).filter(x => x.endpoint !== ep); if (!doc.list[uid].length) delete doc.list[uid]; }
-  await kv.put(env, b, K.subs(envName, fam), doc); out.removed += ctx.dead.length; ctx.dead = [];
-}
-/* /send overflow: queued for the cron (never lost silently — a failure here is reported to the caller) */
-async function enqueue(env, b, envName, fam, uid, kind, rest) {
-  const key = K.out(envName, fam), doc = (await kv.get(env, b, key)) || {};
-  charge(doc, uid, LIMITS.outWritesPerUser, LIMITS.outWritesPerFamily);                         // throws 429 when over the daily limit
-  const now = Date.now();
-  doc.items = (doc.items || []).filter(i => now - i.at < LIMITS.outboxMaxAgeMs);
-  if (doc.items.length >= LIMITS.outboxMax) throw new Fail(429, "queue-full");
-  doc.items.push({ id: b64u(crypto.getRandomValues(new Uint8Array(9))), k: kind, at: now, d: rest.map(x => [x.u, x.e]) });
-  await kv.put(env, b, key, doc);
-  const fams = (await kv.get(env, b, K.fams(envName))) || [];
-  if (!fams.includes(fam)) await kv.put(env, b, K.fams(envName), [...fams, fam]);
-}
+
 /* ---------- Firestore with the caller's own token ---------- */
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 async function caller(req, b) {
@@ -255,21 +219,23 @@ async function caller(req, b) {
   // cheap pre-checks only — the real verification (signature, issuer, audience, expiry) is done by Firestore below
   if (claims.aud !== PROJECT || claims.iss !== `https://securetoken.google.com/${PROJECT}` || !isId(claims.user_id) || claims.sub !== claims.user_id || !(claims.exp * 1000 > Date.now())) return null;
   b.take();
-  let r; try { r = await fetch(`${FS}/users/${claims.user_id}`, { headers: { Authorization: `Bearer ${tok}` } }); } catch (e) { throw new Fail(503, "auth-unavailable"); }
+  let r; try { r = await fetch(`${FS}/users/${claims.user_id}`, { headers: { Authorization: `Bearer ${tok}` }, signal: timeout() }); } catch (e) { throw new Fail(503, "auth-unavailable"); }
   if (!r.ok) return null;
   const f = (await r.json()).fields || {};
-  if (!f.active || f.active.booleanValue !== true) return null;                                   // disabled people and disabled families
+  if (!f.active || f.active.booleanValue !== true) return null;                                   // disabled people (and frozen families' people)
   const role = f.role && f.role.stringValue;
   if (!["admin", "editor", "viewer"].includes(role)) return null;
-  const fam = isId(f.family && f.family.stringValue) ? f.family.stringValue : HOME;
-  return { uid: claims.user_id, fam, role, tok, isSuper: claims.user_id === SUPER };
+  const raw = f.family && f.family.stringValue, famSet = isId(raw);
+  // regular users: a missing family means "home" — exactly what the database rules assume (myFamily()).
+  // The PRIMARY family is never defaulted: /policy refuses to work unless the admin's profile names a family.
+  return { uid: claims.user_id, fam: famSet ? raw : HOME, famSet, role, tok, isSuper: claims.user_id === SUPER };
 }
 /* the family's members (uid → active/role), read with the caller's token — the rules decide what they may list */
 async function fetchRoster(b, who, fam) {
   b.take();
   let r;
   try {
-    r = await fetch(`${FS}:runQuery`, { method: "POST", headers: { Authorization: `Bearer ${who.tok}`, "content-type": "application/json" },
+    r = await fetch(`${FS}:runQuery`, { method: "POST", signal: timeout(), headers: { Authorization: `Bearer ${who.tok}`, "content-type": "application/json" },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "users" }], where: { fieldFilter: { field: { fieldPath: "family" }, op: "EQUAL", value: { stringValue: fam } } }, limit: 100 } }) });
   } catch (e) { throw new Fail(503, "roster-unavailable"); }
   if (!r.ok) throw new Fail(r.status === 403 ? 403 : 503, "roster");
@@ -297,19 +263,12 @@ async function syncRoster(env, b, envName, who, fam, force) {
       for (const uid of Object.keys(doc.list)) if (!users[uid] || !users[uid].a) { delete doc.list[uid]; dirty = true; }
       if (dirty) await kv.put(env, b, sk, doc);
     }
-    if (!Object.keys(users).length) {                                                              // a family that no longer exists
-      for (const k of [K.subs(envName, fam), K.jobs(envName, fam), K.roster(envName, fam)]) await kv.del(env, b, k);
-      const fams = (await kv.get(env, b, K.fams(envName))) || [];
-      if (fams.includes(fam)) await kv.put(env, b, K.fams(envName), fams.filter(x => x !== fam));
-    }
+    if (!Object.keys(users).length) for (const k of [K.subs(envName, fam), K.jobs(envName, fam), K.roster(envName, fam)]) await kv.del(env, b, k);   // family gone
   }
   return next;
 }
 
-/* ---------- per-family push permission ----------
-   The truth is in Firestore: families/{fid}.push (only the system admin can write it — firestore.rules) and
-   families/{fid}.active (frozen = false). The cron has no Firestore access (no service key), so authenticated calls
-   copy the setting into KV as pol:{fid}. Only an explicit push === true counts; a frozen family is never allowed. */
+/* ---------- per-family permission ---------- */
 function policyFrom(fields) {
   const f = fields || {};
   const on = !!(f.push && f.push.booleanValue === true);
@@ -318,44 +277,36 @@ function policyFrom(fields) {
 }
 async function fetchFamily(b, who, fam) {
   b.take();
-  let r; try { r = await fetch(`${FS}/families/${fam}`, { headers: { Authorization: `Bearer ${who.tok}` } }); } catch (e) { throw new Fail(503, "policy-unavailable"); }
+  let r; try { r = await fetch(`${FS}/families/${fam}`, { headers: { Authorization: `Bearer ${who.tok}` }, signal: timeout() }); } catch (e) { throw new Fail(503, "policy-unavailable"); }
   if (r.status === 404) return null;                                                            // the family no longer exists
   if (!r.ok) throw new Fail(503, "policy-unavailable");
   return policyFrom((await r.json()).fields);
 }
 async function listFamilies(b, who) {                                                           // the system admin only (rules: boot may read families)
   b.take();
-  let r; try { r = await fetch(`${FS}/families?pageSize=100&mask.fieldPaths=push&mask.fieldPaths=active`, { headers: { Authorization: `Bearer ${who.tok}` } }); } catch (e) { throw new Fail(503, "policy-unavailable"); }
+  let r; try { r = await fetch(`${FS}/families?pageSize=100&mask.fieldPaths=push&mask.fieldPaths=active`, { headers: { Authorization: `Bearer ${who.tok}` }, signal: timeout() }); } catch (e) { throw new Fail(503, "policy-unavailable"); }
   if (!r.ok) throw new Fail(503, "policy-unavailable");
   const out = {};
   for (const d of (await r.json()).documents || []) { const id = d.name.split("/").pop(); if (isId(id)) out[id] = policyFrom(d.fields); }
   return out;
 }
-/* write pol:{fam} only when something changed or the stored copy is getting old (keeps KV writes low) */
+/* write pol:{fam} when something changed or the stored copy is older than the refresh interval (renews the 48 h) */
 async function storePolicy(env, b, fam, cur, next) {
-  const same = cur && cur.on === next.on && cur.act === next.act && cur.p === next.p;
+  const same = cur && cur.on === next.on && cur.act === next.act;
   if (same && Date.now() - cur.at < LIMITS.policyRefreshMs) return cur;
-  const doc = { ...next, at: Date.now() };
+  const doc = { on: next.on, act: next.act, at: Date.now() };
   await kv.put(env, b, K.pol(fam), doc);
   return doc;
 }
-/* the caller's own family: re-read from Firestore when missing or older than policyRefreshMs */
+/* the caller's own family: re-read from Firestore when missing or older than an hour */
 async function ensurePolicy(env, b, who, fam) {
   const cur = await kv.get(env, b, K.pol(fam));
   if (cur && Date.now() - cur.at < LIMITS.policyRefreshMs) return cur;
   const p = await fetchFamily(b, who, fam);
   if (!p) return null;
-  const primary = who.isSuper ? (fam === who.fam ? 1 : 0) : ((cur && cur.p) || 0);            // only the system admin's own profile decides "primary"
-  return storePolicy(env, b, fam, cur, { ...p, p: primary });
+  return storePolicy(env, b, fam, cur, p);
 }
-/* a family that was deleted: its devices, plan, queue and members list are removed (both envs) */
-async function purgeFamily(env, b, fam) {
-  for (const e of ENVS) {
-    for (const k of [K.subs(e, fam), K.jobs(e, fam), K.out(e, fam), K.roster(e, fam)]) await kv.del(env, b, k);
-    const fams = (await kv.get(env, b, K.fams(e))) || [];
-    if (fams.includes(fam)) await kv.put(env, b, K.fams(e), fams.filter(x => x !== fam));
-  }
-}
+const report = (f, p, verified) => ({ on: p.on, act: p.act, at: p.at, allowed: allowed(p), until: p.at + LIMITS.policyMaxAgeMs, verified });
 
 /* ---------- device ownership ---------- */
 async function detach(env, b, ep) {
@@ -405,6 +356,21 @@ export function slotOf(job, fam) {                                              
   return job.at + (hash32(`${fam}|${job.k}|${job.u.join(",")}`) % spread) * 60e3;
 }
 
+/* ---------- the queue: one immutable key per request ----------
+   Two requests never write the same item key (time + 72 random bits), so concurrent sends cannot overwrite each
+   other. The hint (one shared key) only says "something was queued"; losing a hint write costs at most a delay
+   (the cron also lists the queue every listEveryMin minutes). */
+async function enqueue(env, b, envName, fam, uid, kind, uids) {
+  const hk = K.hint(envName), hint = (await kv.get(env, b, hk)) || {};
+  const d = today(), n = hint.day === d ? { ...(hint.n || {}) } : {};
+  if ((n[uid] || 0) >= LIMITS.queuedPerUserPerDay) throw new Fail(429, "daily-limit");
+  const id = Date.now().toString(36).padStart(9, "0") + "-" + b64u(crypto.getRandomValues(new Uint8Array(9)));
+  await kv.put(env, b, K.q(envName, fam, id), { k: kind, u: uids, at: Date.now(), by: uid }, { expirationTtl: LIMITS.queueTtlSec });
+  n[uid] = (n[uid] || 0) + 1;
+  try { await kv.put(env, b, hk, { t: Date.now(), day: d, n }); } catch (e) { /* the item is stored; the cron's safety listing finds it */ }
+  return id;
+}
+
 /* ================= HTTP ================= */
 async function handle(req, env) {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -424,7 +390,10 @@ async function handle(req, env) {
 
   if (path === "/policy") {                                                                         // the system admin only
     if (!who.isSuper) throw new Fail(403, "forbidden");
-    const out = {};
+    if (!who.famSet) throw new Fail(409, "no-primary");                                             // never guess the primary family
+    const primary = fam, out = {};
+    const curAllow = (await kv.get(env, b, K.allow())) || {};
+    const fams = new Set(Array.isArray(curAllow.fams) ? curAllow.fams.filter(isId) : []);
     if (body.fam !== undefined) {                                                                   // one family: after a change in the admin screen
       if (!isId(body.fam)) throw new Fail(400, "bad-fam");
       const f = body.fam, cur = await kv.get(env, b, K.pol(f));
@@ -435,26 +404,35 @@ async function handle(req, env) {
         p = { on: !!(cur && cur.on === true), act: !!(cur && cur.act === true) }; verified = false;
       }
       if (!p) {                                                                                     // the family was deleted
-        if (cur) { await purgeFamily(env, b, f); await kv.del(env, b, K.pol(f)); }
-        return json({ ok: true, families: { [f]: { gone: true, allowed: false } } });
+        for (const e of ENVS) for (const k of [K.subs(e, f), K.jobs(e, f), K.roster(e, f)]) await kv.del(env, b, k);
+        if (cur) await kv.del(env, b, K.pol(f));
+        fams.delete(f);
+        out[f] = { gone: true, allowed: false, verified: true };
+      } else {
+        if (body.off === true) p = { ...p, on: false };                                            // hints can only restrict, never allow
+        if (body.frozen === true) p = { ...p, act: false };
+        const next = await storePolicy(env, b, f, cur, p);
+        if (allowed(next)) {
+          fams.add(f);
+          // refresh the members list with the admin's sign-in, so it works without anyone in that family opening the app
+          for (const e of ENVS) if (e === "prod" || f === HOME) await syncRoster(env, b, e, who, f, true);
+        } else fams.delete(f);
+        out[f] = report(f, next, verified);
       }
-      if (body.off === true) p = { ...p, on: false };                                              // off / frozen hints can only restrict, never allow
-      if (body.frozen === true) p = { ...p, act: false };
-      const next = await storePolicy(env, b, f, cur, { ...p, p: f === fam ? 1 : 0 });
-      // turned on / unfrozen: refresh the members list now with the admin's own sign-in, so it works without anyone in
-      // that family opening the app. Turned off / frozen: the family's data is left untouched — the cron never reads it.
-      if (allowed(next)) for (const e of ENVS) if (e === "prod" || f === HOME) await syncRoster(env, b, e, who, f, true);
-      out[f] = { on: next.on, act: next.act, p: next.p, at: next.at, allowed: allowed(next), verified };
-    } else {                                                                                        // all families: when the admin app opens
+    } else {                                                                                        // all families: when the admin's app opens
       const all = await listFamilies(b, who);
       for (const [f, p] of Object.entries(all)) {
-        if (b.left() < 3) { out[f] = { pending: true }; continue; }
-        const cur = await kv.get(env, b, K.pol(f));
-        const next = await storePolicy(env, b, f, cur, { ...p, p: f === fam ? 1 : 0 });
-        out[f] = { on: next.on, act: next.act, p: next.p, at: next.at, allowed: allowed(next) };
+        if (b.left() < 4) { out[f] = { pending: true }; continue; }                                 // membership in `allow` left as it was
+        const next = await storePolicy(env, b, f, await kv.get(env, b, K.pol(f)), p);
+        if (allowed(next)) fams.add(f); else fams.delete(f);
+        out[f] = report(f, next, true);
       }
+      for (const f of [...fams]) if (!(f in all)) fams.delete(f);                                   // deleted families
     }
-    return json({ ok: true, primary: fam, families: out });
+    const nextAllow = { primary, fams: [...fams].sort() };
+    if (curAllow.primary !== nextAllow.primary || JSON.stringify(curAllow.fams || []) !== JSON.stringify(nextAllow.fams))
+      await kv.put(env, b, K.allow(), { ...nextAllow, at: Date.now() });
+    return json({ ok: true, primary, allow: nextAllow.fams, families: out });
   }
 
   // every other call works on a family's notification data → that family must be allowed first (checked before any of
@@ -494,37 +472,23 @@ async function handle(req, env) {
     await detach(env, b, body.endpoint);
     return json({ ok: true });
   }
-  if (path === "/test") {                                                                          // your own devices, right away (at most pushesPerSend)
+  if (path === "/test") {                                                                          // your own devices — through the queue like everything else
     if (!throttle(`t:${uid}`, 3)) throw new Fail(429, "slow-down");
     await syncRoster(env, b, envName, who, fam, false);
-    const out = { sent: 0, failed: 0, skipped: 0, removed: 0 }, cache = {};
-    const ctx = await famCtx(env, b, envName, fam, cache);
-    if (!ctx) return json({ ok: false, ...out });
-    const units = unitsFor(ctx, fam, "test", Date.now(), [uid], out);
-    for (const u of units.slice(0, LIMITS.pushesPerSend)) await sendUnit(env, b, ctx, u, out);
-    out.skipped += Math.max(0, units.length - LIMITS.pushesPerSend);                               // a test is not queued
-    await removeDead(env, b, envName, fam, ctx, out);
-    return json({ ok: out.sent > 0 && out.failed === 0, ...out });
+    await enqueue(env, b, envName, fam, uid, "test", [uid]);
+    return json({ ok: true, queued: 1 });
   }
-  if (path === "/send") {
+  if (path === "/send") {                                                                          // queued only — the cron delivers
     if (!canEdit) throw new Fail(403, "read-only");
     if (!SEND_KINDS.includes(body.kind)) throw new Fail(400, "bad-kind");
-    const uids = uidList(body.uids, LIMITS.uidsPerCall).filter(x => x !== uid);
+    const asked = uidList(body.uids, LIMITS.uidsPerCall).filter(x => x !== uid);
     if (!throttle(`s:${uid}`, LIMITS.sendsPerMinutePerUser)) throw new Fail(429, "slow-down");
-    if (!uids.length) return json({ ok: true, sent: 0 });
-    await syncRoster(env, b, envName, who, fam, false);
-    const out = { sent: 0, failed: 0, skipped: 0, removed: 0, queued: 0, lost: 0 }, cache = {};
-    const ctx = await famCtx(env, b, envName, fam, cache);
-    if (!ctx) return json({ ok: false, ...out, skipped: uids.length });
-    const units = unitsFor(ctx, fam, body.kind, Date.now(), uids, out);
-    const now = units.slice(0, LIMITS.pushesPerSend), rest = units.slice(LIMITS.pushesPerSend);
-    for (const u of now) await sendUnit(env, b, ctx, u, out);
-    if (rest.length) {
-      try { await enqueue(env, b, envName, fam, uid, body.kind, rest); out.queued = rest.length; }
-      catch (e) { out.lost = rest.length; }                                                         // reported back — never silent
-    }
-    await removeDead(env, b, envName, fam, ctx, out);
-    return json({ ok: out.failed === 0 && out.skipped === 0 && out.lost === 0, ...out });
+    if (!asked.length) return json({ ok: true, queued: 0 });
+    const roster = await syncRoster(env, b, envName, who, fam, false);
+    const uids = asked.filter(x => roster.users[x] && roster.users[x].a);
+    if (!uids.length) return json({ ok: true, queued: 0, skipped: asked.length });
+    await enqueue(env, b, envName, fam, uid, body.kind, uids);
+    return json({ ok: true, queued: uids.length, skipped: asked.length - uids.length });
   }
   if (path === "/jobs") {
     if (!canEdit) throw new Fail(403, "read-only");
@@ -543,8 +507,6 @@ async function handle(req, env) {
     charge(doc, uid, LIMITS.planWritesPerUser, LIMITS.planWritesPerFamily);
     doc.jobs = clean;
     await kv.put(env, b, key, doc);
-    const fams = (await kv.get(env, b, K.fams(envName))) || [];
-    if (!fams.includes(fam)) await kv.put(env, b, K.fams(envName), [...fams, fam]);
     return json({ ok: true, jobs: clean.length });
   }
   if (path === "/roster") {                                                                         // after an admin disables / deletes / changes someone
@@ -556,119 +518,201 @@ async function handle(req, env) {
 }
 
 /* ================= CRON =================
-   ONE budget per run, shared by prod and test: prod goes first; test gets only what is left (at most pushesPerRunTest).
-   Per env:
-   1. Read the family list and the carry, then each family's permission (pol:{fid}) BEFORE touching any of its data.
-      A family that is not allowed is skipped completely: its plan, queue, roster and devices are not read, it uses no
-      push budget and nothing of it is written. Carried items of a family that is not allowed are dropped (reported as
-      `blocked`), never sent later. If a permission can't be read in this run, that family's items wait untouched.
-   2. Scan the allowed families' plans for this minute and read their /send queue.
-   3. Turn everything into device units (active members' current devices only).
-   4. Pick what fits, by DEVICE: the primary family first, then the others in rotating order, oldest first.
-   5. Save the carry (the rest + processed queue ids) BEFORE sending — if that fails, send nothing (no duplicates).
-   6. Send; remove dead subscriptions. Old work (> lateMs) is dropped and reported, never sent late. */
+   State per env lives in ONE key (cron:{env}) that only the cron writes:
+     done  { id: time }   queue items and reminder occurrences already taken in (so they are never taken twice)
+     fly   [unit]         devices chosen by a run that has not confirmed the result yet (unit = one device of one person)
+     retry [unit]         temporary failures, retried by later runs (at most retryMax attempts, never later than lateMs)
+     wait  [unit]         due, but did not fit into a run
+   One run, per env (prod first, then test with what is left):
+     1. read allow + each family's permission once; a family that is not allowed is never read (its waiting work is
+        dropped and counted). If a permission can't be read, that family's work waits untouched.
+     2. take in: units still "in flight" from a run that died (older than flyResendMs), due retries, waiting units,
+        new queue items (only when a hint is recent or on the safety schedule), reminders of the last jobWindowMs.
+     3. pick up to the device cap: primary family first, then the others; oldest first.
+     4. WRITE 1: chosen → fly, the rest → wait, new ids → done. If this write fails, nothing is sent and nothing
+        advanced: the next run sees exactly the same input (no loss).
+     5. send each chosen device ONCE.
+     6. WRITE 2: remove what was delivered; temporary failures → retry; dead subscriptions removed.
+   What this guarantees, and what it doesn't (KV has no locks and no conditional writes):
+     • crash / CPU limit between 4 and 6 → the units stay in `fly` → re-sent after flyResendMs → a DUPLICATE
+       (if it had gone out), not a loss. Write 2 failing → same.
+     • two overlapping runs, or a stale read of cron:{env} → both can pick the same units → DUPLICATES (≤ device cap).
+       Whichever write lands last wins; the losing run's units are either delivered already or still in fly/done
+       of the winning state — they are re-sent, not lost. A per-instance memory of the last written version reduces
+       stale reads when the same instance runs again.
+     • a temporary push failure that actually arrived → retry → DUPLICATE.
+     • phones show notifications with tag = kind, so a duplicate replaces the earlier one (it may sound again).
+     • LOSS only when: work is later than lateMs (worker/KV down for a long time), a retry runs out, a queue item
+       expires unread (2 h), or a daily KV limit is reached. Every one of those is counted in the run report. */
+const MEM = {};                                                                                     // last state this instance wrote, per env
+const clone = o => JSON.parse(JSON.stringify(o));
+async function loadState(env, b, envName) {
+  const s = await kv.get(env, b, K.cron(envName));
+  const m = MEM[envName];
+  const st = m && (!s || (m.v || 0) > (s.v || 0)) ? clone(m) : (s || {});
+  return { v: st.v || 0, done: st.done || {}, fly: st.fly || [], retry: st.retry || [], wait: st.wait || [], more: st.more === true };
+}
+async function saveState(env, b, envName, st) {
+  st.v = (st.v || 0) + 1;
+  await kv.put(env, b, K.cron(envName), st);
+  MEM[envName] = clone(st);
+}
+const unitId = (src, uid, ep) => `${src}|${uid}|${hash32(ep).toString(36)}`;
+const isUnit = u => u && typeof u === "object" && isId(u.f) && isId(u.u) && typeof u.e === "string" && typeof u.k === "string" && typeof u.at === "number" && typeof u.id === "string";
+
 export async function runCron(env, scheduledTime) {
-  const report = { sent: 0, failed: 0, skipped: 0, removed: 0, carried: 0, dropped: 0, blocked: 0, familyErrors: 0 };
-  if (!vapidReady(env)) return report;
-  const to = Math.floor(scheduledTime / 60e3) * 60e3, from = to - 60e3;
-  const b = budget(), pols = {};
-  let pushesLeft = LIMITS.pushesPerRun;
-  const permission = async f => {                                                                  // true | false | undefined (unknown in this run)
-    if (!isId(f)) return false;
+  const rep = { sent: 0, failed: 0, retried: 0, resent: 0, skipped: 0, removed: 0, dropped: 0, blocked: 0, waiting: 0, errors: 0 };
+  if (!vapidReady(env)) return rep;
+  const to = Math.floor(scheduledTime / 60e3) * 60e3, minute = Math.floor(to / 60e3), now = Date.now();
+  const b = budget(), pols = {}, run = b64u(crypto.getRandomValues(new Uint8Array(6)));
+  let allow;
+  try { allow = (await kv.get(env, b, K.allow())) || {}; } catch (e) { rep.errors++; return rep; }      // can't know who is allowed → do nothing
+  const listed = new Set(Array.isArray(allow.fams) ? allow.fams.filter(isId) : []);
+  const primary = isId(allow.primary) ? allow.primary : null;
+  const perm = async f => {                                                                         // true | false | undefined (unknown this run)
+    if (!isId(f) || !listed.has(f)) return false;
     if (!(f in pols)) { try { pols[f] = await kv.get(env, b, K.pol(f)); } catch (e) { return undefined; } }
     return allowed(pols[f]);
   };
+  // primary first, then the others (rotating so none of them always comes last)
+  const others = [...listed].filter(f => f !== primary).sort(), sh = others.length ? minute % others.length : 0;
+  const order = [...(primary && listed.has(primary) ? [primary] : []), ...others.slice(sh), ...others.slice(0, sh)];
+  const rank = f => { const i = order.indexOf(f); return i < 0 ? order.length : i; };
+  let pushesLeft = LIMITS.pushesPerRun;
+
   for (const envName of ENVS) {
     const cap = Math.min(pushesLeft, envName === "prod" ? LIMITS.pushesPerRun : LIMITS.pushesPerRunTest);
     const cache = {};
-    let fams, carry;
-    try { fams = (await kv.get(env, b, K.fams(envName))) || []; carry = (await kv.get(env, b, K.carry(envName))) || {}; }
-    catch (e) { report.familyErrors++; continue; }
-    const items = Array.isArray(carry.items) ? carry.items : [];
-    const done = Object.fromEntries(Object.entries(carry.done || {}).filter(([, t]) => to - t < LIMITS.doneKeepMs));
-    // 1. permissions first
-    const ok = {};
-    for (const f of new Set([...fams, ...items.map(c => c && c.f)])) ok[f] = await permission(f);
-    const start = fams.length ? Math.floor(to / 60e3) % fams.length : 0;
-    const rot = [...fams.slice(start), ...fams.slice(0, start)].filter(f => ok[f] === true);
-    const order = [...rot.filter(f => pols[f].p === 1), ...rot.filter(f => pols[f].p !== 1)];
-    const rank = f => { const i = order.indexOf(f); return i < 0 ? order.length : i; };
-    const keep = [], rescan = [], entries = [], units = [];
-    for (const c of items) {
-      if (!c || ok[c.f] === false) { report.blocked++; continue; }
-      if (ok[c.f] !== true) { keep.push(c); continue; }
-      if (c.scan) { if (to - c.to > LIMITS.lateMs) report.dropped++; else rescan.push(c); continue; }
-      if (to - c.at > LIMITS.lateMs) { report.dropped++; continue; }
-      (typeof c.e === "string" ? units : entries).push(c);
-    }
-    // 2. plans + queues of allowed families only
-    const unscanned = [];
-    for (const fam of order) {
-      const wins = [[from, to], ...rescan.filter(r => r.f === fam).map(r => [r.from, r.to])];
-      if (b.left() < 8) { for (const [a, z] of wins) unscanned.push({ f: fam, scan: 1, from: a, to: z }); continue; }
+    let st, hint;
+    try { st = await loadState(env, b, envName); hint = await kv.get(env, b, K.hint(envName)); }
+    catch (e) { rep.errors++; continue; }
+    const done = Object.fromEntries(Object.entries(st.done).filter(([, t]) => now - t < LIMITS.doneKeepMs));
+    const ok = {}, okf = async f => (f in ok ? ok[f] : (ok[f] = await perm(f)));                    // read lazily, only when needed
+    const RESERVE = 14;                                                                             // what a run needs to finish its sends + writes
+    const roomFor = f => f === primary || b.left() >= RESERVE;                                      // other families only use what is left
+    if (primary) await okf(primary);
+    for (const u of [...st.fly, ...st.retry, ...st.wait]) if (u && isId(u.f) && !(u.f in ok) && roomFor(u.f)) await okf(u.f);
+
+    // 1. work carried over
+    const hold = { fly: [], retry: [], wait: [] }, cand = [];
+    const carried = (list, kind) => {
+      for (const u of list) {
+        if (!isUnit(u) || ok[u.f] === false) { rep.blocked++; continue; }                          // turned off / frozen / unknown family → never sent
+        if (ok[u.f] !== true) { hold[kind].push(u); continue; }                                     // permission unreadable now → wait untouched
+        if (to - u.at > LIMITS.lateMs) { rep.dropped++; continue; }
+        if (kind === "fly") { if (now - (u.t || 0) >= LIMITS.flyResendMs) { cand.push({ ...u, pr: 0 }); rep.resent++; } else hold.fly.push(u); continue; }
+        if (kind === "retry") { if ((u.next || 0) <= now) cand.push({ ...u, pr: 1 }); else hold.retry.push(u); continue; }
+        cand.push({ ...u, pr: 2 });
+      }
+    };
+    carried(st.fly, "fly"); carried(st.retry, "retry"); carried(st.wait, "wait");
+
+    // 2a. new queue items (list only after a recent hint, or on the safety schedule)
+    const newSrc = [];                                                                              // { id, f, k, at, u:[uid] }
+    const every = envName === "prod" ? LIMITS.listEveryMin : LIMITS.listEveryMinTest;
+    const wantList = st.more || (hint && now - (hint.t || 0) <= LIMITS.hintWindowMs) || minute % every === 0;
+    let more = wantList ? false : st.more;
+    if (wantList && b.left() >= 10) {
       try {
-        const doc = await kv.get(env, b, K.jobs(envName, fam));
+        let taken = 0;
+        const names = (await kv.list(env, b, K.qPrefix(envName))).map(n => [n, n.split(":")[2]])
+          .sort((x, y) => (x[1] === primary ? 0 : 1) - (y[1] === primary ? 0 : 1) || (x[0] < y[0] ? -1 : 1)).map(x => x[0]);   // primary first
+        for (const name of names) {
+          const [, , f, qid] = name.split(":");
+          if (!qid || done[name]) continue;
+          const at = parseInt(qid.split("-")[0], 36);
+          if (isId(f) && !(f in ok)) { if (!roomFor(f)) { more = true; continue; } await okf(f); }   // not in `allow` → false without any read
+          if (ok[f] === false || !isId(f)) { done[name] = now; rep.blocked++; continue; }           // never read a disallowed family's item
+          if (ok[f] !== true) continue;
+          if (!(at > 0) || to - at > LIMITS.lateMs) { done[name] = now; rep.dropped++; continue; }
+          if (taken >= LIMITS.queueItemsPerRun || b.left() < 10) { more = true; continue; }         // stays queued; the next run lists again
+          const item = await kv.get(env, b, name);
+          if (!item) continue;                                                                      // not visible yet (KV lag) or expired → next run
+          taken++;
+          if (!KINDS[item.k] || !Array.isArray(item.u)) { done[name] = now; continue; }
+          newSrc.push({ id: name, f, k: item.k, at, u: item.u.filter(isId) });
+        }
+      } catch (e) { rep.errors++; more = true; }                                                    // nothing marked → read again next time
+    } else if (wantList) more = true;
+    // 2b. reminders due in the last jobWindowMs (ids in `done` prevent repeats)
+    for (const f of order) {
+      if (!roomFor(f) || b.left() < 8 || (await okf(f)) !== true) continue;
+      try {
+        const doc = await kv.get(env, b, K.jobs(envName, f));
         for (const j of (doc && doc.jobs) || []) {
-          const s = slotOf(j, fam);
-          if (wins.some(([a, z]) => s > a && s <= z) && to - s <= LIMITS.lateMs) entries.push({ f: fam, k: j.k, u: j.u, at: s });
+          const s = slotOf(j, f);
+          if (!(s > to - LIMITS.jobWindowMs && s <= to)) continue;
+          const id = `j:${f}:${j.k}:${s}:${hash32(j.u.join(",")).toString(36)}`;
+          if (!done[id]) newSrc.push({ id, f, k: j.k, at: s, u: j.u });
         }
-      } catch (e) { report.familyErrors++; for (const [a, z] of wins) unscanned.push({ f: fam, scan: 1, from: a, to: z }); continue; }
-      try {
-        const ob = await kv.get(env, b, K.out(envName, fam));
-        for (const it of (ob && ob.items) || []) {
-          if (!it || typeof it.id !== "string" || done[it.id] || !Array.isArray(it.d) || to - it.at > LIMITS.outboxMaxAgeMs) continue;
-          done[it.id] = it.at;
-          if (to - it.at > LIMITS.lateMs) { report.dropped += it.d.length; continue; }
-          for (const x of it.d) if (Array.isArray(x)) units.push({ f: fam, k: it.k, at: it.at, u: x[0], e: x[1] });
-        }
-      } catch (e) { report.familyErrors++; }                                                      // the queue is read again next run (ids not marked)
+      } catch (e) { rep.errors++; }                                                                 // re-checked by the next runs (10-minute window)
     }
-    // 3. device units (only active members' current devices)
-    const pending = [];
-    for (const d of entries) {
-      try {
-        const ctx = await famCtx(env, b, envName, d.f, cache);
-        if (!ctx) { report.skipped += d.u.length; continue; }                                      // roster missing/old → fail closed
-        units.push(...unitsFor(ctx, d.f, d.k, d.at, d.u, report));
-      } catch (e) { pending.push(d); }                                                             // out of budget / storage error → next run
+    // 2c. expand into device units (only active members' current devices)
+    for (const src of newSrc) {
+      let ctx; try { ctx = await famCtx(env, b, envName, src.f, cache); } catch (e) { continue; }    // not marked → taken in next run
+      done[src.id] = now;
+      if (!ctx) { rep.skipped += src.u.length; continue; }                                          // members list too old → fail closed
+      for (const uid of new Set(src.u)) {
+        const ru = ctx.roster.users[uid];
+        if (!ru || !ru.a) { rep.skipped++; continue; }
+        for (const s of (ctx.subs.list || {})[uid] || []) cand.push({ id: unitId(src.id, uid, s.endpoint), f: src.f, k: src.k, at: src.at, u: uid, e: s.endpoint, pr: 3 });
+      }
     }
-    const valid = [], seen = new Set();
-    for (const u of units) {
-      const id = `${u.f}|${u.k}|${u.at}|${u.u}|${u.e}`; if (seen.has(id)) continue; seen.add(id);
-      let ctx; try { ctx = await famCtx(env, b, envName, u.f, cache); } catch (e) { pending.push(u); continue; }
-      if (!subOf(ctx, u)) { report.skipped++; continue; }                                          // device gone or person disabled meanwhile
+
+    // 3. pick by device: primary first, then priority (dead run → retry → waiting → new), then oldest
+    const seen = new Set(), valid = [];
+    for (const u of cand.sort((x, y) => rank(x.f) - rank(y.f) || x.pr - y.pr || x.at - y.at)) {
+      if (seen.has(u.id)) continue; seen.add(u.id);
+      let ctx; try { ctx = await famCtx(env, b, envName, u.f, cache); } catch (e) { hold.wait.push(strip(u)); continue; }
+      if (!subOf(ctx, u)) { rep.skipped++; continue; }                                              // device gone / person disabled meanwhile
       valid.push(u);
     }
-    // 4. by device: primary family first, then rotation, oldest first
-    valid.sort((x, y) => rank(x.f) - rank(y.f) || x.at - y.at);
-    const now = [], later = [];
-    for (const u of valid) { if (now.length < cap && b.left() >= 2 * (now.length + 1) + 2) now.push(u); else later.push(u); }
-    const nextItems = [...keep, ...unscanned, ...pending, ...later].slice(0, LIMITS.carryMax);
-    report.dropped += keep.length + unscanned.length + pending.length + later.length - nextItems.length;
-    // 5. save BEFORE sending
-    try {
-      if (JSON.stringify({ items: nextItems, done }) !== JSON.stringify({ items, done: carry.done || {} })) {
-        if (nextItems.length || Object.keys(done).length) await kv.put(env, b, K.carry(envName), { items: nextItems, done });
-        else await kv.del(env, b, K.carry(envName));
-      }
-    } catch (e) { report.familyErrors++; continue; }
-    report.carried += nextItems.length;
-    // 6. send
-    const deferred = [];
-    for (const u of now) {
-      try { await sendUnit(env, b, cache[envName + "|" + u.f], u, report); pushesLeft--; }
-      catch (e) { deferred.push(u); }
+    const chosen = [], rest = [];
+    for (const u of valid) { if (chosen.length < cap && b.left() >= chosen.length + 1 + 2) chosen.push(u); else rest.push(u); }
+    const wait = [...hold.wait, ...rest.map(strip)];
+    if (wait.length > LIMITS.waitMax) rep.dropped += wait.length - LIMITS.waitMax;
+
+    // 4. WRITE 1 — before anything is sent
+    const next = { v: st.v, done, fly: [...hold.fly, ...chosen.map(u => ({ ...strip(u), r: run, t: now }))], retry: hold.retry, wait: wait.slice(0, LIMITS.waitMax), more };
+    const changed = JSON.stringify([next.done, next.fly, next.retry, next.wait, next.more]) !== JSON.stringify([st.done, st.fly, st.retry, st.wait, st.more]);
+    try { if (changed) await saveState(env, b, envName, next); } catch (e) { rep.errors++; continue; }
+    rep.waiting += next.wait.length;
+    if (!chosen.length) continue;
+
+    // 5. send — one attempt per device
+    const results = [];
+    for (const u of chosen) {
+      const ctx = cache[envName + "|" + u.f], s = subOf(ctx, u);
+      let r = "skip";
+      try { if (s) r = await pushOne(env, b, s, messageOf(u.k)); } catch (e) { r = "temp"; }       // out of budget → treated like a temporary failure
+      pushesLeft--;
+      results.push([u, r]);
+      if (r === "ok") rep.sent++; else if (r === "skip") rep.skipped++; else rep.failed++;
+      if (r === "gone") ctx.dead.push([u.u, u.e]);
     }
-    for (const f of new Set(now.map(u => u.f))) { try { await removeDead(env, b, envName, f, cache[envName + "|" + f], report); } catch (e) { /* kept; retried later */ } }
-    if (deferred.length) {
-      try { await kv.put(env, b, K.carry(envName), { items: [...nextItems, ...deferred].slice(0, LIMITS.carryMax), done }); report.carried += deferred.length; }
-      catch (e) { report.dropped += deferred.length; }                                            // reported, not silently lost
+    // 6. WRITE 2 — confirm (if this fails the units stay in `fly` → re-sent later: duplicate, not loss)
+    const mine = new Set(chosen.map(u => u.id));
+    next.fly = next.fly.filter(u => !(u.r === run && mine.has(u.id)));
+    for (const [u, r] of results) {
+      if (r !== "temp") continue;
+      const n = (u.n || 0) + 1;
+      if (n >= LIMITS.retryMax || to - u.at > LIMITS.lateMs) { rep.dropped++; continue; }
+      next.retry.push({ ...strip(u), n, next: now + LIMITS.retryDelayMs }); rep.retried++;
+    }
+    try { await saveState(env, b, envName, next); } catch (e) { rep.errors++; }
+    for (const f of new Set(chosen.map(u => u.f))) {                                                // dead subscriptions (best effort)
+      const ctx = cache[envName + "|" + f];
+      if (!ctx || !ctx.dead.length || b.left() < 1) continue;
+      const list = ctx.subs.list || {};
+      for (const [uid, ep] of ctx.dead) { list[uid] = (list[uid] || []).filter(x => x.endpoint !== ep); if (!list[uid].length) delete list[uid]; }
+      try { await kv.put(env, b, K.subs(envName, f), { ...ctx.subs, list }); rep.removed += ctx.dead.length; } catch (e) { rep.errors++; }
     }
   }
-  if (Object.values(report).some(Boolean))
-    console.log(JSON.stringify({ cron: new Date(to).toISOString(), ...report }));                  // counts only — no tokens, uids or content
-  return report;
+  if (Object.values(rep).some(Boolean)) console.log(JSON.stringify({ cron: new Date(to).toISOString(), ...rep }));   // counts only
+  return rep;
 }
+function strip(u) { const { pr, r, t, ...x } = u; return x; }
+export const _test = { resetMemory() { for (const k of Object.keys(MEM)) delete MEM[k]; } };   // tests only: simulate a fresh instance
 
 export default {
   async fetch(req, env) {

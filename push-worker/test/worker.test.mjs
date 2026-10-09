@@ -1,86 +1,120 @@
 // Local tests for the Nido push worker — mocks only: no network, no Cloudflare, no Firebase, no real phones.
 // Run: node push-worker/test/worker.test.mjs
-import W, { runCron, LIMITS, KINDS, messageOf, slotOf, allowed } from "../worker.js";
+// What these tests CANNOT show (needs a real deployment): Cloudflare CPU time, real KV propagation delays, whether
+// Cloudflare ever starts two cron runs for one minute, real delivery to Android, how a duplicate sounds on a phone.
+import W, { runCron, LIMITS, KINDS, messageOf, slotOf, allowed, _test } from "../worker.js";
 import { readFileSync } from "node:fs";
 
-let failures = 0;
-const log0 = console.log; console.log = (...a) => { if (typeof a[0] === "string" && a[0].startsWith('{"cron"')) return; log0(...a); };   // the cron report line
-const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m); if (!c) failures++; };
+let failures = 0, passed = 0;
+const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m); if (c) passed++; else failures++; };
 const section = t => console.log("\n" + t);
+const log0 = console.log; console.log = (...a) => { if (typeof a[0] === "string" && a[0].startsWith('{"cron"')) return; log0(...a); };
 
-/* ---------- mock KV (with fault injection and per-invocation counters) ---------- */
-const store = new Map(); const faults = new Set(); let ops = 0; const reads = [], writes = [];
+/* ---------- fake clock (the worker reads Date.now) ---------- */
+let CLOCK = Date.UTC(2026, 9, 12, 6, 0, 0);
+Date.now = () => CLOCK;
+const advance = ms => { CLOCK += ms; };
+
+/* ---------- KV simulator ----------
+   • list() with prefix + expirationTtl, like Workers KV
+   • stale reads: staleNext.add(key) → the next get of that key returns the PREVIOUS value (propagation lag)
+   • hideInList.add(key) → the next list() doesn't show it yet (lists lag too)
+   • interleaving: every operation yields to the event loop (randomized when JITTER is on) so concurrent calls mix
+   • crash: crashAfter = n → after n more operations every operation hangs forever (the invocation "dies")
+   • faults: a key (or "PUT") that throws */
+const store = new Map(); const prev = new Map(); const faults = new Set(); const staleNext = new Set(); const hideInList = new Set();
+let ops = 0, crashAfter = Infinity, JITTER = false, seed = 1;
+const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+const reads = [], writes = [];
+const pause = () => new Promise(r => JITTER ? setTimeout(r, Math.floor(rnd() * 3)) : setImmediate(r));
+const HANG = () => new Promise(() => {});
+async function step() { ops++; if (--crashAfter < 0) return HANG(); await pause(); }
+const live = k => { const e = store.get(k); if (!e) return null; if (e.exp && e.exp <= CLOCK) { store.delete(k); return null; } return e; };
 const KV = {
-  async get(k, t) { ops++; reads.push(k); if (faults.has(k)) throw new Error("kv down"); const v = store.get(k); return v == null ? null : (t === "json" ? JSON.parse(v) : v); },
-  async put(k, v) { ops++; writes.push(k); if (faults.has("PUT") || faults.has(k)) throw new Error("kv write failed"); store.set(k, v); },
-  async delete(k) { ops++; writes.push(k); store.delete(k); },
+  async get(k, t) {
+    await step(); reads.push(k); if (faults.has(k)) throw new Error("kv down");
+    if (staleNext.has(k)) { staleNext.delete(k); const p = prev.get(k); return p == null ? null : JSON.parse(p); }
+    const e = live(k); return e == null ? null : (t === "json" ? JSON.parse(e.v) : e.v);
+  },
+  async put(k, v, opt = {}) {
+    await step(); writes.push(k); if (faults.has("PUT") || faults.has("PUT:" + k)) throw new Error("kv write failed");
+    const e = live(k); prev.set(k, e ? e.v : null);
+    store.set(k, { v, exp: opt.expirationTtl ? CLOCK + opt.expirationTtl * 1000 : 0 });
+  },
+  async delete(k) { await step(); writes.push(k); prev.set(k, live(k) ? store.get(k).v : null); store.delete(k); },
+  async list({ prefix, limit }) {
+    await step(); reads.push("LIST " + prefix); if (faults.has("LIST")) throw new Error("kv down");
+    const keys = [...store.keys()].filter(k => k.startsWith(prefix) && live(k) && !hideInList.has(k)).sort().slice(0, limit).map(name => ({ name }));
+    hideInList.clear(); return { keys, list_complete: true };
+  },
 };
+const getJ = k => { const e = live(k); return e ? JSON.parse(e.v) : null; };
 const vapid = await (async () => {
   const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);
   return { pub: Buffer.from(await crypto.subtle.exportKey("raw", kp.publicKey)).toString("base64url"), d: (await crypto.subtle.exportKey("jwk", kp.privateKey)).d };
 })();
 const env = { NIDO: KV, VAPID_PUBLIC: vapid.pub, VAPID_PRIVATE: vapid.d };
 
-/* ---------- mock Firestore + push services ---------- */
-const PROJECT = "nido-family-72346";
+/* ---------- mock Firestore (applies the same read rules as firestore.rules) + push services ---------- */
+const PROJECT = "nido-family-72346", SUPER = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
 const USERS = {
-  a1: { family: "home", role: "admin", active: true }, a2: { family: "home", role: "editor", active: true }, av: { family: "home", role: "viewer", active: true },
+  [SUPER]: { family: "home", role: "admin", active: true },                           // the system admin (Slava)
+  wife: { family: "home", role: "editor", active: true },
+  kid: { family: "home", role: "viewer", active: true },
+  off: { family: "home", role: "editor", active: false },
   b1: { family: "fB", role: "admin", active: true }, b2: { family: "fB", role: "editor", active: true },
   c1: { family: "fC", role: "editor", active: true },
-  off: { family: "home", role: "editor", active: false },
-  K2TaGlPsCJQ7W4HPdaOwQqvRKGS2: { family: "home", role: "admin", active: true },
 };
-const SUPER = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
-// families in Firestore: push = the system admin's switch; active === false = frozen in the app
-const FAMDB = { home: { push: true }, fB: { push: true }, fC: { push: true } };
+const FAMDB = { home: { push: true }, fB: { push: false }, fC: { push: false } };       // only our family is enabled
+let fsDown = false, famDown = false;
 const fsVal = v => typeof v === "boolean" ? { booleanValue: v } : { stringValue: String(v) };
 const famFields = f => Object.fromEntries(Object.entries(f).filter(([k]) => k === "push" || k === "active").map(([k, v]) => [k, fsVal(v)]));
-const tok = (uid, { sig = "good", aud = PROJECT, exp = 3600 } = {}) => "h." + Buffer.from(JSON.stringify({ aud, iss: `https://securetoken.google.com/${aud}`, sub: uid, user_id: uid, exp: Math.floor(Date.now() / 1000) + exp })).toString("base64url") + "." + sig;
-const pushed = []; let fetches = 0;
-let fsFamiliesDown = false;                                                           // simulate Firestore unreachable for family documents
+const tok = (uid, { sig = "good", aud = PROJECT, exp = 3600 } = {}) => "h." + Buffer.from(JSON.stringify({ aud, iss: `https://securetoken.google.com/${aud}`, sub: uid, user_id: uid, exp: Math.floor(CLOCK / 1000) + exp })).toString("base64url") + "." + sig;
+const pushed = []; let fetches = 0; const pushStatus = {};                           // name → [status, status…] (consumed in order)
 globalThis.fetch = async (url, opt = {}) => {
-  fetches++;
+  await step(); fetches++;
   url = String(url);
-  if (fsFamiliesDown && url.includes("/documents/families")) throw new Error("network");
   if (url.includes("firestore.googleapis.com")) {
+    if (fsDown) throw new Error("network");
     const t = (opt.headers.Authorization || "").replace("Bearer ", "");
     const claims = JSON.parse(Buffer.from(t.split(".")[1], "base64url"));
-    if (!t.endsWith(".good") || claims.exp * 1000 < Date.now() || claims.aud !== PROJECT) return new Response("{}", { status: 401 });   // Firestore verifies the token
-    const me = USERS[claims.user_id], isSuperCaller = claims.user_id === SUPER;
-    if (url.includes("/documents/families")) {                                       // rules: families/{fid} read if boot() || inFamily(fid)
+    if (!t.endsWith(".good") || claims.exp * 1000 < CLOCK || claims.aud !== PROJECT) return new Response("{}", { status: 401 });
+    const me = USERS[claims.user_id], isSuper = claims.user_id === SUPER;
+    if (url.includes("/documents/families")) {
+      if (famDown) throw new Error("network");
       const rest = url.split("/documents/families")[1];
-      if (rest.startsWith("?")) {                                                    // list: only the system admin
-        if (!isSuperCaller) return new Response("{}", { status: 403 });
-        return new Response(JSON.stringify({ documents: Object.entries(FAMDB).map(([id, f]) => ({ name: `projects/x/databases/(default)/documents/families/${id}`, fields: famFields(f) })) }), { status: 200 });
+      if (rest.startsWith("?")) {
+        if (!isSuper) return new Response("{}", { status: 403 });
+        return new Response(JSON.stringify({ documents: Object.entries(FAMDB).map(([id, f]) => ({ name: `x/families/${id}`, fields: famFields(f) })) }), { status: 200 });
       }
       const fid = rest.slice(1);
-      if (!isSuperCaller && !(me && me.active && me.family === fid)) return new Response("{}", { status: 403 });
+      if (!isSuper && !(me && me.active && (me.family || "home") === fid)) return new Response("{}", { status: 403 });
       if (!FAMDB[fid]) return new Response("{}", { status: 404 });
       return new Response(JSON.stringify({ name: `x/families/${fid}`, fields: famFields(FAMDB[fid]) }), { status: 200 });
     }
     if (url.endsWith(":runQuery")) {
       const fam = JSON.parse(opt.body).structuredQuery.where.fieldFilter.value.stringValue;
-      const isSuper = claims.user_id === "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";
-      if (!me || !me.active || (!isSuper && me.family !== fam)) return new Response("[]", { status: 403 });   // rules: only own family (or the system admin)
-      return new Response(JSON.stringify(Object.entries(USERS).filter(([, u]) => u.family === fam).map(([uid, u]) => ({ document: { name: `projects/x/databases/(default)/documents/users/${uid}`, fields: { active: { booleanValue: u.active }, role: { stringValue: u.role }, family: { stringValue: u.family } } } }))), { status: 200 });
+      if (!me || (!isSuper && (!me.active || me.family !== fam))) return new Response("[]", { status: 403 });
+      return new Response(JSON.stringify(Object.entries(USERS).filter(([, u]) => u.family === fam).map(([uid, u]) => ({ document: { name: `x/users/${uid}`, fields: { active: { booleanValue: u.active }, role: { stringValue: u.role }, family: { stringValue: u.family } } } }))), { status: 200 });
     }
     const uid = url.split("/users/")[1];
     if (uid !== claims.user_id || !USERS[uid]) return new Response("{}", { status: uid !== claims.user_id ? 403 : 404 });
-    const u = USERS[uid];
-    return new Response(JSON.stringify({ fields: { active: { booleanValue: u.active }, role: { stringValue: u.role }, family: { stringValue: u.family } } }), { status: 200 });
+    const u = USERS[uid], fields = { active: { booleanValue: u.active }, role: { stringValue: u.role } };
+    if (u.family !== undefined) fields.family = { stringValue: u.family };
+    return new Response(JSON.stringify({ fields }), { status: 200 });
   }
   if (url.startsWith("https://push.test/")) {
     const name = url.split("/").pop();
-    pushed.push({ name, body: new Uint8Array(await new Response(opt.body).arrayBuffer()) });
-    if (name.startsWith("gone")) return new Response("", { status: 410 });
-    if (name.startsWith("temp")) return new Response("", { status: 503 });
-    if (name.startsWith("bad")) return new Response("", { status: 400 });
-    return new Response("", { status: 201 });
+    const q = pushStatus[name], st = q && q.length ? q.shift() : (name.startsWith("gone") ? 410 : name.startsWith("bad") ? 400 : 201);
+    if (st === 0) throw new Error("network");
+    pushed.push({ name, body: new Uint8Array(await new Response(opt.body).arrayBuffer()), st });
+    return new Response("", { status: st });
   }
   throw new Error("unexpected fetch " + url);
 };
+const delivered = () => pushed.filter(p => p.st >= 200 && p.st < 300).map(p => p.name);
 
-/* ---------- subscriptions with real keys, so payloads can be decrypted and inspected ---------- */
+/* ---------- devices with real keys, so payloads can be decrypted ---------- */
 const DEV = {};
 async function device(name) {
   const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
@@ -102,346 +136,338 @@ async function decrypt(name, body) {                                            
   return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
 }
 
-/* ---------- call helper: also checks the per-invocation subrequest count stays under 50 ---------- */
-let maxSubreq = 0;
+/* ---------- helpers: every invocation is checked against the 30-subrequest budget ---------- */
+let maxSubreq = 0, maxPushesPerRun = 0, maxTestPushesPerRun = 0;
 async function call(uid, path, body = {}, opts = {}) {
-  const o0 = ops, f0 = fetches;
+  const o0 = ops;
   const headers = { "content-type": "application/json" };
   if (uid) headers.authorization = "Bearer " + (opts.token || tok(uid));
   const raw = opts.raw !== undefined ? opts.raw : JSON.stringify({ env: "prod", ...body });
   const r = await W.fetch(new Request("https://worker.test/" + path.replace(/^\//, ""), { method: "POST", headers, body: raw }), env);
-  maxSubreq = Math.max(maxSubreq, ops - o0 + fetches - f0);
+  maxSubreq = Math.max(maxSubreq, ops - o0);
   return { status: r.status, json: await r.json(), cors: r.headers.get("access-control-allow-origin") };
 }
-async function cron(t) { const o0 = ops, f0 = fetches; const r = await runCron(env, t); maxSubreq = Math.max(maxSubreq, ops - o0 + fetches - f0); return r; }
-const subsOf = (e, f) => JSON.parse(store.get(`subs:${e}:${f}`) || '{"list":{}}').list;
+async function cron(t = CLOCK) {
+  CLOCK = Math.max(CLOCK, t);
+  const o0 = ops, p0 = pushed.length, r = await runCron(env, t);
+  maxSubreq = Math.max(maxSubreq, ops - o0);
+  maxPushesPerRun = Math.max(maxPushesPerRun, pushed.length - p0);
+  return r;
+}
+async function minutes(n, from = CLOCK) { const reps = []; for (let i = 1; i <= n; i++) { CLOCK = from + i * 60e3; reps.push(await cron(CLOCK)); } return reps; }
+const sum = (reps, k) => reps.reduce((a, r) => a + (r[k] || 0), 0);
+const subsOf = (e, f) => (getJ(`subs:${e}:${f}`) || { list: {} }).list;
+const queueKeys = (e = "prod") => [...store.keys()].filter(k => k.startsWith(`q:${e}:`) && live(k));
+const count = (arr, x) => arr.filter(y => y === x).length;
+function resetWorld() { for (const k of [...store.keys()]) if (/^(q|qhint|cron|jobs):/.test(k)) store.delete(k); pushed.length = 0; _test.resetMemory(); staleNext.clear(); hideInList.clear(); faults.clear(); crashAfter = Infinity; JITTER = false; }
 
 /* =============================== tests =============================== */
-section("Setup");
-for (const [u, d] of [["a1", "A1"], ["a2", "A2"], ["av", "AV"], ["b1", "B1"], ["b2", "B2"], ["c1", "C1"]]) ok((await call(u, "/subscribe", { sub: await device(d) })).status === 200, `${u} subscribes`);
-ok((await call("a1", "/subscribe", { sub: DEV.A1.sub })).json.same === true, "re-subscribing the same device writes nothing");
+section("Setup — our family enabled, the others disabled");
+let r = await call(SUPER, "/policy");
+ok(r.status === 200 && r.json.primary === "home" && JSON.stringify(r.json.allow) === '["home"]', `system admin sync: primary = his profile's family, allowed = ${JSON.stringify(r.json.allow)}`);
+ok((await call(SUPER, "/subscribe", { sub: await device("S1") })).status === 200, "Slava's phone subscribes");
+ok((await call("wife", "/subscribe", { sub: await device("W1") })).status === 200, "his wife's phone subscribes");
+ok((await call("b1", "/subscribe", { sub: await device("B1") })).json.error === "push-off", "a disabled family cannot subscribe");
+ok((await call(SUPER, "/subscribe", { sub: DEV.S1.sub })).json.same === true, "re-subscribing the same device writes nothing");
 
-section("Authentication");
-ok((await call("a1", "/send", { uids: ["a2"], kind: "task" }, { token: tok("a1", { sig: "forged" }) })).status === 401, "forged token rejected");
-ok((await call("a1", "/send", { uids: ["a2"], kind: "task" }, { token: tok("a1", { exp: -10 }) })).status === 401, "expired token rejected");
-ok((await call("a1", "/send", { uids: ["a2"], kind: "task" }, { token: tok("a1", { aud: "other-project" }) })).status === 401, "token for another project rejected");
-ok((await call(null, "/send", { uids: ["a2"], kind: "task" })).status === 401, "no token rejected");
+section("Authentication and roles");
+ok((await call("wife", "/send", { uids: [SUPER], kind: "task" }, { token: tok("wife", { sig: "forged" }) })).status === 401, "forged token rejected");
+ok((await call("wife", "/send", { uids: [SUPER], kind: "task" }, { token: tok("wife", { exp: -10 }) })).status === 401, "expired token rejected");
+ok((await call("wife", "/send", { uids: [SUPER], kind: "task" }, { token: tok("wife", { aud: "other" }) })).status === 401, "token for another project rejected");
+ok((await call(null, "/send", { uids: [SUPER], kind: "task" })).status === 401, "no token rejected");
+ok((await call("off", "/subscribe", { sub: await device("OFF") })).status === 401, "disabled user rejected");
+ok((await call("kid", "/send", { uids: [SUPER], kind: "task" })).status === 403, "viewer cannot send");
+ok((await call("kid", "/jobs", { jobs: [{ at: CLOCK + 9e5, uids: [SUPER], kind: "remind" }] })).status === 403, "viewer cannot change the reminder plan");
+ok((await call("wife", "/roster")).status === 403, "an editor cannot force a roster refresh");
+ok((await call("wife", "/policy")).status === 403 && (await call("b1", "/policy", { fam: "fB" })).status === 403, "only the system admin may use /policy");
+
+section("Queue only: /send and /test never push directly");
+resetWorld();
+let f0 = fetches;
+r = await call("wife", "/send", { uids: [SUPER], kind: "task" });
+ok(r.status === 200 && r.json.queued === 1 && pushed.length === 0, `/send answers "queued" and pushes nothing (${JSON.stringify(r.json)})`);
+r = await call(SUPER, "/test");
+ok(r.json.queued === 1 && pushed.length === 0, "/test is queued too");
+ok(queueKeys().length === 2 && getJ("qhint:prod").t === CLOCK, "two separate queue items + a hint");
+await minutes(1);
+ok(delivered().sort().join() === "S1,S1", `the cron delivered both (${delivered().join()})`);
+const msg = await decrypt("S1", pushed[0].body);
+ok(Object.values(KINDS).some(k => k.title === msg.data.title) && !/title|body/.test(JSON.stringify(getJ(queueKeys()[0]) || {})), `payload is a fixed generic text: "${msg.data.title}"`);
+r = await call("wife", "/send", { uids: [SUPER], kind: "task", title: "סוד: יום הולדת", body: "מרבד הקסמים 5" });
+ok(![...store.values()].map(e => e.v).join(" ").match(/יום הולדת|מרבד/), "free text sent by a client is never stored");
+await minutes(1);
 
 section("Cross-family isolation");
-pushed.length = 0;
-await call("a1", "/send", { uids: ["a2", "b1", "b2", "c1"], kind: "task" });
-ok(pushed.map(p => p.name).join() === "A2", `home → [a2,b1,b2,c1] reaches only home's a2 (got ${pushed.map(p => p.name).join()})`);
-pushed.length = 0; await call("b1", "/send", { uids: ["a1", "a2"], kind: "task" });
-ok(pushed.length === 0, "fB cannot reach home users");
-await call("b1", "/jobs", { fam: "home", jobs: [{ at: Date.now() + 10 * 60e3, uids: ["a1"], kind: "remind" }] });
-ok(!store.has("jobs:prod:home"), "a 'fam' field in the request is ignored (fB could not write home's plan)");
-ok((await call("b1", "/unsubscribe", { endpoint: DEV.A1.sub.endpoint })).status === 403, "cannot unsubscribe another family's device");
+resetWorld();
+r = await call("wife", "/send", { uids: [SUPER, "b1", "b2", "c1"], kind: "task" });
+ok(r.json.queued === 1 && r.json.skipped === 3, "only members of the caller's own family are queued");
+await minutes(1);
+ok(delivered().join() === "S1", `…and only they receive it (${delivered().join()})`);
 ok((await call("b1", "/send", { env: "test", uids: ["b2"], kind: "task" })).status === 403, "other families cannot use the test environment");
-ok((await call("b1", "/roster", { fam: "home" })).status === 403, "a family admin cannot refresh another family's roster");
-ok((await call("K2TaGlPsCJQ7W4HPdaOwQqvRKGS2", "/roster", { fam: "fB" })).status === 200, "the system admin can refresh any family's roster");
-
-section("Roles");
-ok((await call("av", "/jobs", { jobs: [{ at: Date.now() + 10 * 60e3, uids: ["a1"], kind: "remind" }] })).status === 403, "viewer cannot change the reminder plan");
-ok((await call("av", "/send", { uids: ["a1"], kind: "task" })).status === 403, "viewer cannot send notifications");
-ok((await call("av", "/test")).status === 200, "viewer can test their own device");
-ok((await call("a2", "/roster")).status === 403, "an editor cannot force a roster refresh");
-
-section("Disabled and deleted users");
-ok((await call("off", "/subscribe", { sub: await device("OFF") })).status === 401, "disabled user rejected");
-ok((await call("ghost", "/subscribe", { sub: await device("GH") })).status === 401, "deleted (no profile) user rejected");
-USERS.a2.active = false;
-await call("a1", "/roster");                                                        // what the admin app does after disabling someone
-ok(!subsOf("prod", "home").a2, "after disabling a2 + roster refresh, a2's devices are removed");
-pushed.length = 0; await call("a1", "/send", { uids: ["a2"], kind: "task" });
-ok(pushed.length === 0, "disabled user receives nothing");
-USERS.a2.active = true; await call("a2", "/subscribe", { sub: DEV.A2.sub }); await call("a1", "/roster");
-delete USERS.b2; await call("b1", "/roster");
-ok(!subsOf("prod", "fB").b2, "deleted user's devices removed on roster refresh");
-USERS.b2 = { family: "fB", role: "editor", active: true }; await call("b1", "/roster"); await call("b2", "/subscribe", { sub: DEV.B2.sub });
+ok((await call("b1", "/roster", { fam: "home" })).status === 403, "a family admin cannot refresh another family");
+ok((await call("b1", "/unsubscribe", { endpoint: DEV.S1.sub.endpoint })).status === 403, "cannot unsubscribe another family's device");
+await call("wife", "/jobs", { fam: "fB", jobs: [{ at: CLOCK + 9e5, uids: ["wife"], kind: "remind" }] });
+ok(!live("jobs:prod:fB"), "a 'fam' field in the request is ignored");
 
 section("Invalid input (rejected safely, CORS kept)");
 const bad = [
-  ["bad json", await call("a1", "/send", {}, { raw: "{not json" })],
-  ["array body", await call("a1", "/send", {}, { raw: "[1,2]" })],
-  ["too large", await call("a1", "/send", {}, { raw: JSON.stringify({ env: "prod", pad: "x".repeat(20000) }) })],
-  ["uids as string", await call("a1", "/send", { uids: "a2", kind: "task" })],
-  ["uids with bad ids", await call("a1", "/send", { uids: ["../x"], kind: "task" })],
-  ["too many uids", await call("a1", "/send", { uids: Array.from({ length: 30 }, (_, i) => "u" + i), kind: "task" })],
-  ["unknown kind", await call("a1", "/send", { uids: ["a2"], kind: "free-text" })],
-  ["bad env", await call("a1", "/send", { env: "staging", uids: ["a2"], kind: "task" })],
-  ["bad subscription", await call("a1", "/subscribe", { sub: { endpoint: "http://x", keys: {} } })],
-  ["jobs not an array", await call("a1", "/jobs", { jobs: "x" })],
-  ["job with bad kind", await call("a1", "/jobs", { jobs: [{ at: Date.now() + 9e5, uids: ["a2"], kind: "x" }] })],
-  ["job uids as string", await call("a1", "/jobs", { jobs: [{ at: Date.now() + 9e5, uids: "a2", kind: "remind" }] })],
-  ["too many jobs", await call("a1", "/jobs", { jobs: Array.from({ length: LIMITS.jobsPerFamily + 1 }, () => ({ at: Date.now() + 9e5, uids: ["a2"], kind: "remind" })) })],
+  ["bad json", await call("wife", "/send", {}, { raw: "{not json" })],
+  ["array body", await call("wife", "/send", {}, { raw: "[1,2]" })],
+  ["too large", await call("wife", "/send", {}, { raw: JSON.stringify({ env: "prod", pad: "x".repeat(20000) }) })],
+  ["uids as string", await call("wife", "/send", { uids: SUPER, kind: "task" })],
+  ["bad uid", await call("wife", "/send", { uids: ["../x"], kind: "task" })],
+  ["too many uids", await call("wife", "/send", { uids: Array.from({ length: 30 }, (_, i) => "u" + i), kind: "task" })],
+  ["unknown kind", await call("wife", "/send", { uids: [SUPER], kind: "free-text" })],
+  ["bad env", await call("wife", "/send", { env: "staging", uids: [SUPER], kind: "task" })],
+  ["bad subscription", await call("wife", "/subscribe", { sub: { endpoint: "http://x", keys: {} } })],
+  ["jobs not an array", await call("wife", "/jobs", { jobs: "x" })],
+  ["job with bad kind", await call("wife", "/jobs", { jobs: [{ at: CLOCK + 9e5, uids: [SUPER], kind: "x" }] })],
+  ["bad fam in /policy", await call(SUPER, "/policy", { fam: "../x" })],
 ];
-for (const [n, r] of bad) ok(r.status >= 400 && r.status < 500 && r.cors === "https://slavaborhovich.github.io", `${n} → ${r.status}`);
+for (const [n, x] of bad) ok(x.status >= 400 && x.status < 500 && x.cors === "https://slavaborhovich.github.io", `${n} → ${x.status}`);
 
-section("Generic payloads only");
-pushed.length = 0; await call("a1", "/send", { uids: ["a2"], kind: "task", title: "סוד: יום הולדת לליאל", body: "מרבד הקסמים 5" });
-const msg = await decrypt("A2", pushed[0].body);
-ok(msg.data.title === KINDS.task.title && !JSON.stringify(msg).includes("ליאל") && !JSON.stringify(msg).includes("מרבד"), `payload is the fixed text only: "${msg.data.title}"`);
-const stored = [...store.values()].join(" ");
-ok(!/ליאל|מרבד|title|body|place/.test(stored), "KV holds no names, titles, places or free text");
-ok(Object.values(KINDS).every(k => !/[א-ת]{2,} [א-ת]+ ל[א-ת]+ \d/.test(k.title)) && messageOf("nope") === null, "only fixed kinds are accepted");
+section("Reminders (jobs) through the cron");
+resetWorld();
+const T = Math.ceil(CLOCK / 3600e3) * 3600e3 + 3600e3;
+await call("wife", "/jobs", { jobs: [{ at: T, uids: [SUPER, "wife"], kind: "digest" }, { at: T + 30 * 60e3, uids: ["wife"], kind: "remind" }] });
+let reps = await minutes(75, T - 5 * 60e3);
+ok(count(delivered(), "S1") === 1 && count(delivered(), "W1") === 2, `each reminder exactly once (S1:${count(delivered(), "S1")}, W1:${count(delivered(), "W1")})`);
+ok(sum(reps, "dropped") === 0, "nothing dropped");
+pushed.length = 0;
+await minutes(5, T + 5 * 60e3);
+ok(pushed.length === 0, "re-running minutes that were already handled sends nothing (done ids)");
+CLOCK = T + 3 * 3600e3;                                                              // back to the future for the next sections
 
-section("Subscription cleanup");
-const sendCap = LIMITS.pushesPerSend; LIMITS.pushesPerSend = 10;                  // cleanup semantics, independent of the send cap
-await call("a1", "/subscribe", { sub: await device("gone-1") });
-await call("a1", "/subscribe", { sub: await device("temp-1") });
-await call("a1", "/subscribe", { sub: await device("bad-1") });
-pushed.length = 0; await call("a2", "/send", { uids: ["a1"], kind: "event" });
-const a1devs = subsOf("prod", "home").a1.map(s => s.endpoint.split("/").pop());
-ok(!a1devs.includes("gone-1"), "410 Gone → subscription removed");
-ok(a1devs.includes("temp-1") && pushed.filter(p => p.name === "temp-1").length === 2, "503 → kept, retried once");
-ok(a1devs.includes("bad-1"), "400 → kept (not a documented 'gone' signal)");
-const r400 = await call("a2", "/send", { uids: ["a1"], kind: "event" });
-ok(r400.json.ok === false && r400.json.failed >= 2, `failures are reported, not hidden (ok:${r400.json.ok}, failed:${r400.json.failed})`);
-await call("a1", "/unsubscribe", { endpoint: "https://push.test/temp-1" }); await call("a1", "/unsubscribe", { endpoint: "https://push.test/bad-1" });
-LIMITS.pushesPerSend = sendCap;
+section("Concurrency: 10 /send requests at the same moment");
+resetWorld(); JITTER = true; seed = 7; reads.length = 0;
+await Promise.all([...Array(5)].map(() => call("wife", "/send", { uids: [SUPER], kind: "note" })).concat([...Array(5)].map(() => call(SUPER, "/send", { uids: ["wife"], kind: "shop" }))));
+JITTER = false;
+ok(queueKeys().length === 10, `10 separate queue items, none overwritten (${queueKeys().length})`);
+reps = await minutes(4);
+ok(count(delivered(), "S1") === 5 && count(delivered(), "W1") === 5, `all 10 delivered within 4 minutes, no duplicates (S1:${count(delivered(), "S1")}, W1:${count(delivered(), "W1")})`);
+ok(maxPushesPerRun <= LIMITS.pushesPerRun, `never more than ${LIMITS.pushesPerRun} pushes in one run`);
 
-section("Device ownership");
-await call("b2", "/subscribe", { sub: DEV.A1.sub });                               // the a1 phone is now b2's
-ok(!JSON.stringify(subsOf("prod", "home")).includes("/A1") && JSON.stringify(subsOf("prod", "fB")).includes("/A1"), "a device moving to another family is removed from the old one");
-await call("a1", "/subscribe", { sub: DEV.A1.sub });
-
-section("Quotas");
-let r429 = null;
-for (let i = 0; i < LIMITS.subWritesPerUser + 2; i++) { const r = await call("c1", "/subscribe", { sub: await device("q" + i) }); if (r.status === 429) { r429 = i; break; } }
-ok(r429 !== null && r429 <= LIMITS.subWritesPerUser, `per-user daily subscription writes capped (blocked at #${r429 + 1})`);
-let jw = 0, j429 = false;
-for (let i = 0; i < LIMITS.planWritesPerUser + 3; i++) { const r = await call("b1", "/jobs", { jobs: [{ at: Date.now() + (10 + i) * 60e3, uids: ["b2"], kind: "remind" }] }); if (r.status === 429) { j429 = true; break; } jw++; }
-ok(j429 && jw <= LIMITS.planWritesPerUser, `per-user daily plan writes capped (${jw} allowed)`);
-const sameBefore = store.get("jobs:prod:home");
-await call("a1", "/jobs", { jobs: [{ at: Date.now() + 3600e3, uids: ["a2"], kind: "remind" }] });
-const w1 = JSON.parse(store.get("jobs:prod:home")).n;
-await call("a2", "/jobs", { jobs: [{ at: Date.now() + 3600e3, uids: ["a2"], kind: "remind" }] });
-ok(JSON.parse(store.get("jobs:prod:home")).n === w1 && sameBefore !== store.get("jobs:prod:home"), "same plan from another member → no extra write");
-
-section("Cron: spreading, batching, isolation, duplicates");
-// a big morning: 3 families, every member gets a digest at 08:00 tomorrow + reminders
-store.delete("jobs:prod:fB"); store.delete("jobs:prod:fC"); store.delete("carry:prod");
-const T = Math.ceil(Date.now() / 3600e3) * 3600e3 + 2 * 3600e3;                  // a whole hour in the future
-const plan = us => ({ jobs: [...us.map(u => ({ at: T, uids: [u], kind: "digest" })), { at: T, uids: us, kind: "remind" }] });
-// more devices so a single minute would overflow
-for (const [u, n] of [["a1", 3], ["a2", 3], ["b1", 3], ["b2", 3]]) for (let i = 0; i < n; i++) await call(u, "/subscribe", { sub: await device(`${u}-x${i}`) });
-await call("a1", "/jobs", plan(["a1", "a2", "av"])); await call("b1", "/jobs", plan(["b1", "b2"]));
-USERS.c2 = { family: "fC", role: "editor", active: true }; await call("c1", "/roster");
-await call("c1", "/jobs", plan(["c1"]));
-const slots = new Set(["home", "fB", "fC"].flatMap(f => JSON.parse(store.get(`jobs:prod:${f}`)).jobs.map(j => slotOf(j, f))));
-ok(slots.size > 3, `08:00 work is spread over ${slots.size} different minutes`);
-// one family's storage is broken: others must still go out
-faults.add("jobs:prod:fC");
-pushed.length = 0; let rep = { sent: 0, failed: 0, carried: 0, familyErrors: 0, dropped: 0 }, perMinute = [];
-for (let m = -1; m <= LIMITS.digestSpreadMin + 6; m++) {
-  const p0 = pushed.length, r = await cron(T + m * 60e3);
-  perMinute.push(pushed.length - p0);
-  for (const k of Object.keys(rep)) rep[k] += r[k] || 0;
+section("Concurrency: two cron runs at the same time (no locks in KV)");
+let lost = 0, dupMax = 0, dupRuns = 0;
+for (let s = 1; s <= 40; s++) {
+  resetWorld(); seed = s;
+  await call("wife", "/send", { uids: [SUPER], kind: "note" }); await call(SUPER, "/send", { uids: ["wife"], kind: "shop" });
+  advance(60e3); JITTER = true;
+  const t = CLOCK; await Promise.all([runCron(env, t), runCron(env, t)]);
+  JITTER = false; await minutes(6);
+  const s1 = count(delivered(), "S1"), w1 = count(delivered(), "W1");
+  if (s1 < 1 || w1 < 1) lost++;
+  const d = Math.max(s1, w1) - 1; dupMax = Math.max(dupMax, d); if (d > 0) dupRuns++;
 }
-faults.delete("jobs:prod:fC");
-for (let m = LIMITS.digestSpreadMin + 7; m <= LIMITS.digestSpreadMin + 20; m++) { const p0 = pushed.length; await cron(T + m * 60e3); perMinute.push(pushed.length - p0); }   // the repaired family catches up
-const names = pushed.map(p => p.name), dup = names.filter((n, i) => names.indexOf(n) !== i);
-ok(rep.familyErrors > 0 && names.some(n => n.startsWith("B")) && names.some(n => n.startsWith("A")), `a broken family (errors: ${rep.familyErrors}) did not stop the others`);
-ok(Math.max(...perMinute) <= LIMITS.pushesPerRun, `no run sent more than ${LIMITS.pushesPerRun} pushes (max ${Math.max(...perMinute)})`);
-const expected = { home: (1 + 4) * 2 + 1, fB: (1 + 3) * 2 + 1 };
-// each device gets: its digest (if its user has one) + the reminder → count distinct deliveries per device
-const perDevice = names.reduce((m, n) => (m[n] = (m[n] || 0) + 1, m), {});
-ok(Object.values(perDevice).every(v => v <= 2), "no device got more than its digest + reminder (no duplicates)");
-ok(!store.has("carry:prod") || !JSON.parse(store.get("carry:prod")).items.length, "everything carried over was eventually sent (carry list empty)");
-ok(names.some(n => /^C1|^q\d/.test(n)), "the repaired family's windows were re-scanned and delivered after the fault");
-ok(maxSubreq <= 50, `max subrequests in any single invocation: ${maxSubreq} (free limit 50)`);
-// a repeated run of an already-processed minute
-const before = pushed.length; await cron(T + 60 * 60e3); await cron(T + 60 * 60e3);
-ok(pushed.length === before, "re-running minutes with nothing due sends nothing");
-// the carry can't be saved before sending → that family sends nothing this run (never a later duplicate), and it is reported
-await call("a1", "/jobs", { jobs: [{ at: T + 3 * 3600e3, uids: ["a1", "a2", "av"], kind: "remind" }] });
-const keep = LIMITS.pushesPerRun; LIMITS.pushesPerRun = 1;                       // force an overflow that needs the carry
-faults.add("PUT");
-const p1 = pushed.length; const crash = { sent: 0, familyErrors: 0 };
-for (let m = 0; m <= LIMITS.remindSpreadMin; m++) { const r = await cron(T + 3 * 3600e3 + m * 60e3); crash.sent += r.sent; crash.familyErrors += r.familyErrors; }
-faults.delete("PUT"); LIMITS.pushesPerRun = keep;
-ok(pushed.length === p1 && crash.familyErrors > 0, `carry not saved → nothing sent, reported as error (errors: ${crash.familyErrors}, pushes: ${pushed.length - p1})`);
+ok(lost === 0, `40 interleavings: nothing lost`);
+ok(dupMax <= LIMITS.pushesPerRun, `duplicates happen (${dupRuns}/40 runs) but stay bounded (max ${dupMax} extra per device)`);
 
-/* ====================== per-family notification permission ====================== */
-const polOf = f => JSON.parse(store.get(`pol:${f}`) || "null");
-const setPol = (f, patch) => store.set(`pol:${f}`, JSON.stringify({ ...polOf(f), ...patch }));
-const keysOf = f => [...store.keys()].filter(k => k.split(":").includes(f)).sort();
-const snap = f => keysOf(f).map(k => k + "=" + store.get(k)).join("\n");
-const minuteNow = () => Math.floor(Date.now() / 60e3) * 60e3;
-const unit = (f, u, e, at, k = "task") => ({ f, k, at, u, e: "https://push.test/" + e });
-const putCarry = (envName, items) => store.set(`carry:${envName}`, JSON.stringify({ items, done: {} }));
-const sentNames = from => pushed.slice(from).map(p => p.name);
-// a clean slate for the cron part: no plans, no queues, no carry
-for (const k of [...store.keys()]) if (/^(jobs|out|carry):/.test(k)) store.delete(k);
+section("Crash in the middle (the run stops after N storage/network operations)");
+let crashLost = 0, crashDupMax = 0, points = 0;
+for (let n = 1; n <= 30; n++) {
+  resetWorld();
+  await call("wife", "/send", { uids: [SUPER], kind: "note" }); await call(SUPER, "/send", { uids: ["wife"], kind: "shop" });
+  advance(60e3);
+  crashAfter = n; runCron(env, CLOCK);                                               // never awaited: it hangs = died
+  await new Promise(r => setTimeout(r, 5)); crashAfter = Infinity; points++;
+  _test.resetMemory();                                                               // the next run is a fresh instance
+  await minutes(6);
+  const s1 = count(delivered(), "S1"), w1 = count(delivered(), "W1");
+  if (s1 < 1 || w1 < 1) crashLost++;
+  crashDupMax = Math.max(crashDupMax, s1 - 1, w1 - 1);
+}
+ok(crashLost === 0, `a crash at each of ${points} points: nothing lost`);
+ok(crashDupMax <= 1, `a crash can cause a duplicate (max ${crashDupMax} extra per device), never more`);
 
-section("Permission — who may change it");
-let r = await call(SUPER, "/policy");
-ok(r.status === 200 && r.json.families.home && r.json.families.fB, "1. the system admin can read and sync every family's setting");
-FAMDB.fB.push = false; r = await call(SUPER, "/policy", { fam: "fB" });
-ok(r.status === 200 && r.json.families.fB.allowed === false && polOf("fB").on === false, "1. the system admin's change (fB off in Firestore) is applied by the worker");
-FAMDB.fB.push = true; r = await call(SUPER, "/policy", { fam: "fB" });
-ok(r.json.families.fB.allowed === true, "1. … and turning it back on works");
-const polBefore = store.get("pol:fB");
-ok((await call("a1", "/policy", { fam: "fB" })).status === 403, "2. a family admin (not the system admin) cannot use /policy");
-ok((await call("b1", "/policy", { fam: "fB", off: true })).status === 403, "2. fB's own admin cannot change fB's setting through the worker");
-ok((await call("b2", "/policy")).status === 403 && store.get("pol:fB") === polBefore, "2. an editor cannot either — nothing changed");
-await call("b1", "/send", { uids: ["b2"], kind: "task", push: false, on: false, allowed: true });
-ok(store.get("pol:fB") === polBefore, "2. values sent from the browser are ignored (the setting is read from Firestore)");
-fsFamiliesDown = true;
-r = await call(SUPER, "/policy", { fam: "fB" });
-ok(r.status === 503 && store.get("pol:fB") === polBefore, "1. database unreachable → no change is made without verification");
+section("Stale reads (KV propagation lag)");
+resetWorld();
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+await minutes(1);
+_test.resetMemory(); staleNext.add("cron:prod");                                    // a different instance reads the old state
+await minutes(3);
+ok(count(delivered(), "S1") <= 2 && count(delivered(), "S1") >= 1, `old cron state read once → at most one duplicate (${count(delivered(), "S1")} deliveries)`);
+resetWorld();
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+await minutes(1); staleNext.add("cron:prod"); await minutes(3);
+ok(count(delivered(), "S1") === 1, "same instance: the in-memory copy hides the stale read (no duplicate)");
+resetWorld();
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+hideInList.add(queueKeys()[0]);                                                      // the list doesn't show the new item yet
+reps = await minutes(3);
+ok(count(delivered(), "S1") === 1, "an item missing from the first list is picked up by the next run (hint window)");
+resetWorld();
+faults.add("PUT:qhint:prod");
+r = await call("wife", "/send", { uids: [SUPER], kind: "note" });
+faults.clear();
+ok(r.json.queued === 1 && !live("qhint:prod"), "hint write failed → the request still succeeds (item stored)");
+const toSafety = (LIMITS.listEveryMin - (Math.floor(CLOCK / 60e3) % LIMITS.listEveryMin)) % LIMITS.listEveryMin || LIMITS.listEveryMin;
+await minutes(toSafety);
+ok(count(delivered(), "S1") === 1, `…delivered by the safety listing within ${LIMITS.listEveryMin} minutes`);
+
+section("Temporary failures, retries, dead devices");
+resetWorld();
+pushStatus.S1 = [503, 503];
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+reps = await minutes(4);
+ok(count(delivered(), "S1") === 1 && sum(reps, "retried") === 2, `503, 503, then delivered on the 3rd attempt (retries: ${sum(reps, "retried")})`);
+resetWorld();
+pushStatus.S1 = [503, 503, 503, 503];
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+reps = await minutes(6);
+ok(count(delivered(), "S1") === 0 && sum(reps, "dropped") === 1, "after 3 failed attempts it is dropped — and counted, not silent");
+delete pushStatus.S1;
+resetWorld();
+pushStatus.S1 = [0];                                                                 // network error: may or may not have arrived
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+await minutes(3);
+ok(count(delivered(), "S1") === 1, "network error → retried (a real phone might get it twice: documented)");
+resetWorld();
+await call(SUPER, "/subscribe", { sub: await device("gone-1") });
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+await minutes(2);
+ok(!JSON.stringify(subsOf("prod", "home")).includes("gone-1") && count(delivered(), "S1") === 1, "410 Gone → that device is removed, the other still delivered");
+
+section("Budget and device cap");
+resetWorld();
+for (let i = 0; i < 4; i++) { await call(SUPER, "/subscribe", { sub: await device("S-x" + i) }); await call("wife", "/subscribe", { sub: await device("W-x" + i) }); }
+for (let i = 0; i < 5; i++) { await call("wife", "/send", { uids: [SUPER], kind: "note" }); await call(SUPER, "/send", { uids: ["wife"], kind: "shop" }); }
+maxSubreq = 0; maxPushesPerRun = 0;
+reps = await minutes(40);
+const expectedDeliveries = 5 * 5 + 5 * 5;                                            // 5 items × 5 devices, both ways
+ok(delivered().length === expectedDeliveries, `heavy load (50 device deliveries): all delivered exactly once (${delivered().length})`);
+ok(maxPushesPerRun <= LIMITS.pushesPerRun, `≤ ${LIMITS.pushesPerRun} devices per run (max ${maxPushesPerRun})`);
+ok(maxSubreq <= LIMITS.subreqBudget, `≤ ${LIMITS.subreqBudget} subrequests in any invocation (max ${maxSubreq}; free limit 50)`);
+for (let i = 0; i < 4; i++) { await call(SUPER, "/unsubscribe", { endpoint: "https://push.test/S-x" + i }); await call("wife", "/unsubscribe", { endpoint: "https://push.test/W-x" + i }); }
+
+section("Production and test share one budget, queues never mix");
+resetWorld();
+await call(SUPER, "/subscribe", { env: "test", sub: await device("TS1") });
+for (let i = 0; i < 3; i++) await call("wife", "/send", { env: "test", uids: [SUPER], kind: "note" });
+for (let i = 0; i < 3; i++) await call("wife", "/send", { uids: [SUPER], kind: "note" });
+maxPushesPerRun = 0; let testPerRun = 0;
+for (let i = 1; i <= 8; i++) { const p0 = pushed.length; await minutes(1); const got = pushed.slice(p0).map(p => p.name); testPerRun = Math.max(testPerRun, got.filter(n => n.startsWith("T")).length); }
+ok(count(delivered(), "S1") === 3 && count(delivered(), "TS1") === 3, `prod items to prod devices, test items to test devices (S1:${count(delivered(), "S1")}, TS1:${count(delivered(), "TS1")})`);
+ok(maxPushesPerRun <= LIMITS.pushesPerRun && testPerRun <= LIMITS.pushesPerRunTest, `one run: ≤ ${LIMITS.pushesPerRun} in total, test ≤ ${LIMITS.pushesPerRunTest}`);
+
+section("Permission: disabled, frozen, new families never get anything");
+resetWorld();
+FAMDB.fB.push = true; await call(SUPER, "/policy", { fam: "fB" });
+await call("b1", "/subscribe", { sub: DEV.B1.sub });
+await call("b1", "/send", { uids: ["b2"], kind: "task" }); await call("b2", "/subscribe", { sub: await device("B2") });
+await call("b2", "/send", { uids: ["b1"], kind: "task" });
+FAMDB.fB.push = false; r = await call(SUPER, "/policy", { fam: "fB" });              // turned off with items already queued
+ok(r.json.families.fB.allowed === false && r.json.families.fB.verified === true && !r.json.allow.includes("fB"), "disable confirmed by the server (verified)");
+reads.length = 0; writes.length = 0;
+reps = await minutes(3);
+ok(!delivered().some(n => n.startsWith("B")), "queued items of a disabled family are never sent");
+ok(!reads.some(k => /^(q|jobs|subs|roster):prod:fB/.test(k)), "the cron did not read any of its queue items, plan, devices or members");
+ok(sum(reps, "blocked") >= 2, `its items were counted as blocked (${sum(reps, "blocked")})`);
+ok((await call("b1", "/send", { uids: ["b2"], kind: "task" })).json.error === "push-off", "…and it cannot queue new ones");
+FAMDB.fC = { push: true, active: false }; await call(SUPER, "/policy", { fam: "fC" });   // frozen, one user still active by mistake
+ok((await call("c1", "/send", { uids: ["c1"], kind: "task" })).json.error === "push-off", "a frozen family is refused even with push on and an active user");
+FAMDB.fN = { name: "חדשה" }; USERS.n1 = { family: "fN", role: "admin", active: true };
+r = await call(SUPER, "/policy");
+ok(!r.json.allow.includes("fN") && (await call("n1", "/subscribe", { sub: await device("N1") })).json.error === "push-off", "a new family (no 'push') stays off");
+FAMDB.fC = { push: false };
+
+section("Permission: sync failures, old settings, missing data — all fail closed");
+resetWorld();
+fsDown = true;
+r = await call(SUPER, "/policy", { fam: "home" });
+ok(r.status === 503, "database unreachable → no change without verification (503)");
+fsDown = false;
+FAMDB.fB.push = true; await call(SUPER, "/policy", { fam: "fB" });
+famDown = true;                                                                     // sign-in works, the family document can't be read
+ok((await call(SUPER, "/policy", { fam: "fB" })).status === 503, "family document unreadable → no change without verification");
 r = await call(SUPER, "/policy", { fam: "fB", off: true });
-ok(r.json.families.fB.allowed === false && r.json.families.fB.verified === false, "1. … except turning OFF, which is always safe (applied, marked unverified)");
-fsFamiliesDown = false; await call(SUPER, "/policy", { fam: "fB" });
-ok(allowed(polOf("fB")), "1. the next verified sync restores the real setting from the database");
+famDown = false;
+ok(r.json.families.fB.allowed === false && r.json.families.fB.verified === false, "turning OFF still works unverified (only the safe direction), marked unverified");
+await call(SUPER, "/policy", { fam: "fB" });
+ok(getJ("pol:fB").on === true, "the next verified sync restores the database's value");
+FAMDB.fB.push = false; await call(SUPER, "/policy", { fam: "fB" });
+const polHome = store.get("pol:home").v;
+const homeBlocked = async (label, mut) => {
+  resetWorld(); mut();
+  await call("wife", "/send", { uids: [SUPER], kind: "note" }).catch(() => {});
+  store.set("pol:home", { v: JSON.stringify({ ...JSON.parse(polHome), at: CLOCK }), exp: 0 }); _test.resetMemory();
+  const q = queueKeys().length;
+  mut(); const rr = await minutes(2);
+  ok(count(delivered(), "S1") === 0, `${label} → nothing sent${q ? "" : " (nothing queued)"}`);
+  store.set("pol:home", { v: polHome, exp: 0 });
+};
+await homeBlocked("setting older than 48 h", () => store.set("pol:home", { v: JSON.stringify({ ...JSON.parse(polHome), at: CLOCK - LIMITS.policyMaxAgeMs - 1 }), exp: 0 }));
+await homeBlocked("no setting stored", () => store.delete("pol:home"));
+await homeBlocked("'on' stored as a string", () => store.set("pol:home", { v: JSON.stringify({ ...JSON.parse(polHome), on: "true", at: CLOCK }), exp: 0 }));
+const allowSaved = store.get("allow");
+await homeBlocked("no allow list (admin never synced)", () => store.delete("allow"));
+store.set("allow", allowSaved);
+store.set("pol:home", { v: JSON.stringify({ on: true, act: true, at: CLOCK }), exp: 0 });
+FAMDB.home.push = "true"; r = await call(SUPER, "/policy", { fam: "home" }); FAMDB.home.push = true;
+ok(r.json.families.home.allowed === false, "a non-boolean 'push' in the database counts as off");
+await call(SUPER, "/policy", { fam: "home" });
+// a member's call renews the setting hourly from the database (catches a change the admin's sync missed)
+store.set("pol:home", { v: JSON.stringify({ on: true, act: true, at: CLOCK - LIMITS.policyRefreshMs - 1 }), exp: 0 });
+FAMDB.home.push = false;
+ok((await call("wife", "/send", { uids: [SUPER], kind: "note" })).json.error === "push-off" && getJ("pol:home").on === false, "a member's call after 1 h re-reads the database and sees 'off'");
+FAMDB.home.push = true; store.set("pol:home", { v: JSON.stringify({ on: true, act: true, at: CLOCK - LIMITS.policyRefreshMs - 1 }), exp: 0 });
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+ok(getJ("pol:home").on === true && CLOCK - getJ("pol:home").at < 1000, "…and renews it when it is still on (the 48 h start again)");
+// the primary family must come from the admin's real profile
+const fam0 = USERS[SUPER].family; delete USERS[SUPER].family;
+r = await call(SUPER, "/policy");
+ok(r.status === 409 && r.json.error === "no-primary", "admin profile without a family → /policy refuses (never assumes \"home\")");
+USERS[SUPER].family = fam0;
+// deleting a family removes its data
+FAMDB.fB.push = true; await call(SUPER, "/policy", { fam: "fB" }); delete FAMDB.fB;
+r = await call(SUPER, "/policy", { fam: "fB" });
+ok(r.json.families.fB.gone === true && !live("pol:fB") && !live("subs:prod:fB") && !r.json.allow.includes("fB"), "a deleted family's setting, devices and plan are removed");
+FAMDB.fB = { push: false };
+
+section("Primary family first — many families, small budget");
+resetWorld();
+const extra = [];
+for (let i = 0; i < 30; i++) { const f = "fx" + i; FAMDB[f] = { push: true }; USERS["u" + i] = { family: f, role: "admin", active: true }; extra.push(f); }
+await call(SUPER, "/policy");
+for (const f of extra) await call(SUPER, "/policy", { fam: f });                      // members lists, so they could receive
+for (let i = 0; i < 30; i++) { await call("u" + i, "/subscribe", { sub: await device("X" + i) }); await call("u" + i, "/send", { uids: ["u" + i], kind: "note" }).catch(() => {}); }
+for (let i = 0; i < 30; i++) { USERS["u" + i + "b"] = { family: "fx" + i, role: "editor", active: true }; }
+for (let i = 0; i < 30; i++) await call("u" + i + "b", "/send", { uids: ["u" + i], kind: "task" }).catch(() => {});
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+let firstRun = null; maxSubreq = 0;
+for (let m = 1; m <= 3; m++) { const p0 = pushed.length; await minutes(1); if (!firstRun) firstRun = pushed.slice(p0).map(p => p.name); }
+ok(firstRun && firstRun[0] === "S1", `30 other families waiting: our family is sent first (${firstRun.slice(0, 3).join()})`);
+ok(maxSubreq <= LIMITS.subreqBudget, `budget never exceeded (${maxSubreq})`);
+for (const f of extra) { delete FAMDB[f]; } for (let i = 0; i < 30; i++) { delete USERS["u" + i]; delete USERS["u" + i + "b"]; }
+await call(SUPER, "/policy");
+
+section("Late work is dropped and counted, never sent late");
+resetWorld();
+await call("wife", "/send", { uids: [SUPER], kind: "note" });
+advance(LIMITS.lateMs + 5 * 60e3);
+reps = await minutes(LIMITS.listEveryMin);
+ok(count(delivered(), "S1") === 0 && sum(reps, "dropped") === 1, "worker down 35 min → the item is dropped and counted");
+
+section("Firestore rules (text check only — the rules engine can't run here)");
 const rulesSrc = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8");
 const famBlock = rulesSrc.slice(rulesSrc.indexOf("match /families/{fid} {"), rulesSrc.indexOf("match /envs/{env}/{col}/{id}"));
-ok(/allow write:\s*if boot\(\);/.test(famBlock), "2. Firestore rules: only the system admin may write families/{fid} (where 'push' lives)");
+ok(/allow write:\s*if boot\(\);/.test(famBlock), "families/{fid} is written only by the system admin (text check, NOT the rules engine)");
 
-section("Permission — primary family");
-r = await call(SUPER, "/policy");
-ok(r.json.primary === "home" && polOf("home").p === 1 && polOf("fB").p === 0 && polOf("fC").p === 0, "3. primary = the system admin's own family (from his Firestore profile)");
-await call("b1", "/subscribe", { sub: await device("PB1") }); await call("b2", "/subscribe", { sub: await device("PB2") });
-let t0 = minuteNow() + 600 * 60e3, p0;
-// fB's devices are listed FIRST in the queue and the rotation would start with fB in some minutes — home must still go first
-for (let m = 0; m < 3; m++) {
-  const t = t0 + m * 60e3;
-  putCarry("prod", [unit("fB", "b1", "PB1", t), unit("fB", "b2", "PB2", t), unit("fB", "b1", "B1", t), unit("home", "a1", "A1", t), unit("home", "a2", "A2", t), unit("home", "av", "AV", t)]);
-  p0 = pushed.length; await cron(t);
-  ok(sentNames(p0).join() === "A1,A2,AV", `3. under load the primary family is sent first (minute ${m}: ${sentNames(p0).join()})`);
-  store.delete("carry:prod");
-}
-
-section("Permission — disabled / frozen / new families");
-FAMDB.fB.push = false; await call(SUPER, "/policy", { fam: "fB" });
-const fBbefore = snap("fB");
-ok((await call("b1", "/send", { uids: ["b2"], kind: "task" })).json.error === "push-off", "4. a disabled family's /send is refused (push-off)");
-ok((await call("b2", "/subscribe", { sub: await device("PB3") })).status === 403 && (await call("b1", "/jobs", { jobs: [{ at: Date.now() + 9e5, uids: ["b2"], kind: "remind" }] })).status === 403, "4. … and so are /subscribe and /jobs");
-t0 += 10 * 60e3;
-store.set("jobs:prod:fB", JSON.stringify({ jobs: [{ at: t0 - 60e3, k: "remind", u: ["b1", "b2"] }] }));     // frozen-family data that exists in KV
-store.set("out:prod:fB", JSON.stringify({ items: [{ id: "x1", k: "task", at: t0 - 1000, d: [["b2", "https://push.test/PB2"]] }] }));
-putCarry("prod", [unit("fB", "b1", "PB1", t0), unit("home", "a1", "A1", t0)]);
-const fBsnap = snap("fB"); reads.length = 0; writes.length = 0; p0 = pushed.length;
-rep = await cron(t0);
-ok(!sentNames(p0).some(n => /B/.test(n)) && sentNames(p0).includes("A1"), `4. cron: nothing to the disabled family, home still sent (${sentNames(p0).join()})`);
-ok(!reads.some(k => k !== "pol:fB" && k.split(":").includes("fB")) && !writes.some(k => k.split(":").includes("fB")), "4. cron read none of fB's data (only its permission) and wrote nothing of fB");
-ok(snap("fB") === fBsnap && rep.blocked === 1, `4. fB's stored data is untouched; its queued item was dropped as blocked (${rep.blocked})`);
-store.delete("jobs:prod:fB"); store.delete("out:prod:fB");
-
-FAMDB.fC = { push: true, active: false }; USERS.c1.active = true;                    // frozen in the app, one user left active by mistake
-await call(SUPER, "/policy", { fam: "fC" });
-ok(polOf("fC").act === false && !allowed(polOf("fC")), "5. a frozen family is not allowed even with push on");
-ok((await call("c1", "/send", { uids: ["c2"], kind: "task" })).json.error === "push-off", "5. … its still-active user cannot send");
-putCarry("prod", [unit("fC", "c1", "C1", t0 + 60e3)]); p0 = pushed.length; rep = await cron(t0 + 60e3);
-ok(pushed.length === p0 && rep.blocked === 1, "5. … and the cron sends nothing to it");
-// the same freeze reaches the worker through a member's own call too (setting older than the refresh interval)
-FAMDB.fC = { push: true }; await call(SUPER, "/policy", { fam: "fC" });
-FAMDB.fC.active = false; setPol("fC", { at: Date.now() - LIMITS.policyRefreshMs - 1000 });
-ok((await call("c1", "/send", { uids: ["c2"], kind: "task" })).json.error === "push-off" && polOf("fC").act === false, "5. a member's call re-reads Firestore and sees the freeze");
-ok(allowed({ on: true, act: true, p: 0, at: Date.now() }) === true, "5. sanity: an explicit on+active+fresh setting is allowed");
-
-FAMDB.fN = { name: "חדשה" }; USERS.n1 = { family: "fN", role: "admin", active: true };   // created by the app: no 'push' field
-ok((await call("n1", "/subscribe", { sub: await device("N1") })).json.error === "push-off", "6. a new family (no 'push' field) cannot subscribe");
-await call(SUPER, "/policy");
-ok(polOf("fN").on === false && !allowed(polOf("fN")), "6. … and stays off after a full sync, until the system admin turns it on");
-putCarry("prod", [unit("fN", "n1", "N1", t0 + 2 * 60e3)]); p0 = pushed.length; await cron(t0 + 2 * 60e3);
-ok(pushed.length === p0, "6. the cron sends nothing to it");
-
-section("Permission — missing, invalid or old settings fail closed");
-const homePol = store.get("pol:home");
-const tryHome = async (label, mutate) => {
-  mutate(); const t = t0 + 10 * 60e3 + Math.floor(Math.random() * 1000) * 60e3;
-  putCarry("prod", [unit("home", "a1", "A1", t)]); const p = pushed.length; const rr = await cron(t);
-  ok(pushed.length === p && rr.blocked === 1, "7. " + label + " → nothing sent");
-  store.set("pol:home", homePol); store.delete("carry:prod");
-};
-await tryHome("no setting stored", () => store.delete("pol:home"));
-await tryHome("setting older than 8 days", () => setPol("home", { at: Date.now() - LIMITS.policyMaxAgeMs - 1 }));
-await tryHome("on is the string \"true\"", () => setPol("home", { on: "true" }));
-await tryHome("no timestamp", () => setPol("home", { at: undefined }));
-await tryHome("garbage value", () => store.set("pol:home", JSON.stringify("yes")));
-FAMDB.fB.push = "true"; await call(SUPER, "/policy", { fam: "fB" });
-ok(polOf("fB").on === false, "7. a non-boolean 'push' in Firestore counts as off");
-const fCmissing = FAMDB.fC; delete FAMDB.fC;
-r = await call(SUPER, "/policy", { fam: "fC" });
-ok(r.json.families.fC.gone === true && !store.has("pol:fC") && !keysOf("fC").some(k => /^(subs|jobs|out|roster):/.test(k)), "7. a deleted family's setting and data are removed");
-FAMDB.fC = fCmissing;
-faults.add("pol:home"); putCarry("prod", [unit("home", "a1", "A1", t0 + 3 * 60e3)]); p0 = pushed.length; rep = await cron(t0 + 3 * 60e3); faults.delete("pol:home");
-ok(pushed.length === p0 && JSON.parse(store.get("carry:prod")).items.length === 1, "7. setting unreadable this run → nothing sent, the item waits (not approved, not lost)");
-store.delete("carry:prod");
-
-section("Permission — changes reach the queue without anyone opening the app");
-FAMDB.fB.push = true; await call(SUPER, "/policy", { fam: "fB" });
-const tq = t0 + 20 * 60e3;
-putCarry("prod", [unit("fB", "b1", "PB1", tq), unit("fB", "b2", "PB2", tq), unit("fB", "b1", "B1", tq), unit("fB", "b2", "B2", tq)]);
-p0 = pushed.length; await cron(tq);
-ok(sentNames(p0).length === 3, "8. fB allowed: 3 of its 4 queued devices sent, 1 waits");
-FAMDB.fB.push = false; await call(SUPER, "/policy", { fam: "fB" });                  // only the admin acts — nobody in fB opens the app
-p0 = pushed.length; rep = await cron(tq + 60e3);
-ok(pushed.length === p0 && rep.blocked === 1, "8. turned off by the admin → the waiting device is dropped at the next run");
-FAMDB.fB.push = true; store.set("roster:prod:fB", JSON.stringify({ ...JSON.parse(store.get("roster:prod:fB")), at: Date.now() - LIMITS.rosterMaxAgeMs - 1 }));
-await call(SUPER, "/policy", { fam: "fB" });                                         // turned on again, fB's members list was old
-ok(Date.now() - JSON.parse(store.get("roster:prod:fB")).at < 60e3, "8. turning on refreshes the family's members list with the admin's sign-in");
-putCarry("prod", [unit("fB", "b1", "PB1", tq + 2 * 60e3)]); p0 = pushed.length; await cron(tq + 2 * 60e3);
-ok(sentNames(p0).join() === "PB1", "8. … so fB is served again right away, still without anyone in fB opening the app");
-
-section("Isolation of failures, prod/test budget");
-const tf = t0 + 30 * 60e3;
-faults.add("pol:fB"); putCarry("prod", [unit("fB", "b1", "PB1", tf), unit("home", "a2", "A2", tf)]); p0 = pushed.length; rep = await cron(tf); faults.delete("pol:fB");
-ok(sentNames(p0).join() === "A2", "9. fB's permission unreadable → home still sent");
-store.delete("carry:prod");
-faults.add("roster:prod:fB"); putCarry("prod", [unit("fB", "b1", "PB1", tf + 60e3), unit("home", "a1", "A1", tf + 60e3)]); p0 = pushed.length; await cron(tf + 60e3); faults.delete("roster:prod:fB");
-ok(sentNames(p0).join() === "A1", "9. fB's storage broken → home still sent");
-store.delete("carry:prod");
-// test-environment devices (home only)
-for (const [u, d] of [["a1", "TA1"], ["a2", "TA2"], ["av", "TAV"]]) await call(u, "/subscribe", { env: "test", sub: await device(d) });
-const tb = t0 + 40 * 60e3;
-putCarry("prod", [unit("home", "a1", "A1", tb), unit("home", "a2", "A2", tb), unit("home", "av", "AV", tb), unit("home", "a1", "a1-x0", tb), unit("home", "a1", "a1-x1", tb)]);
-putCarry("test", [unit("home", "a1", "TA1", tb), unit("home", "a2", "TA2", tb), unit("home", "av", "TAV", tb)]);
-let o0 = ops, f0 = fetches; p0 = pushed.length; await cron(tb); let used = ops - o0 + fetches - f0;
-ok(sentNames(p0).length === 3 && sentNames(p0).every(n => !n.startsWith("T")), `10. busy prod uses the whole run (3); test waits (${sentNames(p0).join()})`);
-ok(used <= LIMITS.subreqBudget, `10. one budget for the whole run: ${used} subrequests (cap ${LIMITS.subreqBudget}, free limit 50)`);
-for (let m = 1; m <= 6; m++) {
-  o0 = ops; f0 = fetches; const pp = pushed.length; await cron(tb + m * 60e3); used = ops - o0 + fetches - f0;
-  const got = sentNames(pp);
-  if (got.length > LIMITS.pushesPerRun || got.filter(n => n.startsWith("T")).length > LIMITS.pushesPerRunTest || used > LIMITS.subreqBudget) { ok(false, `10. minute ${m} over a limit: ${got.join()} / ${used}`); break; }
-}
-const prodNames = sentNames(p0).filter(n => !n.startsWith("T")), testNames = sentNames(p0).filter(n => n.startsWith("T"));
-ok(prodNames.length === 5 && testNames.length === 3 && new Set(sentNames(p0)).size === 8, `10. all 8 delivered over several runs, no duplicates, test ≤ ${LIMITS.pushesPerRunTest} per run`);
-ok(!JSON.parse(store.get("carry:test") || '{"items":[]}').items.some(i => !i.e.includes("/T")) && !JSON.parse(store.get("carry:prod") || '{"items":[]}').items.some(i => i.e.includes("/T")), "10. prod and test queues never mix");
-
-section("Device-level limits and the /send queue");
-for (let i = 0; i < 4; i++) await call("a2", "/subscribe", { sub: await device(`a2-y${i}`) });
-const a2n = subsOf("prod", "home").a2.length;
-const ts = minuteNow() + 900 * 60e3;
-store.set("jobs:prod:home", JSON.stringify({ jobs: [{ at: ts, k: "remind", u: ["a2"] }] }));
-const fams = JSON.parse(store.get("fams:prod")); if (!fams.includes("home")) store.set("fams:prod", JSON.stringify([...fams, "home"]));
-const slot = slotOf({ at: ts, k: "remind", u: ["a2"] }, "home");
-p0 = pushed.length; const per = [];
-for (let m = 0; m <= 4; m++) { const pp = pushed.length; await cron(slot + m * 60e3); per.push(pushed.length - pp); }
-ok(a2n >= 5 && per[0] === 3 && pushed.length - p0 === a2n && new Set(sentNames(p0)).size === a2n, `a person with ${a2n} devices: 3 now, the rest next run(s), each once (${per.join(",")})`);
-store.delete("jobs:prod:home");
-p0 = pushed.length;
-r = await call("a1", "/send", { uids: ["a2"], kind: "note" });
-ok(r.json.sent === LIMITS.pushesPerSend && r.json.queued === a2n - LIMITS.pushesPerSend && r.json.ok === true, `/send: ${r.json.sent} right away, ${r.json.queued} queued (not lost)`);
-const tq2 = minuteNow() + 60e3;
-for (let m = 0; m < 4; m++) await cron(tq2 + m * 60e3);
-await cron(tq2 + 4 * 60e3); await cron(tq2 + 5 * 60e3);
-ok(pushed.length - p0 === a2n && new Set(sentNames(p0)).size === a2n, `the queued devices were delivered by the cron, each exactly once (${pushed.length - p0}/${a2n})`);
-
-section("VAPID");
-const noKeys = { NIDO: KV };
-const r503 = await W.fetch(new Request("https://worker.test/vapid", { method: "GET" }), noKeys);
-ok(r503.status === 503, "no secrets configured → 503, no key is generated");
-ok(!readFileSync(new URL("../worker.js", import.meta.url), "utf8").includes("generateKey({ name: \"ECDSA\""), "worker code never generates a signing key");
+section("VAPID and code hygiene");
+const r503 = await W.fetch(new Request("https://worker.test/vapid", { method: "GET" }), { NIDO: KV });
+ok(r503.status === 503, "no secrets configured → 503, nothing is generated");
+const src = readFileSync(new URL("../worker.js", import.meta.url), "utf8");
+ok(!src.includes('generateKey({ name: "ECDSA"'), "the worker never generates a signing key");
+const handleSrc = src.slice(src.indexOf("async function handle"), src.indexOf("/* ================= CRON"));
+ok(!/pushOne\(/.test(handleSrc), "the HTTP handler contains no push call at all (cron only)");
 
 section("Production / test navigation separation (sw.js)");
 const sw = readFileSync(new URL("../../sw.js", import.meta.url), "utf8");
 const fnSrc = sw.slice(sw.indexOf("function sameApp"), sw.indexOf("self.addEventListener(\"notificationclick\""));
 const mk = scope => new Function("self", fnSrc + "; return sameApp;")({ registration: { scope } });
-const prod = mk("https://slavaborhovich.github.io/nido/"), test = mk("https://slavaborhovich.github.io/nido/test/");
-ok(prod("https://slavaborhovich.github.io/nido/?tab=tasks") && !prod("https://slavaborhovich.github.io/nido/test/"), "prod notification never focuses the test app");
-ok(test("https://slavaborhovich.github.io/nido/test/?tab=cal") && !test("https://slavaborhovich.github.io/nido/"), "test notification never focuses the prod app");
+const prodSW = mk("https://slavaborhovich.github.io/nido/"), testSW = mk("https://slavaborhovich.github.io/nido/test/");
+ok(prodSW("https://slavaborhovich.github.io/nido/?tab=tasks") && !prodSW("https://slavaborhovich.github.io/nido/test/"), "prod notification never focuses the test app");
+ok(testSW("https://slavaborhovich.github.io/nido/test/?tab=cal") && !testSW("https://slavaborhovich.github.io/nido/"), "test notification never focuses the prod app");
+ok(/tag:\s*data\.tag/.test(sw), "notifications carry a tag (a repeated delivery replaces the earlier one)");
 
-console.log(`\n${failures ? "✘ " + failures + " FAILED" : "✔ all passed"} · KV+fetch ops total: ${ops + fetches} · max subrequests per invocation: ${maxSubreq}`);
+log0(`\n${failures ? "✘ " + failures + " FAILED" : "✔ all passed"} (${passed} checks) · max subrequests in one invocation: ${maxSubreq} · KV+fetch ops: ${ops}`);
 process.exit(failures ? 1 : 0);

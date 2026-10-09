@@ -1427,8 +1427,8 @@ const Cloud = {
   async saveFamily(id, patch){ await this.fb.setDoc(this.fb.doc(this.db, "families", id), patch, { merge:true }); },
   /* system admin: may this family receive push notifications? (the database rules allow this write only to him) */
   async setFamilyPush(id, on){
-    await this.saveFamily(id, { push: on === true, pushAt: Date.now(), pushBy: this.user.uid });
-    return PushPolicy.sync(id, on ? {} : { off: true });
+    await this.saveFamily(id, { push: on === true, pushAt: Date.now(), pushBy: this.user.uid });   // throws if not saved
+    return PushPolicy.sync(id, on ? {} : { off: true }, on && FAMILIES[id]?.active !== false);
   },
   /* disabling a family = disabling all its people (the database rules already block inactive users) */
   async setFamilyActive(id, on){
@@ -1436,7 +1436,7 @@ const Cloud = {
     Object.values(ALLUSERS).filter(u => u.family === id && u.uid !== BOOT_ADMIN_UID).forEach(u => b.update(F.doc(this.db, "users", u.uid), { active: on }));
     b.set(F.doc(this.db, "families", id), { active: on }, { merge:true });
     await b.commit();
-    PushPolicy.sync(id, on ? {} : { frozen: true }).catch(e => console.warn("[push policy]", e && e.code));
+    return PushPolicy.sync(id, on ? {} : { frozen: true }, on && FAMILIES[id]?.push === true);
   },
   /* system admin: remove a whole family — its people, content, notes, settings and counters */
   async deleteFamily(fid){
@@ -1450,7 +1450,7 @@ const Cloud = {
     refs.push(F.doc(this.db, "stats", fid));
     for (let i = 0; i < refs.length; i += 400){ const b = F.writeBatch(this.db); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     await F.deleteDoc(F.doc(this.db, "families", fid));
-    PushPolicy.sync(fid).catch(e => console.warn("[push policy]", e && e.code));   // the push server drops the family's devices and reminders
+    PushPolicy.sync(fid, {}, false);                                // the push server drops the family's devices and reminders (retried if it fails)
     return refs.length;
   },
   async bootstrap(){
@@ -1612,7 +1612,9 @@ const NOTIF_KINDS = [
 async function pushApi(path, body){
   if (!PUSH_READY || !Cloud.auth || !Cloud.auth.currentUser) throw { code: "push-off" };
   const token = await Cloud.auth.currentUser.getIdToken();
-  const r = await fetch(PUSH_URL + path, { method:"POST", headers:{ "content-type":"application/json", authorization:"Bearer " + token }, body: JSON.stringify({ env: ENV, ...body }) });
+  let r;
+  try { r = await fetch(PUSH_URL + path, { method:"POST", headers:{ "content-type":"application/json", authorization:"Bearer " + token }, body: JSON.stringify({ env: ENV, ...body }) }); }
+  catch(e){ throw { code: "push-net" }; }                                       // server unreachable: never treated as success
   if (!r.ok){ const j = await r.json().catch(() => ({})); if (j.error === "push-off" && path !== "/roster" && path !== "/policy") Push.markOff(); throw { code: "push-" + r.status, err: j.error }; }
   return r.json();
 }
@@ -1625,31 +1627,69 @@ const primaryFam = () => { const u = Object.values(ALLUSERS).find(x => x.uid ===
    The server reads the values itself (with the admin's sign-in) — nothing here is trusted as a permission.
    If the server can't be reached, the family stays in a pending list and is retried the next time the app opens. */
 const PushPolicy = {
-  KEY: "nido.pushPolicy.pending", state: null, at: 0, err: null,
+  KEY: "nido.pushPolicy.pending", state: {}, primary: null, at: 0, err: null, timer: null,
   pending(){ try { return JSON.parse(localStorage.getItem(this.KEY) || "[]"); } catch(e){ return []; } },
-  setPending(list){ try { localStorage.setItem(this.KEY, JSON.stringify([...new Set(list)])); } catch(e){} },
-  async sync(fid, hint = {}){
-    if (!(CLOUD && PUSH_READY && Cloud.isSuper)) return null;
+  setPending(list){ try { localStorage.setItem(this.KEY, JSON.stringify([...new Set(list)])); } catch(e){} this.ensureTimer(); },
+  /* what the database says the server should be doing for this family */
+  expected(fid){ const f = FAMILIES[fid]; return !!f && f.push === true && f.active !== false; },
+  /* "verified" only when the server answered, read the database itself, and ended in the expected state */
+  async sync(fid, hint = {}, want){
+    if (!(CLOUD && PUSH_READY && Cloud.isSuper)) return { verified: false, offline: true };
+    want = want === undefined ? this.expected(fid) : want;
     try {
       const r = await pushApi("/policy", { fam: fid, ...hint });
-      this.setPending(this.pending().filter(x => x !== fid));
-      this.state = { ...(this.state || {}), ...r.families }; return r;
-    } catch(e){ this.setPending([...this.pending(), fid]); throw e; }
+      this.primary = r.primary || this.primary; this.state = { ...this.state, ...(r.families || {}) };
+      const w = (r.families || {})[fid], verified = !!w && (w.gone === true ? !want : (w.verified === true && w.allowed === want));
+      this.setPending(verified ? this.pending().filter(x => x !== fid) : [...this.pending(), fid]);
+      return { verified, w };
+    } catch(e){ this.err = e.err || e.code || "error"; this.setPending([...this.pending(), fid]); return { verified: false, error: e }; }
   },
-  /* all families (when the admin screen opens, and at most every 6 h when the admin's app starts) */
+  /* all families (when the admin screen or the admin's app opens) + anything still waiting */
   async all(force){
     if (!(CLOUD && PUSH_READY && Cloud.isSuper)) return;
     if (!force && Date.now() - this.at < 60e3) return;
     this.at = Date.now();
+    for (const fid of this.pending()) await this.sync(fid);
     try {
-      for (const fid of this.pending()) await this.sync(fid).catch(() => {});
-      const r = await pushApi("/policy", {}); this.state = r.families; this.err = null;
+      const r = await pushApi("/policy", {}); this.primary = r.primary || null; this.state = { ...this.state, ...(r.families || {}) }; this.err = null;
       try { localStorage.setItem("nido.pushPolicy.at", String(Date.now())); } catch(e){}
     } catch(e){ this.err = e.err || e.code || "error"; console.warn("[push policy]", e); }
   },
   auto(){ let t = 0; try { t = +localStorage.getItem("nido.pushPolicy.at") || 0; } catch(e){}
-    if (Date.now() - t > 6 * 3600e3 || this.pending().length) this.all(true); },
+    if (Date.now() - t > 3600e3 || this.pending().length) this.all(true); this.ensureTimer(); },
+  /* while something waits for the server: try again every minute (only while the app is open and visible) */
+  ensureTimer(){
+    if (this.timer || !this.pending().length || !(CLOUD && PUSH_READY)) return;
+    this.timer = setInterval(async () => {
+      if (!this.pending().length){ clearInterval(this.timer); this.timer = null; return; }
+      if (document.hidden) return;
+      for (const fid of this.pending()) await this.sync(fid);
+      if (S.adminTab === "push" && !$("#admin").hidden && !uiBusy()) Admin.render();
+    }, 60e3);
+  },
+  /* for the screen: saved → waiting for the server → verified by the server */
+  status(fid){
+    if (!PUSH_READY) return { k: "local" };
+    const w = this.state[fid], want = this.expected(fid);
+    if (this.pending().includes(fid) || (w && !w.pending && !(w.verified === true && w.allowed === want))) return { k: "pending", until: w && w.allowed ? w.until : null, want };
+    if (!w || w.pending) return { k: "checking" };
+    return { k: "verified", until: w.allowed ? w.until : null, want };
+  },
+  line(fid){
+    const st = this.status(fid);
+    if (st.k === "local") return `<span class="pn-sync">נשמר · שרת ההתראות עוד לא פעיל</span>`;
+    if (st.k === "checking") return `<span class="pn-sync">בודק מול שרת ההתראות…</span>`;
+    if (st.k === "pending") return `<span class="pn-sync bad">⏳ נשמר במסד הנתונים · ממתין לאימות השרת${!st.want && st.until ? ` — התראות עלולות להימשך עד ${esc(dateHe(st.until))}` : ""}</span>`;
+    return `<span class="pn-sync">✓ אומת בשרת${st.until ? ` · בתוקף עד ${esc(dateHe(st.until))}, מתחדש אוטומטית` : ""}</span>`;
+  },
 };
+/* system admin only: make the server's key pair here, in this browser. Nothing is sent anywhere or saved. */
+async function makeVapidKeys(){
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), jwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+  const b64u = a => btoa(String.fromCharCode(...a)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return { pub: b64u(raw), priv: jwk.d };
+}
 const Push = {
   KEY: "nido.push." + ENV, OFF: "nido.pushOff",
   /* the push server said: notifications are not enabled for this family → background calls pause for an hour */
@@ -2491,18 +2531,12 @@ const Admin = {
      the push server re-reads it from there. App status (active / frozen) and notifications are two separate things. */
   async pushLoad(force){ await PushPolicy.all(force); if (S.adminTab === "push" && !$("#admin").hidden && !uiBusy()) this.render(); },
   pushPanel(){
-    const main = primaryFam(), st = PushPolicy.state || {};
+    const main = PushPolicy.primary || primaryFam();
     const ids = this.famIds().sort((a, b) => a === main ? -1 : b === main ? 1 : 0);
-    const sync = fid => {
-      if (!PUSH_READY) return "";
-      const w = st[fid], f = FAMILIES[fid] || {}, want = f.push === true && f.active !== false;
-      if (PushPolicy.pending().includes(fid)) return `<span class="pn-sync bad">⚠️ לא סונכרן לשרת ההתראות — יתעדכן אוטומטית</span>`;
-      if (!w || w.pending) return `<span class="pn-sync">בודק מול שרת ההתראות…</span>`;
-      return w.allowed === want ? `<span class="pn-sync">✓ מסונכרן לשרת ההתראות</span>` : `<span class="pn-sync bad">⚠️ שרת ההתראות עדיין לא מעודכן</span>`;
-    };
     return `<section class="adm-card"><h3>ניהול התראות למשפחות</h3>
         <p class="adm-note" style="margin-top:0">רק משפחה שההתראות שלה מופעלות כאן תקבל התראות. משפחה מוקפאת לא תקבל התראות גם כשהן מופעלות — אלה שני מצבים נפרדים. משפחה חדשה מתחילה כשההתראות מושבתות.</p>
-        ${!PUSH_READY ? `<p class="adm-note">שרת ההתראות עדיין לא פעיל, אז אף משפחה לא מקבלת התראות כרגע. ההגדרות כאן נשמרות ויחולו כשהוא יופעל.</p>` : PushPolicy.err ? `<p class="adm-note" style="color:#F3A493">לא הצלחתי לבדוק מול שרת ההתראות (${esc(String(PushPolicy.err))}). ההגדרות נשמרות במסד הנתונים.</p>` : ""}</section>
+        ${!PUSH_READY ? `<p class="adm-note">שרת ההתראות עדיין לא פעיל, אז אף משפחה לא מקבלת התראות כרגע. ההגדרות כאן נשמרות ויחולו כשהוא יופעל.</p>`
+          : PushPolicy.err ? `<p class="adm-note" style="color:#F3A493">שרת ההתראות לא ענה (${esc(String(PushPolicy.err))}). ההגדרות נשמרו במסד הנתונים; מנסה שוב כל דקה.</p>` : ""}</section>
       ${ids.map(fid => { const f = FAMILIES[fid] || {}, on = f.push === true, frozen = f.active === false, isMain = fid === main;
         return `<div class="adm-fam pn-fam ${frozen ? "off" : ""}">
           <span class="ic">${icon("home")}</span>
@@ -2511,11 +2545,22 @@ const Admin = {
               <span class="adm-pill ${frozen ? "off" : "on"}">${frozen ? "מוקפאת" : "פעילה"}</span>
               <span class="adm-pill ${on ? "on" : "off"}">${on ? "🔔 התראות מופעלות" : "🔕 התראות מושבתות"}</span>
               <span class="adm-pill">עדיפות ${isMain ? "ראשונה" : "רגילה"}</span></span>
-            <small>${isMain && on ? "המשפחה הראשית — אי אפשר להשבית כאן. " : ""}${frozen && on ? "מוקפאת — לא תקבל התראות עד שהמשפחה תופעל מחדש. " : ""}${sync(fid)}</small></span>
+            <small>${isMain && on ? "המשפחה הראשית — אי אפשר להשבית כאן. " : ""}${frozen && on ? "מוקפאת — לא תקבל התראות עד שהמשפחה תופעל מחדש. " : ""}${PushPolicy.line(fid)}</small></span>
           <input type="checkbox" data-push="${esc(fid)}" aria-label="התראות ל${esc(famName(fid))}" ${on ? "checked" : ""} ${(isMain && on) || !main ? "disabled" : ""}>
         </div>`; }).join("")}
-      ${!main ? `<p class="adm-note">לא זוהתה המשפחה הראשית (הפרופיל של מנהל המערכת לא נטען). השינויים נעולים עד שהוא ייטען.</p>` : ""}
-      <p class="adm-note">עדיפות: כשיש עומס, ההתראות של המשפחה הראשית נשלחות לפני האחרות. זה לא מבטיח מסירה אם יש תקלה או חריגה ממגבלות השירות החינמי.</p>`;
+      ${!main ? `<p class="adm-note">לא זוהתה המשפחה הראשית (בפרופיל של מנהל המערכת אין משפחה). השינויים נעולים.</p>` : ""}
+      <p class="adm-note">עדיפות: כשיש עומס, ההתראות של המשפחה הראשית נשלחות לפני האחרות. זה לא מבטיח מסירה אם יש תקלה או חריגה ממגבלות השירות החינמי.</p>
+      <p class="adm-note">השבתה נכנסת לתוקף רק אחרי ש"אומת בשרת" (בדרך כלל תוך 1–2 דקות). אם השרת לא אישר, ההתראות עלולות להימשך עד המועד שמוצג — לכל היותר 48 שעות.</p>
+      <section class="adm-card"><details><summary><b>הגדרת שרת ההתראות</b> <small class="note">(פעם אחת, בהתקנה)</small></summary>
+        <p class="adm-note">יוצר את זוג המפתחות של שרת ההתראות כאן, בדפדפן שלך. הם לא נשלחים לשום מקום ולא נשמרים. מעתיקים אותם להגדרות ב-Cloudflare לפי ההוראות.</p>
+        <button type="button" class="secondary" data-vapid>${icon("plus")} יצירת מפתחות</button>
+        <div data-vapid-out hidden>
+          <span class="lbl">VAPID_PUBLIC (ציבורי)</span><input class="input" dir="ltr" readonly data-vk="pub">
+          <button type="button" class="secondary" data-copy="pub">העתקה</button>
+          <span class="lbl">VAPID_PRIVATE (סודי!)</span><input class="input" dir="ltr" readonly data-vk="priv">
+          <button type="button" class="secondary" data-copy="priv">העתקה</button>
+          <p class="adm-note" style="color:#F3A493">המפתח הסודי מוצג רק כאן. אל תשלח אותו בוואטסאפ, במייל או בצ׳אט — הדבק אותו רק בהגדרות ב-Cloudflare. יצירה מחדש אחרי ההפעלה תחייב רישום מחדש של כל המכשירים.</p>
+        </div></details></section>`;
   },
   messages(){
     const list = [...Announce.list].sort((a, b) => b.at - a.at);
@@ -2551,20 +2596,34 @@ const Admin = {
     q("[data-active]")?.addEventListener("click", async e => {
       const on = e.currentTarget.dataset.active === "on", fid = S.adminFam;
       if (!on && !await askConfirm(`להשבית את ${famName(fid)}?`, "כל המשתמשים שלה לא יוכלו להיכנס עד שתפעיל מחדש. שום דבר לא נמחק.", "השבתה")) return;
-      try { await Cloud.setFamilyActive(fid, on); toast(on ? "המשפחה הופעלה" : "המשפחה הושבתה"); } catch(x){ toast(errText(x)); }
+      let res; try { res = await Cloud.setFamilyActive(fid, on); } catch(x){ return toast(errText(x)); }
+      toast((on ? "המשפחה הופעלה" : "המשפחה הושבתה") + (!PUSH_READY || res.offline ? "" : res.verified ? " · אומת בשרת ההתראות" : " · ממתין לאימות שרת ההתראות"));
+      this.render();
     });
     q("[data-refresh]")?.addEventListener("click", () => { this.loadStats(true); this.render(); });
     el.querySelectorAll("[data-push]").forEach(c => c.onchange = async () => {
-      const fid = c.dataset.push, on = c.checked, main = primaryFam();
+      const fid = c.dataset.push, on = c.checked, main = PushPolicy.primary || primaryFam();
       if (!main || (fid === main && !on)){ c.checked = !on; return toast("אי אפשר להשבית את ההתראות של המשפחה הראשית"); }
       const ok = await askConfirm(on ? `להפעיל התראות ל${famName(fid)}?` : `להשבית התראות ל${famName(fid)}?`,
         on ? (FAMILIES[fid]?.active === false ? "המשפחה מוקפאת — היא תתחיל לקבל התראות רק אחרי שתופעל מחדש." : "בני המשפחה יוכלו להפעיל התראות במכשירים שלהם.")
-           : "בני המשפחה יפסיקו לקבל התראות. ההגדרות שלהם נשמרות.", on ? "הפעלה" : "השבתה");
+           : "בני המשפחה יפסיקו לקבל התראות אחרי שהשרת יאשר. ההגדרות שלהם נשמרות.", on ? "הפעלה" : "השבתה");
       if (!ok){ c.checked = !on; return; }
       c.disabled = true;
-      try { await Cloud.setFamilyPush(fid, on); toast(on ? "ההתראות הופעלו למשפחה" : "ההתראות הושבתו למשפחה"); }
-      catch(x){ if (x && String(x.code || "").startsWith("push-")) toast("נשמר, אבל שרת ההתראות לא עודכן — ינסה שוב אוטומטית"); else { c.checked = !on; toast(errText(x)); } }
+      let res;
+      try { res = await Cloud.setFamilyPush(fid, on); }
+      catch(x){ c.checked = !on; c.disabled = false; return toast(errText(x)); }                 // not even saved in the database
+      toast(!PUSH_READY || res.offline ? "נשמר. ייכנס לתוקף כשהשרת יופעל"
+        : res.verified ? (on ? "אומת בשרת: ההתראות הופעלו" : "אומת בשרת: ההתראות הושבתו")
+        : "נשמר במסד הנתונים — ממתין לאימות השרת. מנסה שוב כל דקה");
       this.render();
+    });
+    q("[data-vapid]")?.addEventListener("click", async () => {
+      try { const k = await makeVapidKeys(); q("[data-vk=pub]").value = k.pub; q("[data-vk=priv]").value = k.priv; q("[data-vapid-out]").hidden = false; }
+      catch(x){ toast("הדפדפן לא תומך ביצירת מפתחות"); }
+    });
+    el.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+      const v = q(`[data-vk=${b.dataset.copy}]`).value; if (!v) return;
+      try { await navigator.clipboard.writeText(v); toast("הועתק"); } catch(x){ q(`[data-vk=${b.dataset.copy}]`).select(); toast("סמן והעתק ידנית"); }
     });
     q("[data-jump]")?.addEventListener("click", () => { const d = el.querySelector("#adm-dormant"); d?.querySelector("details")?.setAttribute("open", ""); d?.scrollIntoView({ behavior:"smooth", block:"start" }); });
     q("[data-delfam]")?.addEventListener("click", async e => {
@@ -4665,7 +4724,7 @@ function openNotifications(){
     <p class="note">ההעדפות שלך נשמרות לכל המכשירים. התראה לא נשלחת על משהו שעשית בעצמך.</p>
     <button type="button" class="secondary" id="ntTest" style="width:100%;justify-content:center" ${Push.on()?"":"hidden"}>${icon("bell")}שלח לי התראת בדיקה</button>`);
   const dev = sh.querySelector("#ntDev"), stateEl = sh.querySelector("#ntState"), testBtn = sh.querySelector("#ntTest");
-  testBtn.onclick = async () => { testBtn.disabled = true; try { const r = await Push.test(); toast(r.sent ? "נשלחה — היא תופיע עוד רגע" : "לא נמצא מכשיר פעיל"); } catch(e){ toast("השליחה נכשלה"); } testBtn.disabled = false; };
+  testBtn.onclick = async () => { testBtn.disabled = true; try { const r = await Push.test(); toast(r.queued ? "נשלחה — תגיע תוך דקה-שתיים" : "לא נמצא מכשיר פעיל"); } catch(e){ toast("השליחה נכשלה"); } testBtn.disabled = false; };
   dev.addEventListener("change", async () => {
     dev.disabled = true;
     try {
