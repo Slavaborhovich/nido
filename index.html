@@ -1601,7 +1601,7 @@ const Cloud = {
 /* ================= Push notifications ================= */
 /* Standard Web Push. The Nido push server (a free Cloudflare Worker) keeps each phone's subscription,
    sends a notification when someone changes something, and fires scheduled reminders. */
-const PUSH_URL = "__PUSH_URL__";
+const PUSH_URL = "https://nido-push.slava6195.workers.dev";
 const PUSH_READY = !PUSH_URL.startsWith("__");                 // until the push server is set up, notifications stay off
 const NOTIF_KINDS = [
   ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון"],

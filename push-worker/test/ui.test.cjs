@@ -8,8 +8,9 @@ try { ({ chromium } = require("playwright")); } catch (e) { ({ chromium } = requ
 const ROOT = path.join(__dirname, "..", "..");
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "nido-ui-"));
 const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-fs.writeFileSync(path.join(tmp, "ready.html"), html.replace('"__PUSH_URL__"', '"https://worker.test"'));   // as if the server were set up
-fs.writeFileSync(path.join(tmp, "notready.html"), html);                                              // as today
+const withUrl = u => html.replace(/^const PUSH_URL = "[^"]*";/m, `const PUSH_URL = "${u}";`);
+fs.writeFileSync(path.join(tmp, "ready.html"), withUrl("https://worker.test"));                       // server set up (mocked)
+fs.writeFileSync(path.join(tmp, "notready.html"), withUrl("__PUSH_URL__"));                           // no server address
 
 let failures = 0, passed = 0;
 const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m); if (c) passed++; else failures++; };
