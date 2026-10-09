@@ -29,8 +29,13 @@
    expires by itself) and a hint; the cron delivers. See "CRON" below for how crashes, overlaps and stale reads
    turn into (rare, bounded) duplicates instead of losses.
 
-   PRIVACY — notifications are generic. The client sends only a kind code; the text comes from the fixed table.
-   KV stores uids, times and kind codes — no names, titles, places, tasks or items. */
+   PRIVACY — the owner chose readable notifications ("תהילה הוסיפה: חלב, ביצים"). The client may send a short title
+   and body with each item. That text is kept only as long as delivery needs it:
+     • queue items — at most queueTtlSec (2 h), then KV deletes them by itself;
+     • cron state  — only while a device is waiting/retrying, and never later than lateMs (30 min) after it was due;
+     • reminders   — inside the family's plan (jobs:{env}:{family}) until their time (up to 8 days), replaced
+                     whenever the plan changes. A plan item without text falls back to the fixed generic text.
+   Nothing with text is ever written to the log. Without text, the fixed generic text below is used. */
 
 const PROJECT = "nido-family-72346";
 const ORIGIN = "https://slavaborhovich.github.io";
@@ -41,12 +46,12 @@ const SUPER = "K2TaGlPsCJQ7W4HPdaOwQqvRKGS2";                    // the system a
 
 /* ---------- limits (conservative for the free plan) ---------- */
 export const LIMITS = {
-  bodyBytes: 16 * 1024,          // max request body
+  bodyBytes: 64 * 1024,          // max request body (a 120-item reminder plan with text fits)
   uidsPerCall: 20,               // recipients per /send or per job
   jobsPerFamily: 120,            // reminders in a family's plan (7 days)
   devicesPerUser: 6,
   // daily KV write budgets (UTC day) — counted inside values that are written anyway
-  planWritesPerFamily: 48, planWritesPerUser: 24,
+  planWritesPerFamily: 96, planWritesPerUser: 48,                  // plans now carry titles → change more often
   subWritesPerFamily: 30, subWritesPerUser: 10,
   queuedPerUserPerDay: 60,       // /send + /test items per person per day (soft: counted in the hint)
   rosterMaxAgeMs: 8 * 864e5,     // older roster → that family's notifications are skipped (fail closed)
@@ -84,13 +89,34 @@ export const KINDS = {
   idea:   { title: "💡 NIDO — יש עדכון ברעיונות", tab: "ideas" },
   shop:   { title: "🛒 NIDO — יש עדכון בקניות", tab: "shop" },
   note:   { title: "❤️ NIDO — יש לך פתק חדש על המקרר", tab: "" },
+  update: { title: "🆕 NIDO — יש גרסה חדשה", tab: "" },
   test:   { title: "🔔 NIDO — ההתראות עובדות!", tab: "" },
 };
 const BODY = "פתחו את NIDO כדי לראות";
 const SEND_KINDS = ["task", "event", "idea", "shop", "note"];
 const JOB_KINDS = ["remind", "digest"];
-// tag = kind: a repeated delivery replaces the earlier notification on the phone instead of stacking
-export const messageOf = kind => { const k = KINDS[kind]; return k ? { title: k.title, body: BODY, tag: kind, tab: k.tab } : null; };
+// tag: a repeated delivery of the same message replaces the earlier notification on the phone instead of stacking.
+// x = optional custom text { t: title, b: body, g: tag } — without a title the fixed generic text is used.
+export const messageOf = (kind, x) => {
+  const k = KINDS[kind]; if (!k) return null;
+  if (x && x.t) return { title: x.t, body: x.b || "", tag: x.g || kind, tab: k.tab };
+  return { title: k.title, body: BODY, tag: kind, tab: k.tab };
+};
+/* custom text from the app: plain one-line-ish strings, short, no control characters. Missing → null (generic). */
+export const TEXT = { title: 80, body: 180 };
+export function textOf(o) {
+  const str = (v, max) => {
+    if (v === undefined || v === null || v === "") return "";
+    if (typeof v !== "string") throw new Fail(400, "bad-text");
+    const t = v.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").replace(/\s+\n/g, "\n").trim();
+    return t.length > max ? t.slice(0, max - 1) + "…" : t;
+  };
+  const t = str(o.title, TEXT.title), b = str(o.body, TEXT.body);
+  if (o.tag !== undefined && o.tag !== null && o.tag !== "" && !(typeof o.tag === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(o.tag))) throw new Fail(400, "bad-tag");
+  if (!t) return null;
+  const x = { t }; if (b) x.b = b; if (o.tag) x.g = o.tag;
+  return x;
+}
 
 /* ---------- helpers ---------- */
 const enc = new TextEncoder();
@@ -245,6 +271,8 @@ async function fetchRoster(b, who, fam) {
     const uid = d.name.split("/").pop(), f = d.fields || {};
     if (!isId(uid)) continue;
     users[uid] = { a: f.active && f.active.booleanValue === true ? 1 : 0, r: (f.role && f.role.stringValue) || "viewer" };
+    const nu = f.notif && f.notif.mapValue && f.notif.mapValue.fields && f.notif.mapValue.fields.update;
+    if (nu && nu.booleanValue === false) users[uid].nu = 1;                                         // turned off "new version" notifications
   }
   return users;
 }
@@ -360,15 +388,46 @@ export function slotOf(job, fam) {                                              
    Two requests never write the same item key (time + 72 random bits), so concurrent sends cannot overwrite each
    other. The hint (one shared key) only says "something was queued"; losing a hint write costs at most a delay
    (the cron also lists the queue every listEveryMin minutes). */
-async function enqueue(env, b, envName, fam, uid, kind, uids) {
+async function enqueue(env, b, envName, fam, uid, kind, uids, text) {
   const hk = K.hint(envName), hint = (await kv.get(env, b, hk)) || {};
   const d = today(), n = hint.day === d ? { ...(hint.n || {}) } : {};
   if ((n[uid] || 0) >= LIMITS.queuedPerUserPerDay) throw new Fail(429, "daily-limit");
   const id = Date.now().toString(36).padStart(9, "0") + "-" + b64u(crypto.getRandomValues(new Uint8Array(9)));
-  await kv.put(env, b, K.q(envName, fam, id), { k: kind, u: uids, at: Date.now(), by: uid }, { expirationTtl: LIMITS.queueTtlSec });
+  await kv.put(env, b, K.q(envName, fam, id), { k: kind, u: uids, at: Date.now(), by: uid, ...(text || {}) }, { expirationTtl: LIMITS.queueTtlSec });
   n[uid] = (n[uid] || 0) + 1;
   try { await kv.put(env, b, hk, { t: Date.now(), day: d, n }); } catch (e) { /* the item is stored; the cron's safety listing finds it */ }
   return id;
+}
+
+/* ---------- "new version" — called by the deploy workflow (GitHub Actions), not by a person ----------
+   Auth: header x-nido-key must equal the secret ANNOUNCE_KEY (set in Cloudflare and in GitHub; never in code).
+   Without the secret the endpoint is closed. Recipients: active members (from the stored roster) of every family that
+   is allowed right now — test: the home family only. People who turned "new version" off (roster nu) are skipped. */
+function sameSecret(a, c) {
+  if (typeof a !== "string" || typeof c !== "string" || a.length !== c.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ c.charCodeAt(i);
+  return d === 0;
+}
+async function announce(req, env, b, envName, body) {
+  const key = env.ANNOUNCE_KEY;
+  if (typeof key !== "string" || key.length < 24) throw new Fail(503, "not-configured");
+  if (!sameSecret(req.headers.get("x-nido-key") || "", key)) return json({ error: "unauthorized" }, 401);
+  const text = textOf(body);
+  if (!text) throw new Fail(400, "bad-text");
+  const allow = (await kv.get(env, b, K.allow())) || {};
+  const fams = envName === "test" ? [HOME] : (Array.isArray(allow.fams) ? allow.fams.filter(isId) : []);
+  const out = {};
+  for (const f of fams.slice(0, 10)) {
+    if (b.left() < 6) { out[f] = "busy"; continue; }
+    if (!(Array.isArray(allow.fams) && allow.fams.includes(f)) || !allowed(await kv.get(env, b, K.pol(f)))) { out[f] = "off"; continue; }
+    const roster = await kv.get(env, b, K.roster(envName, f));
+    if (!roster || !roster.users || !(Date.now() - roster.at < LIMITS.rosterMaxAgeMs)) { out[f] = "no-roster"; continue; }
+    const uids = Object.entries(roster.users).filter(([, u]) => u.a && !u.nu).map(([u]) => u).slice(0, LIMITS.uidsPerCall);
+    if (!uids.length) { out[f] = 0; continue; }
+    await enqueue(env, b, envName, f, "deploy", "update", uids, { ...text, g: text.g || "update" });
+    out[f] = uids.length;
+  }
+  return json({ ok: true, families: out });
 }
 
 /* ================= HTTP ================= */
@@ -383,6 +442,7 @@ async function handle(req, env) {
   const body = await readBody(req);
   const envName = ENVS.includes(body.env) ? body.env : null;
   if (!envName) throw new Fail(400, "bad-env");
+  if (path === "/announce") return announce(req, env, b, envName, body);
   const who = await caller(req, b);
   if (!who) return json({ error: "unauthorized" }, 401);
   if (envName === "test" && who.fam !== HOME) throw new Fail(403, "forbidden");
@@ -481,13 +541,14 @@ async function handle(req, env) {
   if (path === "/send") {                                                                          // queued only — the cron delivers
     if (!canEdit) throw new Fail(403, "read-only");
     if (!SEND_KINDS.includes(body.kind)) throw new Fail(400, "bad-kind");
+    const text = textOf(body);
     const asked = uidList(body.uids, LIMITS.uidsPerCall).filter(x => x !== uid);
     if (!throttle(`s:${uid}`, LIMITS.sendsPerMinutePerUser)) throw new Fail(429, "slow-down");
     if (!asked.length) return json({ ok: true, queued: 0 });
     const roster = await syncRoster(env, b, envName, who, fam, false);
     const uids = asked.filter(x => roster.users[x] && roster.users[x].a);
     if (!uids.length) return json({ ok: true, queued: 0, skipped: asked.length });
-    await enqueue(env, b, envName, fam, uid, body.kind, uids);
+    await enqueue(env, b, envName, fam, uid, body.kind, uids, text);
     return json({ ok: true, queued: uids.length, skipped: asked.length - uids.length });
   }
   if (path === "/jobs") {
@@ -497,11 +558,11 @@ async function handle(req, env) {
     for (const j of body.jobs) {
       if (!j || typeof j !== "object" || !JOB_KINDS.includes(j.kind) || typeof j.at !== "number" || !isFinite(j.at)) throw new Fail(400, "bad-job");
       if (!(j.at > now && j.at < now + 8 * 864e5)) continue;                                        // past or too far: ignored
-      jobs.push({ at: Math.floor(j.at / 60e3) * 60e3, k: j.kind, u: uidList(j.uids, LIMITS.uidsPerCall) });
+      jobs.push({ at: Math.floor(j.at / 60e3) * 60e3, k: j.kind, u: uidList(j.uids, LIMITS.uidsPerCall), ...(textOf(j) || {}) });
     }
     const roster = await syncRoster(env, b, envName, who, fam, false);
     const clean = jobs.map(j => ({ ...j, u: j.u.filter(x => roster.users[x] && roster.users[x].a) })).filter(j => j.u.length)
-      .sort((a, c) => a.at - c.at || a.k.localeCompare(c.k) || a.u.join().localeCompare(c.u.join()));
+      .sort((a, c) => a.at - c.at || a.k.localeCompare(c.k) || a.u.join().localeCompare(c.u.join()) || (a.t || "").localeCompare(c.t || ""));
     const key = K.jobs(envName, fam), doc = (await kv.get(env, b, key)) || {};
     if (JSON.stringify(doc.jobs || []) === JSON.stringify(clean)) return json({ ok: true, jobs: clean.length, same: true });   // every member sends the same plan → write once
     charge(doc, uid, LIMITS.planWritesPerUser, LIMITS.planWritesPerFamily);
@@ -630,7 +691,7 @@ export async function runCron(env, scheduledTime) {
           if (!item) continue;                                                                      // not visible yet (KV lag) or expired → next run
           taken++;
           if (!KINDS[item.k] || !Array.isArray(item.u)) { done[name] = now; continue; }
-          newSrc.push({ id: name, f, k: item.k, at, u: item.u.filter(isId) });
+          newSrc.push({ id: name, f, k: item.k, at, u: item.u.filter(isId), x: textCopy(item) });
         }
       } catch (e) { rep.errors++; more = true; }                                                    // nothing marked → read again next time
     } else if (wantList) more = true;
@@ -642,8 +703,8 @@ export async function runCron(env, scheduledTime) {
         for (const j of (doc && doc.jobs) || []) {
           const s = slotOf(j, f);
           if (!(s > to - LIMITS.jobWindowMs && s <= to)) continue;
-          const id = `j:${f}:${j.k}:${s}:${hash32(j.u.join(",")).toString(36)}`;
-          if (!done[id]) newSrc.push({ id, f, k: j.k, at: s, u: j.u });
+          const id = `j:${f}:${j.k}:${s}:${hash32(j.u.join(",") + "|" + (j.g || "") + "|" + (j.t || "")).toString(36)}`;
+          if (!done[id]) newSrc.push({ id, f, k: j.k, at: s, u: j.u, x: textCopy(j) });
         }
       } catch (e) { rep.errors++; }                                                                 // re-checked by the next runs (10-minute window)
     }
@@ -655,7 +716,7 @@ export async function runCron(env, scheduledTime) {
       for (const uid of new Set(src.u)) {
         const ru = ctx.roster.users[uid];
         if (!ru || !ru.a) { rep.skipped++; continue; }
-        for (const s of (ctx.subs.list || {})[uid] || []) cand.push({ id: unitId(src.id, uid, s.endpoint), f: src.f, k: src.k, at: src.at, u: uid, e: s.endpoint, pr: 3 });
+        for (const s of (ctx.subs.list || {})[uid] || []) cand.push({ id: unitId(src.id, uid, s.endpoint), f: src.f, k: src.k, at: src.at, u: uid, e: s.endpoint, ...(src.x ? { x: src.x } : {}), pr: 3 });
       }
     }
 
@@ -684,7 +745,7 @@ export async function runCron(env, scheduledTime) {
     for (const u of chosen) {
       const ctx = cache[envName + "|" + u.f], s = subOf(ctx, u);
       let r = "skip";
-      try { if (s) r = await pushOne(env, b, s, messageOf(u.k)); } catch (e) { r = "temp"; }       // out of budget → treated like a temporary failure
+      try { if (s) r = await pushOne(env, b, s, messageOf(u.k, u.x)); } catch (e) { r = "temp"; }       // out of budget → treated like a temporary failure
       pushesLeft--;
       results.push([u, r]);
       if (r === "ok") rep.sent++; else if (r === "skip") rep.skipped++; else rep.failed++;
@@ -712,6 +773,14 @@ export async function runCron(env, scheduledTime) {
   return rep;
 }
 function strip(u) { const { pr, r, t, ...x } = u; return x; }
+/* only the three text fields, re-checked (items and plans were validated on the way in; this is defence in depth) */
+function textCopy(o) {
+  if (!o || typeof o.t !== "string" || !o.t) return null;
+  const x = { t: o.t.slice(0, TEXT.title) };
+  if (typeof o.b === "string" && o.b) x.b = o.b.slice(0, TEXT.body);
+  if (typeof o.g === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(o.g)) x.g = o.g;
+  return x;
+}
 export const _test = { resetMemory() { for (const k of Object.keys(MEM)) delete MEM[k]; } };   // tests only: simulate a fresh instance
 
 export default {

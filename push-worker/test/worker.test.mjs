@@ -2,7 +2,7 @@
 // Run: node push-worker/test/worker.test.mjs
 // What these tests CANNOT show (needs a real deployment): Cloudflare CPU time, real KV propagation delays, whether
 // Cloudflare ever starts two cron runs for one minute, real delivery to Android, how a duplicate sounds on a phone.
-import W, { runCron, LIMITS, KINDS, messageOf, slotOf, allowed, _test } from "../worker.js";
+import W, { runCron, LIMITS, KINDS, messageOf, slotOf, allowed, TEXT, _test } from "../worker.js";
 import { readFileSync } from "node:fs";
 
 let failures = 0, passed = 0;
@@ -95,7 +95,7 @@ globalThis.fetch = async (url, opt = {}) => {
     if (url.endsWith(":runQuery")) {
       const fam = JSON.parse(opt.body).structuredQuery.where.fieldFilter.value.stringValue;
       if (!me || (!isSuper && (!me.active || me.family !== fam))) return new Response("[]", { status: 403 });
-      return new Response(JSON.stringify(Object.entries(USERS).filter(([, u]) => u.family === fam).map(([uid, u]) => ({ document: { name: `x/users/${uid}`, fields: { active: { booleanValue: u.active }, role: { stringValue: u.role }, family: { stringValue: u.family } } } }))), { status: 200 });
+      return new Response(JSON.stringify(Object.entries(USERS).filter(([, u]) => u.family === fam).map(([uid, u]) => ({ document: { name: `x/users/${uid}`, fields: { active: { booleanValue: u.active }, role: { stringValue: u.role }, family: { stringValue: u.family }, ...(u.notif ? { notif: { mapValue: { fields: Object.fromEntries(Object.entries(u.notif).map(([k, v]) => [k, { booleanValue: v }])) } } } : {}) } } }))), { status: 200 });
     }
     const uid = url.split("/users/")[1];
     if (uid !== claims.user_id || !USERS[uid]) return new Response("{}", { status: uid !== claims.user_id ? 403 : 404 });
@@ -192,9 +192,7 @@ ok(queueKeys().length === 2 && getJ("qhint:prod").t === CLOCK, "two separate que
 await minutes(1);
 ok(delivered().sort().join() === "S1,S1", `the cron delivered both (${delivered().join()})`);
 const msg = await decrypt("S1", pushed[0].body);
-ok(Object.values(KINDS).some(k => k.title === msg.data.title) && !/title|body/.test(JSON.stringify(getJ(queueKeys()[0]) || {})), `payload is a fixed generic text: "${msg.data.title}"`);
-r = await call("wife", "/send", { uids: [SUPER], kind: "task", title: "סוד: יום הולדת", body: "מרבד הקסמים 5" });
-ok(![...store.values()].map(e => e.v).join(" ").match(/יום הולדת|מרבד/), "free text sent by a client is never stored");
+ok(Object.values(KINDS).some(k => k.title === msg.data.title), `without text the payload is the fixed generic text: "${msg.data.title}"`);
 await minutes(1);
 
 section("Cross-family isolation");
@@ -446,6 +444,65 @@ await call("wife", "/send", { uids: [SUPER], kind: "note" });
 advance(LIMITS.lateMs + 5 * 60e3);
 reps = await minutes(LIMITS.listEveryMin);
 ok(count(delivered(), "S1") === 0 && sum(reps, "dropped") === 1, "worker down 35 min → the item is dropped and counted");
+
+section("Readable notifications: text, tags, how long text is kept");
+resetWorld();
+r = await call("wife", "/send", { uids: [SUPER], kind: "shop", title: "🛒 תהילה הוסיפה 3 פריטים", body: "חלב, ביצים, לחם", tag: "g-shop-1" });
+ok(r.status === 200 && r.json.queued === 1, "/send with title + body + tag is queued");
+await minutes(2);
+let m2 = await decrypt("S1", pushed[pushed.length - 1].body);
+ok(m2.data.title === "🛒 תהילה הוסיפה 3 פריטים" && m2.data.body === "חלב, ביצים, לחם" && m2.data.tag === "g-shop-1" && m2.data.tab === "shop", `the phone gets the text and tag (${m2.data.title} / ${m2.data.body})`);
+ok(!JSON.stringify(getJ("cron:prod") || {}).includes("חלב"), "after delivery the cron state holds no text");
+advance(2 * 3600e3 + 60e3);
+ok(![...store.keys()].filter(k => live(k)).map(k => store.get(k).v).join(" ").includes("חלב"), "2 hours later the text is gone from storage (queue item expired by itself)");
+resetWorld();
+r = await call("wife", "/send", { uids: [SUPER], kind: "task", title: "x".repeat(300), body: "y".repeat(500) });
+await minutes(2);
+m2 = await decrypt("S1", pushed[pushed.length - 1].body);
+ok(m2.data.title.length === TEXT.title && m2.data.body.length === TEXT.body, `long text is cut (${m2.data.title.length}/${m2.data.body.length})`);
+ok((await call("wife", "/send", { uids: [SUPER], kind: "task", title: "a", tag: "bad tag!" })).status === 400, "bad tag rejected");
+ok((await call("wife", "/send", { uids: [SUPER], kind: "task", title: { x: 1 } })).status === 400, "non-text title rejected");
+resetWorld();
+r = await call("wife", "/send", { uids: [SUPER], kind: "task", title: "שורה\u0007", body: "" });
+await minutes(2);
+m2 = await decrypt("S1", pushed[pushed.length - 1].body);
+ok(m2.data.title === "שורה" && m2.data.body === "", "control characters removed; empty body allowed");
+
+section("Readable reminders: two different reminders at the same minute both go out");
+resetWorld();
+const RT = Math.floor((CLOCK + 3 * 3600e3) / 60e3) * 60e3;
+r = await call("wife", "/jobs", { jobs: [
+  { at: RT, uids: [SUPER], kind: "remind", title: "📅 מחר: רופא שיניים", body: "17:30", tag: "r1" },
+  { at: RT, uids: [SUPER], kind: "remind", title: "🗓️ בעוד שבוע: לחדש ביטוח", body: "יעד: 19.10", tag: "r2" } ] });
+ok(r.status === 200 && r.json.jobs === 2, "plan with text accepted");
+CLOCK = RT - 60e3;
+await minutes(LIMITS.remindSpreadMin + 2);
+const got = []; for (const p of pushed) got.push((await decrypt(p.name, p.body)).data.title);
+ok(got.includes("📅 מחר: רופא שיניים") && got.includes("🗓️ בעוד שבוע: לחדש ביטוח"), `both delivered (${got.join(" | ")})`);
+r = await call("wife", "/jobs", { jobs: [{ at: RT + 864e5, uids: [SUPER], kind: "remind" }] });
+ok(r.status === 200, "a plan item without text still works (generic text)");
+
+section("New version announcement (from the deploy workflow)");
+resetWorld();
+const ann = async (body, key, e = "prod") => {
+  const headers = { "content-type": "application/json" }; if (key) headers["x-nido-key"] = key;
+  const res = await W.fetch(new Request("https://worker.test/announce", { method: "POST", headers, body: JSON.stringify({ env: e, ...body }) }), env);
+  return { status: res.status, json: await res.json() };
+};
+ok((await ann({ title: "🆕 Nido עודכנה" }, "whatever")).status === 503, "closed while ANNOUNCE_KEY is not set");
+env.ANNOUNCE_KEY = "k".repeat(32);
+ok((await ann({ title: "🆕 Nido עודכנה" }, "wrong".repeat(7))).status === 401, "wrong key rejected");
+ok((await ann({ title: "🆕 Nido עודכנה" })).status === 401, "missing key rejected");
+ok((await ann({ body: "no title" }, env.ANNOUNCE_KEY)).status === 400, "a title is required");
+USERS.wife.notif = { update: false };
+await call(SUPER, "/roster");
+r = await ann({ title: "🆕 Nido עודכנה", body: "חדש: התראות מאוחדות" }, env.ANNOUNCE_KEY);
+const qi = getJ(queueKeys()[0]) || {};
+ok(r.status === 200 && Object.keys(r.json.families).join() === "home" && qi.u.includes(SUPER) && !qi.u.includes("wife"), `only the allowed family; whoever turned it off is skipped (${JSON.stringify(r.json.families)}, ${qi.u})`);
+await minutes(2);
+m2 = await decrypt("S1", pushed[pushed.length - 1].body);
+ok(delivered().join() === "S1" && m2.data.title === "🆕 Nido עודכנה" && m2.data.tag === "update", `delivered to Slava only (${delivered().join()})`);
+delete USERS.wife.notif; await call(SUPER, "/roster"); delete env.ANNOUNCE_KEY;
 
 section("Firestore rules (text check only — the rules engine can't run here)");
 const rulesSrc = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8");

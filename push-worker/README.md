@@ -1,4 +1,4 @@
-# Nido push server (Cloudflare Worker) — NOT DEPLOYED
+# Nido push server (Cloudflare Worker)
 
 **Iron rule: 0 ₪.** Workers **Free** plan only. No credit card, no payment method, no Workers Paid,
 no Durable Objects / Queues / D1 / R2. If Cloudflare ever asks for a card to continue — stop.
@@ -47,6 +47,24 @@ KV has **no locks and no conditional writes**, and reads may lag (~60 s in other
 Phones show notifications with `tag` = kind, so a duplicate replaces the earlier one (it may sound again).
 Tested locally with a KV simulator (interleavings, a crash after every single operation, stale reads, hidden list
 entries). **Not provable locally:** real KV timing, whether Cloudflare ever starts two runs for one minute, real phones.
+
+## Readable notifications (owner's decision, 2026-10-09)
+The owner chose notifications with content ("🛒 נוספו 3 פריטים לקניות · תהילה: חלב, ביצים, לחם") over generic ones,
+and accepted that Cloudflare keeps that text for a short time:
+* `/send` items carry `title`, `body`, `tag` (validated, cut to 80 / 180 chars). Queue items expire after **2 hours**.
+* The cron state keeps a device's text only while it waits/retries — never more than 30 min after it was due.
+* **Reminders** carry text too and stay in the family's plan (`jobs:{env}:{family}`) **until their time — up to 8 days**,
+  replaced whenever the plan changes. Without text, the fixed generic text is used.
+* Fridge notes stay generic (the app sends no text for them). Nothing with text is ever logged.
+
+Grouping happens in the app (90 s after the last addition, ≤ 5 min, or when the app goes to the background) — one
+`/send` per group, which also saves KV writes.
+
+## New-version announcement
+`POST /announce` with header `x-nido-key: <ANNOUNCE_KEY>` and `{ env, title, body, tag }` → queued for the active members
+of every allowed family (test: home only), skipping anyone who turned "גרסה חדשה" off. Called by the deploy workflow
+only when a push adds a note to `updates.json`. Setup: one random key (≥ 24 chars) saved as Cloudflare secret
+`ANNOUNCE_KEY` **and** GitHub secret `NIDO_ANNOUNCE_KEY`. Without it the endpoint answers 503 and the workflow skips.
 
 ## Which families get notifications
 Admin screen → **התראות**. The switch is `families/{fid}.push` in Firestore — only the system admin may write it

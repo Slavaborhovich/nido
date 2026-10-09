@@ -57,3 +57,26 @@ jobs:
         with: { path: _site }
       - id: deployment
         uses: actions/deploy-pages@v4
+      # "new version" push notification — only when this push added a release note to updates.json.
+      # Needs the GitHub secret NIDO_ANNOUNCE_KEY (the same value as the Cloudflare secret ANNOUNCE_KEY). Without it: skipped.
+      # Free: GitHub Actions on a public repo + one call to the free Cloudflare worker.
+      - name: Announce the new version (push)
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          KEY: ${{ secrets.NIDO_ANNOUNCE_KEY }}
+          BRANCH: ${{ github.ref_name }}
+          COMMITS: ${{ toJSON(github.event.commits) }}
+        run: |
+          [ -n "$KEY" ] || { echo "NIDO_ANNOUNCE_KEY not set — skipping"; exit 0; }
+          printf '%s' "$COMMITS" | grep -q 'updates.json' || { echo "no new release note — skipping"; exit 0; }
+          if [ "$BRANCH" = "test" ]; then SRC=test; ENVN=test; else SRC=main; ENVN=prod; fi
+          F="$SRC/updates.json"; [ -f "$F" ] || { echo "no updates.json — skipping"; exit 0; }
+          TEXT=$(jq -r '.[0].text // ""' "$F")
+          [ -n "$TEXT" ] || { echo "empty note — skipping"; exit 0; }
+          HEAD=$(printf '%s\n' "$TEXT" | grep -m1 '^#' | sed -E 's/^#+[[:space:]]*//')
+          TITLE="🆕 ${HEAD:-Nido עודכנה}"
+          BODY=$(printf '%s\n' "$TEXT" | grep -E '^[[:space:]]*(•|\*|-)' | sed -E 's/^[[:space:]]*(•|\*|-)[[:space:]]*//' | paste -sd'|' | sed 's/|/ · /g')
+          jq -n --arg e "$ENVN" --arg t "$TITLE" --arg b "$BODY" '{env:$e, title:$t, body:$b, tag:"update"}' > announce.json
+          curl -sS --max-time 20 -X POST "https://nido-push.slava6195.workers.dev/announce" \
+            -H "content-type: application/json" -H "x-nido-key: $KEY" --data @announce.json

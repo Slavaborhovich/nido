@@ -1604,11 +1604,12 @@ const Cloud = {
 const PUSH_URL = "https://nido-push.slava6195.workers.dev";
 const PUSH_READY = !PUSH_URL.startsWith("__");                 // until the push server is set up, notifications stay off
 const NOTIF_KINDS = [
-  ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון"],
+  ["added",    "נוסף משהו חדש",              "משימה, רעיון, אירוע, מוצר לקניות או קופון — כמה ברצף מגיעים כהתראה אחת · וגם \"בא לי\""],
   ["assigned", "שובצה לי משימה",              "כשמישהו מעביר אליך משימה"],
-  ["done",     "בוצע / יצאו לקניות",          "משימה הושלמה או שמישהו לקח את הקניות"],
-  ["remind",   "תזכורות",                     "שעה לפני אירוע או משימה עם שעה, וסיכום בוקר ב־8:00"],
-];
+  ["done",     "בוצע / יצאו לקניות",          "משימה הושלמה, מישהו לקח את הקניות, או נבחר מוצר בסקר שוק"],
+  ["remind",   "תזכורות",                     "יום לפני אירוע, שבוע לפני תאריך יעד, שעה לפני דבר עם שעה, וסיכום בוקר ב־8:00"],
+  ["update",   "גרסה חדשה",                   "כשיוצא עדכון ל־Nido"],
+]
 async function pushApi(path, body){
   if (!PUSH_READY || !Cloud.auth || !Cloud.auth.currentUser) throw { code: "push-off" };
   const token = await Cloud.auth.currentUser.getIdToken();
@@ -1734,42 +1735,141 @@ const Push = {
   },
 };
 
-/* What to tell whom. Runs on the phone that made the change; never notifies the person who did it. */
+/* What to tell whom. Runs on the phone that made the change; never notifies the person who did it.
+   Notifications are readable ("🛒 נוספו 3 פריטים לקניות · תהילה: חלב, ביצים, לחם"). The push server keeps the text only
+   until it is delivered (at most 2 hours; reminders until their time).
+   SMART GROUPING — new tasks, events, ideas, shopping items, coupons and market-survey products are collected for a short
+   while and go out as ONE notification per kind. A group is sent 90 s after its last addition (at most 5 min after the
+   first one), or right away when the app goes to the background. The waiting groups live in localStorage, so a group
+   that could not leave (no sign-in token, offline) is sent the next time the app opens — or dropped after 2 hours. */
 const Notify = {
-  /* only a kind code is sent; the push server turns it into a fixed, generic text (nothing personal on the lock screen) */
   KIND: { tasks:"task", ideas:"idea", events:"event", shop:"shop", coupons:"shop", survey:"shop" },
+  TYPE: { tasks:"task", ideas:"idea", events:"event", shop:"shop", coupons:"coupon", survey:"survey" },
+  TAB:  { task:"tasks", assigned:"tasks", idea:"ideas", event:"cal", shop:"shop", coupon:"shop", survey:"shop" },
+  /* [title for one, title for n] */
+  GROUP_TEXT: {
+    task:     ["📋 משימה חדשה", n => `📋 ${n} משימות חדשות`],
+    assigned: ["📋 משימה חדשה בשבילך", n => `📋 ${n} משימות חדשות בשבילך`],
+    event:    ["📅 אירוע חדש ביומן", n => `📅 ${n} אירועים חדשים ביומן`],
+    idea:     ["💡 רעיון חדש", n => `💡 ${n} רעיונות חדשים`],
+    shop:     ["🛒 נוסף לקניות", n => `🛒 נוספו ${n} פריטים לקניות`],
+    coupon:   ["🎟️ קופון חדש", n => `🎟️ ${n} קופונים חדשים`],
+    survey:   ["🏷️ מוצר חדש בסקר שוק", n => `🏷️ ${n} מוצרים חדשים בסקר שוק`],
+  },
+  GROUP_MS: 90e3, MAX_MS: 5 * 60e3, TTL: 2 * 3600e3, BUF: "nido.nbuf." + ENV,
   wants: (k, kind) => !(USERS[k] && USERS[k].notif && USERS[k].notif[kind] === false),
   others(kind){ return people().filter(k => k !== me && USERS[k].uid && this.wants(k, kind)); },
-  send(keys, kind){
-    const uids = [...new Set(keys.map(k => USERS[k] && USERS[k].uid).filter(Boolean))];
-    if (!uids.length || !navigator.onLine || !canEdit()) return;
-    if (Push.familyOff()) return;
-    pushApi("/send", { uids, kind }).catch(e => console.warn("[notify]", e && e.code));
+  uidsOf(keys){ return [...new Set(keys.map(k => USERS[k] && USERS[k].uid).filter(Boolean))]; },
+  ok(){ return CLOUD && PUSH_READY && !!me && canEdit() && !Push.familyOff(); },
+  tagOf: s => String(s).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || undefined,
+  /* immediate: msg = { title, body, tag } (or nothing → the server's generic text, e.g. fridge notes) */
+  send(keys, kind, msg){
+    const uids = this.uidsOf(keys);
+    if (!uids.length || !navigator.onLine || !this.ok()) return;
+    pushApi("/send", { uids, kind, ...(msg || {}) }).catch(e => console.warn("[notify]", e && e.code));
   },
+  /* ---- grouping ---- */
+  load(){ try { const a = JSON.parse(localStorage.getItem(this.BUF) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } },
+  store(list){ try { list.length ? localStorage.setItem(this.BUF, JSON.stringify(list)) : localStorage.removeItem(this.BUF); } catch(e){} },
+  later(keys, type, label){
+    const uids = this.uidsOf(keys); label = String(label || "").trim();
+    if (!uids.length || !label || !this.ok()) return;
+    const now = Date.now(), list = this.load(), gk = type + "|" + [...uids].sort().join(",");
+    let g = list.find(x => x.gk === gk && now - x.first < this.MAX_MS);
+    if (!g){ g = { gk, type, kind: type === "assigned" ? "task" : (type === "coupon" || type === "survey") ? "shop" : type, uids, who: meU().name, labels: [], first: now }; list.push(g); }
+    g.labels.push(label); g.last = now;
+    this.store(list); this.token(); this.arm();
+  },
+  textOf(g){
+    const n = g.labels.length, [one, many] = this.GROUP_TEXT[g.type] || this.GROUP_TEXT.task;
+    let body = g.who + ": ", shown = 0;
+    for (const l of g.labels){ const add = (shown ? ", " : "") + l; if (shown && body.length + add.length > 150) break; body += add; shown++; }
+    if (shown < n) body += ` ועוד ${n - shown}`;
+    return { title: n === 1 ? one : many(n), body, tag: this.tagOf(`g-${g.type}-${g.first.toString(36)}`) };
+  },
+  /* the sign-in token, kept fresh so a group can still leave while the app is closing (no time to ask for one then) */
+  token(){
+    try { const u = Cloud.auth && Cloud.auth.currentUser; if (!u) return;
+      u.getIdToken().then(t => { let exp = 0; try { exp = JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).exp * 1000; } catch(e){} this._tok = { t, exp }; }).catch(() => {});
+    } catch(e){}
+  },
+  arm(){
+    clearTimeout(this._gt);
+    const list = this.load(); if (!list.length) return;
+    const due = Math.min(...list.map(g => Math.min(g.last + this.GROUP_MS, g.first + this.MAX_MS)));
+    this._gt = setTimeout(() => this.flush(false), Math.max(1000, due - Date.now()));
+  },
+  /* all = the app is going to the background: send everything now, with keepalive */
+  flush(all){
+    const now = Date.now(), keep = [], out = [];
+    for (const g of this.load()){
+      if (now - g.first > this.TTL) continue;                                         // too old → dropped
+      if (all || now - g.last >= this.GROUP_MS - 500 || now - g.first >= this.MAX_MS) out.push(g); else keep.push(g);
+    }
+    const sent = [];
+    for (const g of out){
+      if (!navigator.onLine || !this.ok()){ keep.push(g); continue; }
+      const body = { env: ENV, uids: g.uids, kind: g.kind, ...this.textOf(g) };
+      const tk = this._tok && this._tok.exp > now + 60e3 ? this._tok.t : null;
+      if (all){
+        if (!tk){ keep.push(g); continue; }                                           // no fresh token now → next time the app opens
+        try { fetch(PUSH_URL + "/send", { method:"POST", keepalive:true, headers:{ "content-type":"application/json", authorization:"Bearer " + tk }, body: JSON.stringify(body) }).catch(() => {}); sent.push(g); }
+        catch(e){ keep.push(g); }
+      } else {
+        const { env, ...rest } = body;
+        pushApi("/send", rest).catch(e => console.warn("[notify]", e && e.code));
+        sent.push(g);
+      }
+    }
+    this.store(keep);
+    if (!all) this.arm();
+  },
+  /* ---- what changed → who hears about it ---- */
   changes(list){
     if (!CLOUD || !PUSH_READY || !me || !list.length || list.length > 12) return;      // bulk changes (imports, seeding) stay quiet
+    const who = meU().name;
     for (const { c, before, after } of list){
+      const label = after.title || after.name || "";
       if (!before){
         if (c === "tasks" && (after.spawned || after.kind === "idea" || after.kind === "survey")) continue;
-        if (c === "tasks" && after.kind === "shop"){ this.send(this.others("done"), "shop"); continue; }
+        if (c === "tasks" && after.kind === "shop"){
+          const n = DB.shop.filter(i => i.taskId === after.id).length;
+          this.send(this.others("done"), "shop", { title:"🛍️ יוצאים לקניות", body:`${who} לוקח/ת ${n === 1 ? "פריט אחד" : n + " פריטים"}`, tag: this.tagOf("take-" + after.id) });
+          continue;
+        }
         let skip = null;
         if (c === "tasks" && after.assignee && after.assignee !== me && USERS[after.assignee]){
           skip = after.assignee;
-          if (this.wants(skip, "assigned")) this.send([skip], "task");
+          if (this.wants(skip, "assigned")) this.later([skip], "assigned", label);
         }
-        this.send(this.others("added").filter(k => k !== skip), this.KIND[c] || "task");
+        const type = this.TYPE[c] || "task";
+        const lab = c === "events" && after.date ? `${label} (${dayLabel(after.date)}${after.time ? " " + after.time : ""})`
+                  : c === "shop" && after.qty ? `${label} ×${after.qty}` : label;
+        this.later(this.others("added").filter(k => k !== skip), type, lab);
         continue;
       }
       if (c === "tasks"){
         if (after.assignee && after.assignee !== before.assignee && after.assignee !== me && USERS[after.assignee] && this.wants(after.assignee, "assigned"))
-          this.send([after.assignee], "task");
-        if (after.done && !before.done) this.send(this.others("done"), after.kind === "shop" ? "shop" : "task");
+          this.send([after.assignee], "task", { title:"📋 משימה בשבילך", body:`${label} · מ${who}`, tag: this.tagOf("a-" + after.id) });
+        if (after.done && !before.done){
+          const shop = after.kind === "shop";
+          this.send(this.others("done"), shop ? "shop" : "task", shop
+            ? { title:"✅ הקניות הושלמו", body:`${who} סיים/ה את הקניות`, tag: this.tagOf("d-" + after.id) }
+            : { title:"✅ משימה הושלמה", body:`${who}: ${label}`, tag: this.tagOf("d-" + after.id) });
+        }
+      }
+      if (c === "ideas" && Array.isArray(after.likes) && after.likes.includes(me) && !(before.likes || []).includes(me))
+        this.send(this.others("added"), "idea", { title:`❤️ גם ל${who} בא`, body: label, tag: this.tagOf("like-" + after.id) });
+      if (c === "survey" && after.chosen && after.chosen !== before.chosen){
+        const o = (after.offers || []).find(x => x.id === after.chosen);
+        this.send(this.others("done"), "shop", { title:`🏷️ נבחר: ${label}`, body: o ? `${o.store} · ${ils(o.price)} · נוצרה משימה` : "נוצרה משימה", tag: this.tagOf("ch-" + after.id) });
       }
     }
   },
   /* the whole reminder plan for the next 7 days, sent to the server whenever it changes */
   schedule(){
     if (!CLOUD || !PUSH_READY || !me || !Cloud.user) return;
+    if (!this._started){ this._started = true; this.token(); this.arm(); }                  // leftovers from last time
     clearTimeout(this._t); this._t = setTimeout(() => this._schedule(), 2500);
   },
   _schedule(){
@@ -1777,14 +1877,19 @@ const Notify = {
     const at = (d, t) => { const [h, m] = (t || "08:00").split(":").map(Number); const x = parse(d); x.setHours(h, m, 0, 0); return x.getTime(); };
     const remind = people().filter(k => USERS[k].uid && this.wants(k, "remind"));
     const uidsOf = ks => ks.map(k => USERS[k].uid);
-    for (const e of DB.events) if (e.date && e.time){
-      const t = at(e.date, e.time) - 60*60e3;
-      if (t > now && t < until && remind.length) jobs.push({ at:t, uids: uidsOf(remind), kind:"remind" });
+    const add = (t, ks, kind, title, body, tag) => { if (t > now && t < until && ks.length) jobs.push({ at:t, uids: uidsOf(ks), kind, title, body, tag: this.tagOf(tag) }); };
+    const dmy = d => { const x = parse(d); return `${x.getDate()}.${x.getMonth() + 1}`; };
+    for (const e of DB.events) if (e.date){
+      const place = e.place ? " · " + e.place : "";
+      // 24 hours before the start (all-day events: the day before at 09:00)
+      add(e.time ? at(e.date, e.time) - 864e5 : at(e.date, "09:00") - 864e5, remind, "remind", `📅 מחר: ${e.title}`, `${e.time || "כל היום"}${place}`, `e1-${e.id}`);
+      if (e.time) add(at(e.date, e.time) - 60*60e3, remind, "remind", `⏰ בעוד שעה: ${e.title}`, `${e.time}${place}`, `eh-${e.id}`);
     }
-    for (const k of DB.tasks) if (!k.done && k.date && k.time){
-      const t = at(k.date, k.time) - 60*60e3;
+    for (const k of DB.tasks) if (!k.done && k.date){
       const to = k.assignee && USERS[k.assignee] ? remind.filter(x => x === k.assignee) : remind;
-      if (t > now && t < until && to.length) jobs.push({ at:t, uids: uidsOf(to), kind:"remind" });
+      // a week before the due date (a task opened with less than a week left gets none — "משימה חדשה" already told)
+      add(at(k.date, k.time || "09:00") - 7*864e5, to, "remind", `🗓️ בעוד שבוע: ${k.title}`, `תאריך יעד: ${dmy(k.date)}${k.time ? " " + k.time : ""}`, `kw-${k.id}`);
+      if (k.time) add(at(k.date, k.time) - 60*60e3, to, "remind", `⏰ תזכורת: ${k.title}`, `בעוד שעה · ${k.time}`, `kh-${k.id}`);
     }
     for (let i = 0; i < 7; i++){
       const day = iso(addDays(new Date(), i)), t = at(day, "08:00");
@@ -1795,18 +1900,22 @@ const Notify = {
           ...DB.tasks.filter(k => !k.done && k.date === day && (!k.assignee || k.assignee === u)).map(k => (k.time ? k.time + " " : "") + k.title),
         ];
         if (!items.length) continue;
-        jobs.push({ at:t, uids:[USERS[u].uid], kind:"digest" });
+        add(t, [u], "digest", `☀️ בוקר טוב ${USERS[u].name} · ${items.length === 1 ? "דבר אחד היום" : items.length + " דברים היום"}`,
+          items.slice(0, 4).join(" · ") + (items.length > 4 ? " …" : ""), "digest");
       }
     }
     if (!canEdit()) return;                                                                   // viewers can't change the family's plan
-    jobs.splice(120);
-    jobs.sort((a, b) => a.at - b.at || a.kind.localeCompare(b.kind) || a.uids.join().localeCompare(b.uids.join()));
+    jobs.sort((a, b) => a.at - b.at || a.kind.localeCompare(b.kind) || a.uids.join().localeCompare(b.uids.join()) || a.title.localeCompare(b.title));
+    jobs.splice(120);                                                                         // the server's limit: the nearest 120
     const sig = JSON.stringify(jobs), key = "nido.jobs." + ENV;
     try { if (localStorage.getItem(key) === sig) return; } catch(e){}
     if (Push.familyOff()) return;
     pushApi("/jobs", { jobs }).then(() => { try { localStorage.setItem(key, sig); } catch(e){} }).catch(e => console.warn("[jobs]", e && e.code));
   },
 };
+/* groups leave when the app goes to the background; leftovers from last time go out when it opens */
+document.addEventListener("visibilitychange", () => { if (document.hidden) Notify.flush(true); else { Notify.token(); Notify.arm(); } });
+window.addEventListener("pagehide", () => Notify.flush(true));
 /* a tap on a notification opens the right tab */
 if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
   if (e.data && e.data.tab && me){ closeSheet(); S.tab = e.data.tab; render(); }
