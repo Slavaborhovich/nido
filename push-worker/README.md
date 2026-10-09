@@ -9,10 +9,10 @@ Everything below is a plan. Each step needs the owner's explicit approval before
 | Resource | Free-plan limit (per Cloudflare docs) | Our use |
 |---|---|---|
 | Worker requests | 100,000 / day | app calls + 1,440 cron runs/day |
-| CPU | 10 ms per invocation (HTTP and cron) | ≤ 8 pushes per cron run, ≤ 10 per `/send` |
-| Subrequests | 50 per invocation (every `fetch` **and** every KV call) | budget capped at 40 in code |
+| CPU | 10 ms per invocation (HTTP and cron) | ≤ 3 devices per cron run (prod + test together, test ≤ 1), ≤ 2 right away per `/send` (the rest queued). **Not measured on Cloudflare yet** — local Node estimate ≈1.1–1.2 ms per push |
+| Subrequests | 50 per invocation (every `fetch` **and** every KV call) | one budget of 30 per invocation (cron: shared by prod and test) |
 | Cron Triggers | 5 per account | 1 (`* * * * *`) |
-| KV reads | 100,000 / day | ≈ (3 + families) × 1,440 per day for the cron |
+| KV reads | 100,000 / day | cron: ≈ 4 + 1 per listed family + 2 per allowed family, per minute (≈ 13k/day for one family) |
 | KV writes / deletes | 1,000 / day each | capped per family and per user in code |
 | KV storage | 1 GB | a few KB |
 
@@ -23,6 +23,14 @@ Docs: https://developers.cloudflare.com/workers/platform/limits · https://devel
 The worker also reads Firestore with the caller's own sign-in (1 read for the caller's profile on every request,
 plus one family-members query when the roster is refreshed — at most every 6 h per family, or after an admin change).
 Those count against the Firebase **Spark** quota (50,000 reads/day), which also never bills.
+
+## Which families get notifications
+Admin screen → **התראות** ("ניהול התראות למשפחות"). The switch is `families/{fid}.push` in Firestore — only the system
+admin may write it (existing rule `allow write: if boot()` on `families/{fid}`). A frozen family (`active: false`) gets
+nothing even with the switch on. New families start **off**. The primary family (the system admin's own) is served
+first and can't be switched off from the screen. The worker reads the setting from Firestore itself; if it can't be
+synced, the screen says so and retries when the admin's app opens. A missing or 8-day-old setting means "off".
+After deployment the system admin must switch the primary family **on** once (it has no `push` field yet).
 
 ## Setup (later, only with approval)
 1. Owner creates a Cloudflare account (no card) and checks: plan = **Workers Free**, no payment method.
