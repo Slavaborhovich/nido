@@ -1084,7 +1084,7 @@ body.admin-open .note-fab{display:none}
 
 /* ================= Skin: Nido Light (user preference; Nido Home = everything above, unchanged) =================
    Only colors, surfaces and backgrounds change here — never layout, features or behaviour. */
-html[data-skin="light"]{background:#F6EFE5}
+html[data-skin="light"]{background:#F6EFE5;color-scheme:light}      /* native checkboxes, dates and scrollbars in light colours */
 html[data-skin="light"] :is(#app,#sheetRoot,#toast,body){
   --bg:#F6EFE5; --bg-2:#FBF7F1; --surface:rgba(255,253,250,.95); --surface-hi:#FFFFFF; --line:rgba(110,78,40,.13);
   --text:#2A1D12; --muted:#76604B; --faint:#9C8670; --err:#B5452F;
@@ -1177,6 +1177,69 @@ html[data-skin="light"] .av i{border-color:#fff}
 html[data-skin="light"] .c-date{background:rgba(255,253,250,.9);border-color:rgba(110,78,40,.12)}
 html[data-skin="light"] .fb-pills button.yes.on{background:rgba(80,130,66,.14);border-color:rgba(80,130,66,.45);color:#3F6E33}
 html[data-skin="light"] .fb-pills button.no.on{background:rgba(181,69,47,.1);border-color:rgba(181,69,47,.4);color:#9A3A26}
+/* Nido Light — the system admin screen: cream page, white cards, darker accents */
+html[data-skin="light"] #admin{background:#F6EFE5}
+html[data-skin="light"] #admin .secondary{background:#FFFDF9;border-color:rgba(110,78,40,.18);color:#2A1D12;box-shadow:0 4px 12px rgba(92,60,26,.06)}
+html[data-skin="light"] :is(.adm-head small,.adm-note,.adm-sec,.dv-sh,.hh-top p,.hh-status small,.hh-meter small,.adm-row .t small,.adm-row .t b small,.adm-fam .t small,.adm-mini small,.adm-kv small,.adm-msg small,.pn-sync,.dv-it small,.adm-stats small,.ann-from){color:#8A735C}
+html[data-skin="light"] :is(.adm-bars-l,.adm-types .h){color:#9C8670}
+html[data-skin="light"] :is(.adm-tabs,.dv-seg){background:rgba(255,253,250,.97);border-color:rgba(110,78,40,.13);box-shadow:0 6px 18px rgba(92,60,26,.08)}
+html[data-skin="light"] :is(.adm-tabs button,.dv-seg button){color:#7A6450}
+html[data-skin="light"] :is(.adm-tabs button[aria-selected="true"],.dv-seg button[aria-selected="true"]){background:#F4E2C4;color:#2A1D12;box-shadow:none}
+html[data-skin="light"] :is(.adm-card,.adm-health,.adm-fam,.adm-stats div){background:#FFFDF9;border-color:rgba(110,78,40,.13);box-shadow:0 6px 18px rgba(92,60,26,.07)}
+html[data-skin="light"] .adm-health.green{border-color:rgba(80,130,66,.4)}
+html[data-skin="light"] .adm-health.amber{border-color:rgba(190,140,40,.45)}
+html[data-skin="light"] .adm-health.red{border-color:rgba(181,69,47,.45)}
+html[data-skin="light"] :is(.adm-warn,.danger-zone){border-color:rgba(181,69,47,.35)}
+html[data-skin="light"] .adm-card :is(.input,.textarea),html[data-skin="light"] .adm-limit .input{background:#fff;border-color:rgba(110,78,40,.16)}
+html[data-skin="light"] :is(.adm-limit,.adm-mini div,.dv-it){background:rgba(110,78,40,.05);border-color:rgba(110,78,40,.1)}
+html[data-skin="light"] :is(.adm-row,.adm-types,.adm-msg,.hh-svc){border-top-color:rgba(110,78,40,.1)}
+html[data-skin="light"] :is(.adm-kv,.hh-meter .hh-ml,.adm-alert.low .t b){color:#76604B}
+html[data-skin="light"] .adm-msg p{color:#4A3A2C}
+html[data-skin="light"] :is(.adm-back,#adm-dormant summary,.adm-row .rank){color:#9A6B1F}
+html[data-skin="light"] :is(.adm-row .ic-fam,.adm-fam .ic){background:rgba(207,157,87,.16);color:#9A6B1F}
+html[data-skin="light"] .adm-row .spark i{background:rgba(185,132,61,.55)}
+html[data-skin="light"] .adm-bars i{background:linear-gradient(180deg,#C9964F,rgba(201,150,79,.45))}
+html[data-skin="light"] :is(.adm-quota,.adm-row .dot){background:rgba(110,78,40,.12)}
+html[data-skin="light"] .adm-quota i,html[data-skin="light"] .adm-row .dot.on{background:#5E9A50}
+html[data-skin="light"] .adm-row .dot.on{box-shadow:0 0 0 3px rgba(94,154,80,.2)}
+html[data-skin="light"] :is(.adm-quota.mid i,.adm-row .dot.mid){background:#D0A23E}
+html[data-skin="light"] :is(.adm-quota.hi i,.adm-row .dot.off){background:#C0614A}
+html[data-skin="light"] .adm-row .old{color:#B5452F}
+html[data-skin="light"] .hh-svc b{color:#8A735C}
+html[data-skin="light"] .hh-svc b.ok{color:#3F6E33}
+html[data-skin="light"] .hh-svc b.hi,html[data-skin="light"] .pn-sync.bad{color:#B5452F}
+html[data-skin="light"] .hh-ph-t{color:#8A6212}
+html[data-skin="light"] .adm-swatches .sw.on{border-color:#2A1D12;box-shadow:0 0 0 3px rgba(110,78,40,.18)}
+html[data-skin="light"] .dv-add .pl{background:rgba(207,157,87,.2);color:#8C5E22}
+/* small coloured labels: same hues, darker text so they read on white */
+html[data-skin="light"] .adm-pill,html[data-skin="light"] .p-low{background:rgba(110,78,40,.08);color:#76604B}
+html[data-skin="light"] .adm-pill.on{background:rgba(80,130,66,.14);color:#3F6E33}
+html[data-skin="light"] :is(.adm-pill.mid,.p-mid){background:rgba(208,162,62,.18);color:#7A5512}
+html[data-skin="light"] :is(.adm-pill.off,.p-high,.k-bug){background:rgba(181,69,47,.12);color:#9A3A26}
+html[data-skin="light"] .k-feature{background:rgba(70,110,190,.12);color:#2F5BA8}
+html[data-skin="light"] .k-improve{background:rgba(80,130,66,.14);color:#3F6E33}
+html[data-skin="light"] .k-v{background:rgba(120,90,200,.12);color:#5B45A8}
+html[data-skin="light"] .role-badge{background:rgba(207,157,87,.16);color:#8C5E22;border-color:rgba(185,132,61,.3)}
+html[data-skin="light"] .role-badge.viewer{background:rgba(110,78,40,.06);color:#76604B;border-color:rgba(110,78,40,.16)}
+html[data-skin="light"] .role-badge.admin{background:rgba(181,69,47,.1);color:#9A3A26;border-color:rgba(181,69,47,.28)}
+
+/* Nido Light — login: the warm home photo instead of the night sky, a white form */
+html[data-skin="light"] #sky{display:none}
+html[data-skin="light"] #login{--bg:#F6EFE5; --surface:rgba(255,253,250,.94); --surface-hi:#fff; --line:rgba(110,78,40,.16);
+  --text:#2A1D12; --muted:#76604B; --faint:#9C8670; --blue:#A9742C; --blue-deep:#CF9D57; --err:#FFD9CF}
+html[data-skin="light"] #login::before{content:"";position:fixed;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(40,24,10,.58) 0%,rgba(40,24,10,.30) 40%,rgba(40,24,10,.38) 70%,rgba(40,24,10,.62) 100%),url(bg/today.jpg) 50% 50%/cover #6B4A2C}
+html[data-skin="light"] #login .input{background:rgba(255,253,250,.94);border-color:rgba(255,255,255,.5);color:#2A1D12;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 8px 24px rgba(40,22,6,.18)}
+html[data-skin="light"] #login .input::placeholder{color:#9C8670}
+html[data-skin="light"] #login .primary{background:linear-gradient(140deg,#D9A962,#B9843D);color:#fff;box-shadow:0 10px 26px rgba(40,22,6,.3)}
+html[data-skin="light"] .brand .logo{filter:drop-shadow(0 4px 18px rgba(40,22,6,.55))}
+html[data-skin="light"] .brand h1{color:#FFF8EE}
+html[data-skin="light"] .brand p{color:rgba(255,246,232,.92)}
+html[data-skin="light"] :is(.brand h1,.brand p){text-shadow:0 2px 18px rgba(40,22,6,.6)}
+html[data-skin="light"] #login .error{text-shadow:0 1px 8px rgba(40,22,6,.8)}
+html[data-skin="light"] :is(#login .demo,.phase-demo button){color:rgba(255,246,232,.85);text-shadow:0 1px 8px rgba(40,22,6,.8)}
+html[data-skin="light"] .phase-demo button[aria-pressed="true"]{background:rgba(255,250,242,.2);color:#FFF8EE}
+
 /* "המראה שלי" */
 .skins{display:grid;gap:12px;margin:4px 0 6px}
 .skin-card{display:flex;align-items:center;gap:14px;width:100%;padding:10px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);text-align:right;font:inherit;cursor:pointer}
@@ -1190,7 +1253,6 @@ html[data-skin="light"] .fb-pills button.no.on{background:rgba(181,69,47,.1);bor
 .skin-card.on .ok{background:var(--blue-deep);border-color:var(--blue-deep);color:var(--ink)}
 .skin-card .ok svg{width:15px;height:15px}
 
-/* swipe between screens: a short slide-in from the side the user came from */
 /* swipe between screens: the screen follows the finger; the old one slides out while the next slides in */
 .sw-ghost{position:fixed;margin:0!important;pointer-events:none;will-change:transform,opacity}
 #screen.sw-drag{will-change:transform,opacity}
