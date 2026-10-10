@@ -1215,9 +1215,18 @@ html[data-skin="light"] #app .mn-mon button{background:rgba(255,250,242,.22);col
 html[data-skin="light"] #app .mn-hero{background:var(--surface)}
 
 /* ---------- "מזל טוב, מנהל המשפחה" ---------- */
-.cfm.crown{text-align:center;padding-top:22px}
-.crown-tile{position:relative;width:132px;height:132px;margin:0 auto 14px;border-radius:30px;display:grid;place-items:center;
-  background:radial-gradient(circle at 50% 38%,#4A321C 0%,#2C1E13 70%);border:1px solid rgba(255,214,170,.18);box-shadow:inset 0 1px 0 rgba(255,236,200,.08),0 14px 34px rgba(0,0,0,.35)}
+/* glass over the screen's own photo, like the app's other windows — no black box */
+.crown-scrim{background:rgba(30,18,8,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.cfm.crown{text-align:center;padding-top:22px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(78,52,28,.66) 0%,rgba(46,31,20,.70) 45%,rgba(40,27,18,.74) 100%);
+  backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+  border:1px solid rgba(255,214,170,.22);box-shadow:0 24px 60px rgba(20,10,4,.35),inset 0 1px 0 rgba(255,236,200,.12)}
+.cfm.crown::before{content:"";position:absolute;left:50%;top:-90px;width:300px;height:220px;margin-left:-150px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(242,182,107,.30),transparent);pointer-events:none}
+.cfm.crown > *{position:relative}
+.crown-tile{position:relative;width:128px;height:128px;margin:0 auto 14px;border-radius:30px;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%,rgba(255,226,180,.20) 0%,rgba(242,182,107,.08) 60%,rgba(255,226,190,.04) 100%);
+  border:1px solid rgba(255,214,170,.22);box-shadow:inset 0 1px 0 rgba(255,236,200,.14)}
 .crown-svg{width:92px;height:auto;filter:drop-shadow(0 6px 10px rgba(185,132,61,.45));animation:crownBob 2.6s ease-in-out infinite;transform-origin:50% 80%}
 @keyframes crownBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
 .crown-tile .sp{position:absolute;font-style:normal;color:#F2C48A;font-size:14px;animation:crownTw 2.2s ease-in-out infinite;text-shadow:0 0 8px rgba(242,182,107,.6)}
@@ -1233,7 +1242,10 @@ html[data-skin="light"] #app .mn-hero{background:var(--surface)}
 .cfm.crown .crown-hint{margin:6px 0 4px;font-size:12.5px;color:var(--faint)}
 .cfm.crown .row .go{width:100%;height:52px;font-size:16.5px;font-weight:600}
 @media (prefers-reduced-motion:reduce){.crown-svg,.crown-tile .sp,.crown-tile .dot{animation:none}}
-html[data-skin="light"] .crown-tile{background:radial-gradient(circle at 50% 38%,#FFF6E6 0%,#F4E2C4 75%);border-color:rgba(185,132,61,.25);box-shadow:0 12px 28px rgba(150,98,40,.18)}
+html[data-skin="light"] .crown-scrim{background:rgba(52,32,12,.22)}
+html[data-skin="light"] .cfm.crown{background:linear-gradient(180deg,rgba(255,246,230,.90) 0%,rgba(255,252,246,.92) 50%,rgba(255,253,249,.94) 100%);border-color:rgba(255,255,255,.7);box-shadow:0 24px 60px rgba(60,36,12,.22)}
+html[data-skin="light"] .cfm.crown::before{background:radial-gradient(closest-side,rgba(233,178,113,.35),transparent)}
+html[data-skin="light"] .crown-tile{background:radial-gradient(circle at 50% 40%,#FFF8EC 0%,#F6E6CB 80%);border-color:rgba(185,132,61,.22);box-shadow:0 10px 24px rgba(150,98,40,.14)}
 html[data-skin="light"] .crown-tile .sp{color:#C9964F;text-shadow:none}html[data-skin="light"] .crown-tile .dot{background:#D9A962}
 
 /* ================= Skin: Nido Light (user preference; Nido Home = everything above, unchanged) =================
@@ -2668,6 +2680,11 @@ function famAdminWelcome(){
   const go = () => {
     if (!me || $("#app").hidden || document.getElementById("splash") || $("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim,.note-scrim")){ setTimeout(go, 1500); return; }
     try { localStorage.setItem(k, "1"); } catch(e){}
+    showAdminWelcome();
+  };
+  setTimeout(go, 1200);
+}
+function showAdminWelcome(){
     const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim crown-scrim";
     w.innerHTML = `<div class="cfm upd crown" role="dialog" aria-modal="true" aria-labelledby="faT">
       <div class="crown-tile" aria-hidden="true">
@@ -2691,8 +2708,6 @@ function famAdminWelcome(){
       <div class="row"><button type="button" class="go">יאללה, יצאנו לדרך! 🏠</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
     w.querySelector(".go").onclick = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 220); };
-  };
-  setTimeout(go, 1200);
 }
 
 /* ================= usage counters (for the system admin) =================
