@@ -83,7 +83,8 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await R(() => JSON.parse(localStorage.getItem("nido.money")).ex.length === 0), "delete from the edit window (after confirming)");
 
   // ---- who sees it ----
-  ok(await R(() => { const r = USERS[me].role; USERS[me].role = "viewer"; const off = !moneyOn() && !tabsNow().some(t => t[0] === "money"); USERS[me].role = r; return off; }), "a view-only member (e.g. a child) has no הוצאות tab");
+  ok(await R(() => moneyOn() && USERS[me].role === "admin"), "the family admin sees הוצאות");
+  ok(await R(() => { const r = USERS[me].role; const out = ["editor", "viewer"].map(x => { USERS[me].role = x; return !moneyOn() && !tabsNow().some(t => t[0] === "money"); }); USERS[me].role = r; return out.every(Boolean); }), "an editor and a view-only member (e.g. a child) have no הוצאות tab");
   ok(errs.length === 0, `no page errors (${errs.join("; ") || "none"})`);
   await b.close(); console.log(`\n${f ? "✘ " + f + " FAILED" : "✔ all passed"} (${n} checks)`); process.exit(f ? 1 : 0);
 })();

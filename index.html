@@ -3491,11 +3491,12 @@ function completeTask(t){
      envs/{env}/expmonths/{YYYY-MM} running totals (total, n, cats{}, payers{}) kept with atomic increments
      envs/{env}/expmeta/settings   categories + the monthly budget (total + per category)
    Unlike tasks or shopping, expenses are NOT in COLS: the app never loads all of them — only the open month,
-   and only while the expenses screen is open. Shown to admins and editors only; in production only for a family
+   and only while the expenses screen is open. Shown to the family admin and the system admin only; in production only for a family
    whose admin switched it on (families/{fid}.features.expenses = true). */
 const EXP_CATS0 = [["food","סופר ומזון","🛒"],["bills","חשבונות","💡"],["car","רכב ודלק","⛽"],["fun","בילויים","🎈"],["home","לבית","🏠"],["clothes","ביגוד","👕"],["health","בריאות","💊"],["kids","ילדים","🧸"],["other","אחר","✨"]];
 const TOGETHER = "together";
-function moneyOn(){ return !!me && canEdit() && (!CLOUD || ENV === "test" || !!(FAM.features && FAM.features.expenses === true)); }
+/* who sees it: the family's admin and the system admin — not editors or view-only members */
+function moneyOn(){ return !!me && (roleOf() === "admin" || (CLOUD && Cloud.isSuper)) && (!CLOUD || ENV === "test" || !!(FAM.features && FAM.features.expenses === true)); }
 const nis = a => (a < 0 ? "−" : "") + "₪" + (Math.abs(a) / 100).toLocaleString("he-IL", { minimumFractionDigits: Math.abs(a) % 100 ? 2 : 0, maximumFractionDigits: 2 });
 const ilsR = a => "₪" + Math.round(a / 100).toLocaleString("he-IL");
 const monthOf = d => String(d).slice(0, 7);
