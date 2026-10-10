@@ -500,6 +500,22 @@ li+li .ev{border-top:1px solid var(--line)}
 .chip svg{width:16px;height:16px}
 .chip.on{color:var(--blue);border-color:var(--blue-deep)}
 .opt{margin-top:14px}
+.opt .lbl small{font-weight:400;color:var(--faint);font-size:11.5px}
+.tk-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.tk-it{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.tk-it > a,.tk-open{flex:1;min-width:0;display:flex;align-items:center;gap:9px;color:var(--text);text-decoration:none;border:0;background:none;padding:2px;font:inherit;text-align:start}
+.tk-it > a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--blue)}
+.tk-open img,.tk-doc{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:none}
+.tk-doc{display:grid;place-items:center;font-size:12px;font-weight:700;background:rgba(232,112,90,.16);color:#F3A493}
+.tk-open > span{display:flex;flex-direction:column;min-width:0}.tk-open b{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tk-open small{font-size:11.5px;color:var(--faint)}
+.tk-x{width:30px;height:30px;flex:none;border:0;border-radius:9px;background:none;color:var(--faint);display:grid;place-items:center}
+.tk-x svg{width:16px;height:16px}
+.tk-add{display:flex;gap:8px}.tk-add .input{flex:1}.tk-add .secondary{width:52px;height:52px;justify-content:center;padding:0}
+.tk-place{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tk-place .secondary{height:38px;font-size:13.5px}
+.tk-pick{cursor:pointer;width:100%;justify-content:center}
+.tk-wait{font-size:13px;color:var(--faint);margin:4px 2px}
+.meta .att svg{width:13px;height:13px}
 .sheet .actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
 .sheet .actions .primary{flex:1}
 .rate{display:flex;gap:4px}
@@ -1189,6 +1205,10 @@ html[data-skin="light"] :is(.if-link,.fb-text,.cp-codebox,.toggle-row,.ulist but
 html[data-skin="light"] .if-foot{background:linear-gradient(transparent,#FBF7F1 30%)}
 html[data-skin="light"] .pf-ava .cam{background:#fff;border-color:rgba(110,78,40,.2);color:#76604B}
 html[data-skin="light"] .swatches button.on{box-shadow:0 0 0 2px #FBF7F1,0 0 0 4px #B9843D}
+html[data-skin="light"] .tk-it{background:#fff;border-color:rgba(110,78,40,.15)}
+html[data-skin="light"] .nav .wz{background:rgba(20,130,190,.12);color:#11688F}
+html[data-skin="light"] .nav .gm{background:rgba(80,130,66,.13);color:#3F6E33}
+html[data-skin="light"] .tk-doc{background:rgba(181,69,47,.1);color:#9A3A26}
 html[data-skin="light"] .ro-pill{background:rgba(110,78,40,.08);border-color:rgba(110,78,40,.16);color:#76604B}
 html[data-skin="light"] .av i{border-color:#fff}
 html[data-skin="light"] .c-date{background:rgba(255,253,250,.9);border-color:rgba(110,78,40,.12)}
@@ -3282,6 +3302,9 @@ function taskRow(t){
   if (t.eventId){ const ev = DB.events.find(x => x.id===t.eventId); if (ev) meta.push(`<span class="from">${icon("cal")}${esc(ev.title)}</span>`); }
   if (t.date) meta.push(`<span>${icon("clock")}${dayLabel(t.date)}${t.time?" "+t.time:""}</span>`);
   if (t.repeat && t.repeat!=="none") meta.push(`<span>${icon("repeat")}${REPEAT[t.repeat]}</span>`);
+  if (t.place) meta.push(`<span class="att">${icon("pin")}${esc(isCoords(t.place) ? "מיקום" : t.place.length > 22 ? t.place.slice(0, 21) + "…" : t.place)}</span>`);
+  if (t.links?.length) meta.push(`<span class="att">${icon("link")}${t.links.length}</span>`);
+  if (t.fileCount) meta.push(`<span class="att">${icon("image")}${t.fileCount}</span>`);
   if (t.done) meta.push(`<span>הושלם ${dayLabel(iso(new Date(t.doneAt)))}${t.doneBy?" ע״י "+esc(USERS[t.doneBy]?.name||""):""}</span>`);
   return `<li><div class="task ${t.done?"done":""}" data-id="${t.id}">
     <button class="check ${t.done?"on":""}" data-act="toggle" aria-label="${t.done?"החזר לפעילות":"סמן כבוצע"}">${icon("tick")}</button>
@@ -3367,8 +3390,9 @@ function radios(name, opts, val){
 
 /* --- Task sheet --- */
 function taskSheet(t){
-  const edit = !!t; t = t || { title:"", assignee:null, date:"", time:"", repeat:"none" };
-  const has = { who:!!t.assignee, date:!!t.date, time:!!t.time, rep:t.repeat && t.repeat!=="none" };
+  const edit = !!t; t = t || { id:uid(), title:"", assignee:null, date:"", time:"", repeat:"none" };
+  const has = { who:!!t.assignee, date:!!t.date, time:!!t.time, rep:t.repeat && t.repeat!=="none", links:!!t.links?.length, place:!!t.place, files:!!t.fileCount };
+  let links = [...(t.links || [])], files = [], adds = [], dels = [];               // files: what is stored; adds/dels: applied on save
   const sh = openSheet(`${head(edit?"עריכת משימה":"משימה חדשה")}
     <form id="tf">
       <input class="input" name="title" placeholder="מה צריך לעשות?" value="${esc(t.title)}" autocomplete="off" required>
@@ -3377,6 +3401,9 @@ function taskSheet(t){
         <button type="button" class="chip ${has.date?"on":""}" data-r="date">${icon("cal")}תאריך</button>
         <button type="button" class="chip ${has.time?"on":""}" data-r="time">${icon("clock")}שעה</button>
         <button type="button" class="chip ${has.rep?"on":""}" data-r="rep">${icon("repeat")}חזרתיות</button>
+        <button type="button" class="chip ${has.links?"on":""}" data-r="links">${icon("link")}קישור</button>
+        <button type="button" class="chip ${has.place?"on":""}" data-r="place">${icon("pin")}מיקום</button>
+        <button type="button" class="chip ${has.files?"on":""}" data-r="files">${icon("image")}קבצים</button>
       </div>
       <div class="opt" data-f="who" ${has.who?"":"hidden"}><span class="lbl">אחראי</span>
         ${radios("assignee", [["","ללא"], ...people().map(k=>[k,USERS[k].name])], t.assignee||"")}</div>
@@ -3384,6 +3411,15 @@ function taskSheet(t){
       <div class="opt" data-f="time" ${has.time?"":"hidden"}><span class="lbl">שעה</span><input class="input" type="time" name="time" value="${t.time||""}"></div>
       <div class="opt" data-f="rep" ${has.rep?"":"hidden"}><span class="lbl">חזרתיות</span>
         ${radios("repeat", Object.entries(REPEAT), t.repeat||"none")}</div>
+      <div class="opt" data-f="links" ${has.links?"":"hidden"}><span class="lbl">קישורים</span>
+        <div class="tk-list" id="tkLinks"></div>
+        <div class="tk-add"><input class="input" id="tkUrl" type="url" inputmode="url" placeholder="הדבק קישור…" autocomplete="off" aria-label="קישור"><button type="button" class="secondary" id="tkUrlAdd">${icon("plus")}</button></div></div>
+      <div class="opt" data-f="place" ${has.place?"":"hidden"}><span class="lbl">מיקום</span>
+        <input class="input" name="place" value="${esc(t.place||"")}" placeholder="כתובת או שם מקום" autocomplete="off" aria-label="מיקום">
+        <div class="tk-place"><button type="button" class="secondary" id="tkHere">${icon("pin")}המיקום הנוכחי שלי</button><span id="tkNav">${t.place ? placeLinks(t.place) : ""}</span></div></div>
+      <div class="opt" data-f="files" ${has.files?"":"hidden"}><span class="lbl">קבצים <small>· תמונות, PDF ועוד · עד ${Photos.max()} · עד 650KB לקובץ (תמונות מוקטנות לבד)</small></span>
+        <div class="tk-list" id="tkFiles">${t.fileCount ? `<p class="tk-wait">טוען…</p>` : ""}</div>
+        <label class="secondary tk-pick">${icon("plus")}הוספת קובץ<input type="file" id="tkFile" multiple hidden></label></div>
       <div class="actions">
         ${edit?`<button type="button" class="danger" id="del">${icon("trash")}מחיקה</button>`:""}
         <button class="primary" type="submit">${edit?"שמירה":"הוספה"}</button>
@@ -3391,6 +3427,40 @@ function taskSheet(t){
     </form>`);
   const f = sh.querySelector("#tf");
   if (!edit) setTimeout(()=>f.title.focus(), 260);
+  /* links */
+  const drawLinks = () => { sh.querySelector("#tkLinks").innerHTML = links.map((u, k) => `<div class="tk-it"><a href="${esc(u)}" target="_blank" rel="noopener">${icon("link")}<span>${esc(hostOf(u))}</span></a><button type="button" class="tk-x" data-xl="${k}" aria-label="הסרת הקישור">${icon("close")}</button></div>`).join(""); };
+  const addLink = () => { const inp = sh.querySelector("#tkUrl"), u = normUrl(inp.value); if (!inp.value.trim()) return;
+    if (!u) return toast("זה לא נראה כמו קישור"); if (links.length >= 5) return toast("עד 5 קישורים למשימה"); if (!links.includes(u)) links.push(u); inp.value = ""; drawLinks(); };
+  sh.querySelector("#tkUrlAdd").onclick = addLink;
+  sh.querySelector("#tkUrl").onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); addLink(); } };
+  sh.querySelector("#tkLinks").onclick = e => { const x = e.target.closest("[data-xl]"); if (x){ links.splice(+x.dataset.xl, 1); drawLinks(); } };
+  drawLinks();
+  /* place */
+  const navNow = () => { const v = f.place.value.trim(); sh.querySelector("#tkNav").innerHTML = v ? placeLinks(v) : ""; };
+  f.place.oninput = navNow;
+  sh.querySelector("#tkHere").onclick = e => {
+    const b = e.currentTarget; if (!navigator.geolocation) return toast("המכשיר לא נותן מיקום");
+    busyBtn(b, true, "מאתר…");
+    navigator.geolocation.getCurrentPosition(pos => { f.place.value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`; navNow(); busyBtn(b, false); b.innerHTML = `${icon("pin")}המיקום הנוכחי שלי`; },
+      () => { busyBtn(b, false); b.innerHTML = `${icon("pin")}המיקום הנוכחי שלי`; toast("אין גישה למיקום — אפשר לכתוב כתובת"); }, { enableHighAccuracy:true, timeout:12000, maximumAge:60000 });
+  };
+  /* files (applied only when the task is saved) */
+  const shown = () => [...files.filter(p => !dels.includes(p)), ...adds];
+  const drawFiles = () => { sh.querySelector("#tkFiles").innerHTML = shown().map((p, k) => { const img = /^image\//.test(p.mime || "") || /^data:image/.test((p.img || p.data || "").slice(0, 11));
+      return `<div class="tk-it tk-file"><button type="button" class="tk-open" data-of="${k}">${img ? `<img src="${esc(p.img || p.data)}" alt="">` : `<span class="tk-doc">${/pdf/.test(p.mime || "") ? "PDF" : "📄"}</span>`}<span><b>${esc(p.name || "קובץ")}</b><small>${kb(p.size || 0)}${p.data ? " · יישמר בשמירה" : ""}</small></span></button><button type="button" class="tk-x" data-xf="${k}" aria-label="הסרת הקובץ">${icon("close")}</button></div>`; }).join(""); };
+  if (t.fileCount) TaskFiles.list(t).then(a => { files = a; if (sh.isConnected) drawFiles(); }).catch(e => { console.warn("[task files]", e); if (sh.isConnected) sh.querySelector("#tkFiles").innerHTML = `<p class="tk-wait">לא הצלחתי לטעון את הקבצים</p>`; });
+  sh.querySelector("#tkFile").onchange = async e => {
+    for (const file of [...e.target.files]){
+      if (shown().length >= Photos.max()){ toast(`אפשר עד ${Photos.max()} קבצים למשימה`); break; }
+      try { adds.push(await TaskFiles.prepare(file)); } catch(x){ toast(x && x.code === "big" ? `"${String(file.name).slice(0, 30)}" גדול מדי — עד 650KB לקובץ` : "לא הצלחתי לקרוא את הקובץ"); }
+    }
+    e.target.value = ""; drawFiles();
+  };
+  sh.querySelector("#tkFiles").onclick = e => {
+    const x = e.target.closest("[data-xf]"), o = e.target.closest("[data-of]"), list = shown();
+    if (x){ const p = list[+x.dataset.xf]; if (adds.includes(p)) adds.splice(adds.indexOf(p), 1); else dels.push(p); drawFiles(); }
+    else if (o){ const p = list[+o.dataset.of]; TaskFiles.open(p.data ? { img:p.data, mime:p.mime, name:p.name } : p); }
+  };
   sh.querySelectorAll("[data-r]").forEach(c => c.onclick = () => {
     const box = sh.querySelector(`[data-f="${c.dataset.r}"]`);
     box.hidden = !box.hidden; c.classList.toggle("on", !box.hidden);
@@ -3407,17 +3477,33 @@ function taskSheet(t){
       date: vis("date") ? (f.date.value || null) : null,
       time: vis("time") ? (f.time.value || null) : null,
       repeat: vis("rep") ? f.repeat.value : "none",
+      links: vis("links") ? links : [],
+      place: vis("place") ? f.place.value.trim().slice(0, 200) : "",
     };
+    if (vis("links") && sh.querySelector("#tkUrl").value.trim()){ const u = normUrl(sh.querySelector("#tkUrl").value); if (u && !data.links.includes(u) && data.links.length < 5) data.links = [...data.links, u]; }
+    if (!vis("files") && t.fileCount && !files.length) files = await TaskFiles.list(t).catch(() => []);   // removing all: make sure we know them
+    const fileOps = vis("files") ? { adds, dels } : { adds:[], dels:files };
     if (data.time && !data.date) data.date = iso(new Date());
     let tk = t;
+    if (fileOps.adds.length || fileOps.dels.length){
+      const sb = f.querySelector("[type=submit]"); busyBtn(sb, true, "שומר קבצים…");
+      try {
+        for (const p of fileOps.dels) await TaskFiles.remove(p);
+        const now = files.filter(p => !fileOps.dels.includes(p));
+        for (const a of fileOps.adds) await TaskFiles.add(t, now, a);
+        data.fileCount = now.length; data.fileOwner = TaskFiles.owner(t);
+      } catch(x){ busyBtn(sb, false, edit ? "שמירה" : "הוספה"); return toast(x && x.code === "limit" ? `אפשר עד ${Photos.max()} קבצים למשימה` : errText(x)); }
+    } else if (!vis("files")) data.fileCount = 0;
     if (edit) Object.assign(t, data);
-    else { tk = { id:uid(), ...data, done:false, buy: buy || false, created:Date.now() }; DB.tasks.push(tk); }
+    else { tk = { id:t.id, ...data, done:false, buy: buy || false, created:Date.now() }; DB.tasks.push(tk); }
     if (tk.buy) syncBuy(tk);
     save(); closeSheet(); S.taskView="active"; render();
     toast(edit ? "נשמר" : buy ? `המשימה נוספה · ונכנסה לרשימת ${buy==="home"?"לבית":"הסופר"} 🛒` : "המשימה נוספה");
   };
   if (edit) sh.querySelector("#del").onclick = () => {
     DB.tasks = DB.tasks.filter(x=>x.id!==t.id); save(); closeSheet(); render(); toast("המשימה נמחקה");
+    if (t.fileCount && !DB.tasks.some(x => TaskFiles.owner(x) === TaskFiles.owner(t) && x.fileCount))      // a repeat's other copy may still use them
+      TaskFiles.list(t).then(a => Promise.all(a.map(p => TaskFiles.remove(p)))).catch(e => console.warn("[task files]", e));
   };
 }
 
@@ -4277,6 +4363,63 @@ const Photos = {
     delete this.cache[i.id];
   },
 };
+/* ================= a task's attachments: links, a place, files =================
+   Files live in the same free place as idea photos (envs/{env}/photos, one document each, ≤ 900 KB as text →
+   a file of about 650 KB). Never Firebase Storage (paid). The documents are keyed by the task's "file owner":
+   a repeating task's next copy shares its files. */
+const TaskFiles = {
+  MAX_CHARS: 880000,
+  owner: t => t.fileOwner || t.id,
+  async list(t){
+    if (!t.fileCount) return [];
+    const o = this.owner(t); let arr = [];
+    if (CLOUD){ const F = Cloud.fb; const qs = await F.getDocs(F.query(Photos.col(), F.where("ideaId", "==", o))); arr = qs.docs.map(d => ({ id:d.id, ...d.data() })); }
+    else arr = Photos.local().filter(p => p.ideaId === o);
+    return arr.sort((a, b) => a.seq - b.seq);
+  },
+  async add(t, existing, f){
+    let seq = 1; while (existing.some(p => p.seq === seq)) seq++;
+    if (seq > Photos.max()) throw { code:"limit" };
+    const o = this.owner(t), id = `${o}_${seq}`, doc = { ideaId:o, seq, img:f.data, name:f.name, mime:f.mime, size:f.size, task:true, by:me, at:Date.now() };
+    if (CLOUD) await Cloud.fb.setDoc(Cloud.fb.doc(Photos.col(), id), doc);
+    else { const all = Photos.local(); all.push({ id, ...doc }); Photos.saveLocal(all); }
+    existing.push({ id, ...doc });
+  },
+  async remove(p){
+    if (CLOUD) await Cloud.fb.deleteDoc(Cloud.fb.doc(Photos.col(), p.id));
+    else Photos.saveLocal(Photos.local().filter(x => x.id !== p.id));
+  },
+  /* a picked file → { data, name, mime, size } small enough to store; photos are shrunk, other files must already be small */
+  async prepare(file){
+    const name = String(file.name || "קובץ").slice(0, 80);
+    if (/^image\//.test(file.type) && !/gif|svg/.test(file.type)){
+      const src = await readFile(file);
+      for (const [side, q] of [[1600, .8], [1280, .72], [1000, .65]]){ const d = await shrinkData(src, side, q); if (d.length < this.MAX_CHARS) return { data:d, name:name.replace(/\.[a-z0-9]+$/i, "") + ".jpg", mime:"image/jpeg", size:Math.round(d.length * .75) }; }
+      throw { code:"big" };
+    }
+    if (file.size > this.MAX_CHARS * .74) throw { code:"big" };
+    const d = await readFile(file); if (d.length >= this.MAX_CHARS) throw { code:"big" };
+    return { data:d, name, mime:file.type || "application/octet-stream", size:file.size };
+  },
+  open(p){
+    try {
+      const [h, b64] = p.img.split(","), mime = (h.match(/data:([^;]+)/) || [])[1] || p.mime || "application/octet-stream";
+      const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([u8], { type:mime })), a = document.createElement("a");
+      a.href = url; a.target = "_blank"; a.rel = "noopener"; if (!/^image\/|pdf/.test(mime)) a.download = p.name || "file";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60e3);
+    } catch(e){ toast("לא הצלחתי לפתוח את הקובץ"); }
+  },
+};
+const kb = n => n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`;
+const isCoords = s => /^\s*-?\d{1,2}\.\d+\s*,\s*-?\d{1,3}\.\d+\s*$/.test(s || "");
+const placeLinks = place => isCoords(place)
+  ? `<span class="nav"><a class="wz" href="https://waze.com/ul?ll=${encodeURIComponent(place.replace(/\s/g, ""))}&navigate=yes" target="_blank" rel="noopener">Waze</a><a class="gm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.replace(/\s/g, ""))}" target="_blank" rel="noopener">מפות</a></span>`
+  : navLinks(place);
+const normUrl = u => { u = String(u || "").trim(); if (!u || /\s/.test(u)) return ""; if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = "https://" + u;
+  try { const x = new URL(u); return /^https?:$/.test(x.protocol) && /^[^.%]+(\.[^.%]+)+$/.test(x.hostname) ? x.href : ""; } catch(e){ return ""; } };
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch(e){ return u; } };
+
 /* a picture → JPEG of at most `side` pixels */
 function shrinkData(src, side, q = .72){
   return new Promise((ok, bad) => { const im = new Image(); im.onload = () => {
