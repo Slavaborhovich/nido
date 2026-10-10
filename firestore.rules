@@ -60,13 +60,13 @@ service cloud.firestore {
     // old location of our data (before families) — read-only backup, used once for the move
     match /envs/{env}/{col}/{id} {
       allow read:  if inFamily('home');
-      allow write: if false;
+      allow write: if canEditIn('home');      // TRANSITION: old app versions still write here — remove (back to `if false`) once every device runs the new version
     }
 
     // people
     match /users/{uid} {
       allow get:  if boot() || (signedIn() && request.auth.uid == uid) || (member() && resource.data.get('family', 'home') == myFamily());
-      allow list: if boot() || (member() && resource.data.family == myFamily());
+      allow list: if boot() || (member() && (myFamily() == 'home' || resource.data.family == myFamily()));   // TRANSITION: remove the 'home' part together with the one above
       // the system admin: anything
       allow create, update, delete: if boot();
       // a family admin: only regular people in their own family — never other admins, the note limit, or another family
