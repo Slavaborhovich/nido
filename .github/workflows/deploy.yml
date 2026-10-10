@@ -61,7 +61,7 @@ jobs:
       # Needs the GitHub secret NIDO_ANNOUNCE_KEY (the same value as the Cloudflare secret ANNOUNCE_KEY). Without it: skipped.
       # Free: GitHub Actions on a public repo + one call to the free Cloudflare worker.
       - name: Announce the new version (push)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_name == 'main'   # prod only — test pushes never announce
         continue-on-error: true
         env:
           KEY: ${{ secrets.NIDO_ANNOUNCE_KEY }}
