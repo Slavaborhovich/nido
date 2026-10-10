@@ -42,7 +42,33 @@ let f = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m
   await p.evaluate(() => closeSheet()); await p.clock.runFor(500);
   await p.evaluate(() => go("today"));
   await swipe(null, 100, 300);
-  ok(await p.evaluate(() => document.getElementById("screen").classList.contains("sw-l")), "a short slide animation plays");
+  ok(await p.evaluate(() => !!document.querySelector(".sw-ghost")), "the old screen slides out while the new one slides in");
+  await p.clock.runFor(600);
+  ok(await p.evaluate(() => !document.querySelector(".sw-ghost") && !document.getElementById("screen").style.transform), "…and the animation cleans up after itself");
+
+  // finger-following drag: start, move step by step, check mid-drag, then release
+  const drag = (x0, xs, release = true) => p.evaluate(async ([x0, xs, release]) => {
+    const el = document.elementFromPoint(x0, 400), mk = x => new Touch({ identifier: 1, target: el, clientX: x, clientY: 400 });
+    el.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, cancelable: true, touches: [mk(x0)], changedTouches: [mk(x0)] }));
+    let mid = null;
+    for (const x of xs) { el.dispatchEvent(new TouchEvent("touchmove", { bubbles: true, cancelable: true, touches: [mk(x)], changedTouches: [mk(x)] })); }
+    const sc = document.getElementById("screen"); mid = { tr: sc.style.transform, op: sc.style.opacity };
+    if (release) el.dispatchEvent(new TouchEvent("touchend", { bubbles: true, cancelable: true, touches: [], changedTouches: [mk(xs.at(-1))] }));
+    return { mid, tab: S.tab };
+  }, [x0, xs, release]);
+  await p.evaluate(() => go("today"));
+  let d = await drag(100, [115, 140, 160], false);
+  ok(/translateX\(60px\)/.test(d.mid.tr) && +d.mid.op < 1, `while dragging, the screen follows the finger (${d.mid.tr}, opacity ${d.mid.op})`);
+  d = await drag(100, [115, 140, 160]); await p.clock.runFor(500);
+  ok(d.tab === "today" && !(await p.evaluate(() => document.getElementById("screen").style.transform)), "a short drag released → springs back to its place");
+  d = await drag(300, [285, 250, 200], false);
+  ok(/translateX\(-22px\)/.test(d.mid.tr), `no screen that way → only a small rubber-band pull (${d.mid.tr})`);
+  await p.evaluate(() => document.getElementById("app").dispatchEvent(new TouchEvent("touchcancel", { bubbles: true, touches: [], changedTouches: [new Touch({ identifier: 1, target: document.body, clientX: 200, clientY: 400 })] })));
+  await p.clock.runFor(500);
+  d = await drag(80, [100, 160, 240, 330]);
+  ok(d.tab === "tasks", "a long drag released → moves to the next screen");
+  await p.clock.runFor(600);
+  ok(await p.evaluate(() => !document.querySelector(".sw-ghost") && !document.getElementById("screen").style.transform && document.getElementById("screen").style.opacity === ""), "…and ends cleanly in place");
   ok(errs.length === 0, `no errors (${errs.join("; ") || "none"})`);
   await b.close(); console.log(f ? `✘ ${f} FAILED` : "✔ all passed"); process.exit(f ? 1 : 0);
 })();

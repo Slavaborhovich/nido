@@ -1191,11 +1191,10 @@ html[data-skin="light"] .fb-pills button.no.on{background:rgba(181,69,47,.1);bor
 .skin-card .ok svg{width:15px;height:15px}
 
 /* swipe between screens: a short slide-in from the side the user came from */
-@keyframes nidoSwL{from{opacity:.25;transform:translateX(-28px)}to{opacity:1;transform:none}}
-@keyframes nidoSwR{from{opacity:.25;transform:translateX(28px)}to{opacity:1;transform:none}}
-#screen.sw-l{animation:nidoSwL .24s cubic-bezier(.22,1,.36,1)}
-#screen.sw-r{animation:nidoSwR .24s cubic-bezier(.22,1,.36,1)}
-@media (prefers-reduced-motion:reduce){#screen.sw-l,#screen.sw-r{animation:none}}
+/* swipe between screens: the screen follows the finger; the old one slides out while the next slides in */
+.sw-ghost{position:fixed;margin:0!important;pointer-events:none;will-change:transform,opacity}
+#screen.sw-drag{will-change:transform,opacity}
+#screen.sw-drag .fab,.sw-ghost .fab{visibility:hidden}               /* a fixed button would ride along inside the moving screen */
 </style>
 </head>
 <body>
@@ -2932,29 +2931,55 @@ $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-ta
 function go(tab, fromBack){ if (!fromBack && S.tab !== tab){ Back.prev.push(S.tab); if (Back.prev.length > 20) Back.prev.shift(); } S.tab = tab; if (tab!=="shop"){ S.take=false; } render(); window.scrollTo(0,0); }
 /* swipe between the main screens — Hebrew order: swipe right → next screen (the one to the left in the bar), left → back.
    Never from inside text fields, sideways-scrolling strips, open windows, or the screen edges (Android's back gesture). */
-function slideTo(tab, dir){
-  go(tab);
-  const sc = document.getElementById("screen"); if (!sc) return;
-  sc.classList.remove("sw-l", "sw-r"); void sc.offsetWidth; sc.classList.add(dir > 0 ? "sw-l" : "sw-r");
+const SW = { ms: 360, ease: "cubic-bezier(.2,.8,.2,1)" };
+function slideTo(tab, dir, fromX = 0){
+  const sc = document.getElementById("screen");
+  if (!sc || matchMedia("(prefers-reduced-motion: reduce)").matches){ if (sc){ sc.style.transform = sc.style.opacity = sc.style.transition = ""; } go(tab); return; }
+  document.querySelectorAll(".sw-ghost").forEach(g => g.remove());
+  const W = innerWidth, r = sc.getBoundingClientRect();
+  const g = sc.cloneNode(true); g.removeAttribute("id"); g.classList.remove("sw-drag"); g.classList.add("sw-ghost"); g.setAttribute("aria-hidden", "true"); g.inert = true;
+  Object.assign(g.style, { top: r.top + "px", left: (r.left - fromX) + "px",   // r already includes the finger's offset width: r.width + "px", transition: "none",
+                           transform: `translateX(${fromX}px)`, opacity: sc.style.opacity || "1" });
+  sc.after(g);
+  sc.style.transition = "none"; go(tab); sc.classList.add("sw-drag");      // the new screen is drawn now (S.tab changes at once)
+  sc.style.transform = `translateX(${-dir * W * 0.3}px)`; sc.style.opacity = "0"; void sc.offsetWidth;
+  sc.style.transition = `transform ${SW.ms}ms ${SW.ease}, opacity ${SW.ms * .8}ms ease`; sc.style.transform = ""; sc.style.opacity = "";
+  g.style.transition = `transform ${SW.ms}ms ${SW.ease}, opacity ${SW.ms * .7}ms ease`; g.style.transform = `translateX(${dir * W * .9}px)`; g.style.opacity = "0";
+  clearTimeout(slideTo.t); slideTo.t = setTimeout(() => { g.remove(); sc.style.transition = ""; sc.classList.remove("sw-drag"); }, SW.ms + 80);
 }
 (() => {
   const app = document.getElementById("app"); if (!app) return;
-  let sx = 0, sy = 0, t0 = 0, armed = false;
+  let sx = 0, sy = 0, t0 = 0, armed = false, mode = "", lastX = 0;
+  const sc = () => document.getElementById("screen");
   const sideways = el => { for (let e = el; e && e !== app; e = e.parentElement) if (e.scrollWidth > e.clientWidth + 4 && /(auto|scroll)/.test(getComputedStyle(e).overflowX)) return true; return false; };
-  const blocked = el => !!el.closest("input,textarea,select,[contenteditable],nav.tabs,[data-noswipe]") || sideways(el);
+  const blocked = el => !!el.closest("input,textarea,select,[contenteditable],nav.tabs,[data-noswipe],.sw-ghost") || sideways(el);
+  const target = dx => { const order = TABS.map(x => x[0]), k = order.indexOf(S.tab) + (dx > 0 ? 1 : -1); return k >= 0 && k < order.length ? order[k] : null; };
+  const offset = dx => target(dx) ? dx : dx * .22;                         // no screen that way → a short rubber-band pull
+  const back = () => { const s = sc(); if (!s) return; s.style.transition = `transform 300ms ${SW.ease}, opacity 300ms ease`; s.style.transform = ""; s.style.opacity = "";
+                       setTimeout(() => { if (!s.style.transform){ s.style.transition = ""; s.classList.remove("sw-drag"); } }, 340); };
   app.addEventListener("touchstart", e => {
-    armed = false;
+    armed = false; mode = "";
     if (!me || e.touches.length !== 1 || uiBusy() || !$("#admin").hidden) return;
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; t0 = Date.now();
+    const t = e.touches[0]; sx = lastX = t.clientX; sy = t.clientY; t0 = Date.now();
     armed = sx > 24 && sx < innerWidth - 24 && !blocked(e.target);
   }, { passive:true });
-  app.addEventListener("touchend", e => {
+  app.addEventListener("touchmove", e => {
+    if (!armed || e.touches.length !== 1) return;
+    const t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy; lastX = t.clientX;
+    if (!mode){ if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y"; if (mode === "y"){ armed = false; return; } }
+    e.preventDefault();                                                     // sideways: don't scroll the page meanwhile
+    const s = sc(); if (!s) return; const x = offset(dx);
+    s.classList.add("sw-drag"); s.style.transition = "none"; s.style.transform = `translateX(${x}px)`; s.style.opacity = String(1 - Math.min(Math.abs(x) / innerWidth, 1) * .45);
+  }, { passive:false });
+  const end = e => {
     if (!armed) return; armed = false;
-    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Date.now() - t0 > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
-    const order = TABS.map(x => x[0]), k = order.indexOf(S.tab) + (dx > 0 ? 1 : -1);
-    if (k >= 0 && k < order.length) slideTo(order[k], dx > 0 ? 1 : -1);
-  }, { passive:true });
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy, dt = Date.now() - t0, to = target(dx);
+    const go2 = to && Math.abs(dx) >= 70 && Math.abs(dx) >= Math.abs(dy) * 1.8 && (dt <= 700 || Math.abs(dx) > innerWidth * .35);
+    if (go2 && e.type === "touchend") slideTo(to, dx > 0 ? 1 : -1, mode === "x" ? offset(dx) : 0);
+    else if (mode === "x") back();
+  };
+  app.addEventListener("touchend", end, { passive:true });
+  app.addEventListener("touchcancel", end, { passive:true });
 })();
 
 /* ================= the phone's back button =================
