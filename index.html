@@ -220,9 +220,11 @@ li+li .up{border-top:1px solid var(--line)}
   background:radial-gradient(circle,rgba(242,182,107,.24) 0%,rgba(217,154,85,.08) 38%,transparent 66%);opacity:0}
 #splash .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:10vh}
 #splash .nest{position:relative;width:140px;height:128px;transform-origin:50% 85%}
-#splash .nest img{position:absolute;left:0;top:0;width:140px;height:auto;display:block;
-  filter:sepia(1) saturate(2.3) hue-rotate(-12deg) brightness(1.06) drop-shadow(0 8px 26px rgba(200,120,40,.42))}
-#splash .nest .ghost{opacity:.13;filter:sepia(1) saturate(2) hue-rotate(-12deg) brightness(1.1)}
+#splash .nest img{position:absolute;left:0;top:0;width:140px;height:auto;display:block;filter:url(#nestCut) sepia(1) saturate(2.3) hue-rotate(-12deg) brightness(1.06)}
+/* the glow is its own soft layer behind the nest (a glow on the image itself would be cut square by the build-up mask) */
+#splash .nest::before{content:"";position:absolute;left:50%;top:58%;width:210px;height:170px;margin:-85px 0 0 -105px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(226,150,66,.30),rgba(226,150,66,.10) 55%,transparent);filter:blur(6px);pointer-events:none}
+#splash .nest .ghost{opacity:.13;filter:url(#nestCut) sepia(1) saturate(2) hue-rotate(-12deg) brightness(1.1)}
 #splash .nest .real{clip-path:inset(100% 0 0 0)}
 #splash .fx{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 #splash .fx i{position:absolute;left:0;top:0;font-style:normal;font-size:15px;color:var(--sp-gold);opacity:0;text-shadow:0 0 10px rgba(242,182,107,.6)}
@@ -243,7 +245,8 @@ html[data-skin="light"] #splash .bg{background:radial-gradient(75% 48% at 50% 40
 html[data-skin="light"] #splash .bg2{background:#F6EFE5}
 html[data-skin="light"] #splash .halo{background:radial-gradient(circle,rgba(233,178,113,.32) 0%,rgba(217,154,85,.1) 40%,transparent 66%)}
 /* the logo's faint built-in glow (invisible on dark) is cut away on cream, and it turns golden brown */
-html[data-skin="light"] #splash .nest img{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg) drop-shadow(0 6px 14px rgba(150,98,40,.18))}
+html[data-skin="light"] #splash .nest img{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg)}
+html[data-skin="light"] #splash .nest::before{background:radial-gradient(closest-side,rgba(214,150,80,.20),rgba(214,150,80,.06) 55%,transparent)}
 html[data-skin="light"] #splash .nest .ghost{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg)}
 html[data-skin="light"] #splash .bar{background:rgba(110,78,40,.13)}
 html[data-skin="light"] #splash .fx i{text-shadow:none}
@@ -5291,10 +5294,12 @@ function playSplash(onCovered){
   const d0 = cold ? 80 : 380;
   A($s(".halo"), [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"scale(1)"}], { duration:2200, delay:d0, easing:EZ });
   if (reduce){
-    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
+    const b0 = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
+    if (b0) b0.onfinish = () => { real.style.clipPath = "none"; b0.cancel(); };
     [".motto", "h1", ".load", ".studio"].forEach(q => A($s(q), [{opacity:0},{opacity:1}], { duration:400, delay:d0 + 200 }));
   } else {
-    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:1050, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
+    const build = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:1050, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
+    if (build) build.onfinish = () => { real.style.clipPath = "none"; build.cancel(); };      // fully built → no mask left at all
     A(nest, [{transform:"scale(.92) translateY(8px)", opacity:.4},{transform:"none", opacity:1}], { duration:900, delay:d0, easing:EZ });
     later(() => A(nest, [{transform:"none"},{transform:"scale(1.07,.92)", offset:.35},{transform:"scale(.97,1.04) translateY(-3px)", offset:.7},{transform:"none"}], { duration:420, easing:"ease-out", fill:"none" }), d0 + 1050);
     A($s("h1"), [{opacity:0, transform:"translateY(12px)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 650, easing:EZ });
