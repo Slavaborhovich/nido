@@ -2885,12 +2885,12 @@ const Admin = {
     });
     q("[data-jump]")?.addEventListener("click", () => { const d = el.querySelector("#adm-dormant"); d?.querySelector("details")?.setAttribute("open", ""); d?.scrollIntoView({ behavior:"smooth", block:"start" }); });
     q("[data-delfam]")?.addEventListener("click", async e => {
-      const fid = S.adminFam, x = this.info(fid);
+      const b = e.currentTarget, fid = S.adminFam, x = this.info(fid);     // read the button now: after an await e.currentTarget is null
       if (!await askConfirm(`למחוק את ${famName(fid)}?`, `${x.people.length} משתמשים${x.sized ? `, ${x.items} פריטים (${fmtSize(x.bytes)})` : ""} יימחקו לצמיתות.`, "המשך")) return;
       if (!await askConfirm("בטוח לגמרי?", "אין דרך לשחזר את המשפחה או את התוכן שלה אחרי המחיקה.", "מחיקה לצמיתות")) return;
-      const b = e.currentTarget; busyBtn(b, true, "מוחק…");
+      const label = b.innerHTML; busyBtn(b, true, "מוחק…");
       try { const n = await Cloud.deleteFamily(fid); S.adminFam = null; toast(`המשפחה נמחקה (${n} רשומות)`); this.render(); }
-      catch(x){ busyBtn(b, false); toast(errText(x)); }
+      catch(x){ busyBtn(b, false); b.innerHTML = label; toast(errText(x)); }
     });
     q("[data-send]")?.addEventListener("click", async e => {
       const title = q("[data-title]").value.trim(), text = q("[data-text]").value.trim(), target = q("[data-target]").value;
