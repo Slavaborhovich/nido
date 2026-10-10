@@ -2366,14 +2366,26 @@ const Notes = {
     this.markSent(); Stats.record({ notes: 1 }, 1);
     if (CLOUD) Notify.send(toKeys, "note");                     // generic "פתק חדש על המקרר" — the note itself stays in the app
   },
+  /* notes are not kept: once every recipient has read a note it is deleted everywhere */
+  allRead: (n, extra) => (n.to || []).every(u => u === extra || (n.readBy && n.readBy[u])),
   async ack(n){
     if (CLOUD){
-      const F = Cloud.fb;
-      try { await F.updateDoc(F.doc(Cloud.db, "families", Cloud.fam, "notes", n.id), { [`readBy.${Cloud.user.uid}`]: Date.now() }); } catch(e){ console.warn("[note]", e); }
+      const F = Cloud.fb, ref = F.doc(Cloud.db, "families", Cloud.fam, "notes", n.id), uid = Cloud.user.uid;
+      try { await F.updateDoc(ref, { [`readBy.${uid}`]: Date.now() }); } catch(e){ console.warn("[note]", e); }
+      if (this.allRead(n, uid)) try { await F.deleteDoc(ref); } catch(e){ console.warn("[note] delete", e); }   // the last reader removes it
     } else {
-      const all = JSON.parse(localStorage.getItem("nido.notes") || "[]");
+      let all = JSON.parse(localStorage.getItem("nido.notes") || "[]");
       const x = all.find(y => y.id === n.id); if (x){ x.readBy = x.readBy || {}; x.readBy[me] = Date.now(); }
+      all = all.filter(y => !this.allRead(y));
       localStorage.setItem("nido.notes", JSON.stringify(all));
+    }
+  },
+  /* sweep: notes everyone read (e.g. two people read at once, or from before this rule) and my own unread notes older than 30 days */
+  async sweep(docs){
+    const F = Cloud.fb, uid = Cloud.user.uid, old = iso(new Date(Date.now() - 30 * 864e5));
+    for (const d of docs){
+      const n = d.data(); if (!(this.allRead(n) || (n.from === uid && n.day < old))) continue;
+      try { await F.deleteDoc(d.ref); } catch(e){ return; }                // rule not published yet → try again next time
     }
   },
   /* ---- incoming ---- */
@@ -2386,7 +2398,10 @@ const Notes = {
       this.unsub = F.onSnapshot(q, qs => {
         const fresh = qs.docs.map(d => ({ id: d.id, ...d.data() })).filter(n => n.env === ENV && !(n.readBy && n.readBy[uid]));
         this.offer(fresh);
+        this.sweep(qs.docs.filter(d => this.allRead(d.data())));
       }, e => console.warn("[notes]", e));
+      if (!this._swept){ this._swept = true;                               // once per session: my own notes nobody will read
+        F.getDocs(F.query(F.collection(Cloud.db, "families", Cloud.fam, "notes"), F.where("from", "==", uid))).then(qs => this.sweep(qs.docs)).catch(e => console.warn("[notes] sweep", e)); }
     } else {
       const all = JSON.parse(localStorage.getItem("nido.notes") || "[]");
       this.offer(all.filter(n => n.to.includes(me) && !(n.readBy && n.readBy[me])));

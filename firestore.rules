@@ -35,7 +35,7 @@ service cloud.firestore {
       // "פתק על המקרר": only sender + recipients see it; id = env_day_sender[_n] → up to each person's noteLimit (set by the admin) per day
       match /notes/{id} {
         allow get:    if inFamily(fid) && (resource == null || request.auth.uid in resource.data.to || resource.data.from == request.auth.uid);
-        allow list:   if inFamily(fid) && request.auth.uid in resource.data.to;
+        allow list:   if inFamily(fid) && (request.auth.uid in resource.data.to || resource.data.from == request.auth.uid);
         allow create: if inFamily(fid) && request.resource.data.from == request.auth.uid
                          && request.resource.data.env in ['prod', 'test']
                          && ((request.resource.data.get('seq', 1) == 1 && id == request.resource.data.env + '_' + request.resource.data.day + '_' + request.auth.uid)
@@ -47,6 +47,9 @@ service cloud.firestore {
         allow update: if inFamily(fid) && request.auth.uid in resource.data.to
                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
                          && request.resource.data.readBy.diff(resource.data.readBy).affectedKeys().hasOnly([request.auth.uid]);
+        // notes are not kept: once every recipient has read it, any of them deletes it; the sender may delete their own
+        allow delete: if inFamily(fid) && (resource.data.from == request.auth.uid
+                         || (request.auth.uid in resource.data.to && resource.data.readBy.keys().hasAll(resource.data.to)));
       }
       // the system admin may wipe a whole family (deleting needs to list what's there)
       match /{rest=**} {
