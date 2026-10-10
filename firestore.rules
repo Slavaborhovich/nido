@@ -81,7 +81,8 @@ service cloud.firestore {
       allow delete: if isFamAdmin(resource.data.get('family', 'home')) && resource.data.get('role', 'editor') != 'admin';
       // everyone: their own name, colour, photo, settings
       allow update: if member() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif', 'lastSeen', 'build', 'lastAct', 'act']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'color', 'photo', 'notif', 'lastSeen', 'build', 'lastAct', 'act', 'skin'])
+        && (!('skin' in request.resource.data) || (request.resource.data.skin is string && request.resource.data.skin.size() <= 20));   // personal look (Nido Home / Light…)
     }
 
     // usage counters per family (numbers and dates only) — written by its members, read by the system admin
