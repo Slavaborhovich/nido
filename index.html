@@ -1005,18 +1005,24 @@ body.admin-open .note-fab{display:none}
 .dv-it .tg span{font-size:10.5px;padding:2px 8px;border-radius:99px}
 .k-feature{background:rgba(127,176,255,.14);color:#A9C8FF}.k-improve{background:rgba(143,211,168,.14);color:#9FD9B3}.k-bug{background:rgba(232,112,90,.16);color:#F3A493}.k-v{background:rgba(195,177,255,.16);color:#CDBEFF}
 .p-high{background:rgba(232,112,90,.14);color:#F3A493}.p-mid{background:rgba(232,196,106,.14);color:#E8C46A}.p-low{background:rgba(255,226,190,.08);color:#B9A48E}
-.st-idea{--c:#B9A48E}.st-spec{--c:#C3B1FF}.st-plan{--c:#E8C46A}.st-dev{--c:#7FB0FF}.st-test{--c:#F2A65A}.st-prod{--c:#8FD3A8}
-.dv-pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:0 0 6px}
+.st-idea{--c:#B9A48E}.st-spec{--c:#C3B1FF}.st-plan{--c:#E8C46A}.st-dev{--c:#7FB0FF}.st-test{--c:#F2A65A}.st-prod{--c:#E58FC0}
+.st-done{--c:#8FD3A8}
+.dv-pipe{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:0 0 6px}
+.dv-pipe .st-done{background:rgba(143,211,168,.1)}
 .dv-pipe div{border-radius:12px;padding:7px 2px 6px;text-align:center;background:rgba(255,226,190,.05);border-bottom:2px solid var(--c)}
-.dv-pipe b{display:block;font-size:17px;font-weight:600;color:var(--c);line-height:1.2}.dv-pipe small{font-size:10.5px;color:#B9A48E}
+.dv-pipe b{display:block;font-size:17px;font-weight:600;color:var(--c);line-height:1.2}.dv-pipe small{font-size:10px;color:#B9A48E;white-space:nowrap}
 .dv-sec{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--c);margin:16px 2px 8px}.dv-sec i{font-style:normal;color:#93806C;font-weight:400}
 .dv-it{align-items:center}
 .dv-side{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:none}
 .dv-bar{display:flex;gap:2px;width:66px;direction:rtl}.dv-bar i{flex:1;height:5px;border-radius:3px;background:rgba(255,226,190,.12)}.dv-bar i.on{background:var(--c)}
 .dv-nx{border:0;border-radius:99px;padding:3px 10px;font:inherit;font-size:11.5px;background:rgba(242,182,107,.12);color:#F2C48A;white-space:nowrap}
-.dv-ver{font-size:10.5px;padding:2px 8px;border-radius:99px;background:rgba(143,211,168,.14);color:#8FD3A8}
+.dv-ver{font-size:10.5px;padding:2px 8px;border-radius:99px;background:rgba(229,143,192,.14);color:#EBA6CF}
+.dv-done{font-size:10.5px;padding:2px 8px;border-radius:99px;background:rgba(143,211,168,.14);color:#8FD3A8}
+.dv-st{font-size:10.5px;padding:2px 8px;border-radius:99px;background:rgba(255,226,190,.08);color:#B9A48E}
+.dv-close{background:rgba(143,211,168,.16);color:#8FD3A8}
+.dv-it.closed .dv-bar i.on{background:#8FD3A8}
 .dv-fold{display:flex;justify-content:space-between;width:100%;margin:16px 0 8px;padding:11px 12px;border-radius:14px;border:1px dashed rgba(143,211,168,.35);background:none;color:#8FD3A8;font:inherit;font-size:13px}
-.dv-prod .dv-it{opacity:.75}
+.dv-prod .dv-it{opacity:.72}
 .adm-swatches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 10px}
 .adm-swatches .sw{position:relative;width:38px;height:38px;border-radius:50%;border:2px solid transparent;padding:0;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .adm-swatches .sw.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
@@ -1222,12 +1228,16 @@ html[data-skin="light"] .hh-svc b.hi,html[data-skin="light"] .pn-sync.bad{color:
 html[data-skin="light"] .hh-ph-t{color:#8A6212}
 html[data-skin="light"] .adm-swatches .sw.on{border-color:#2A1D12;box-shadow:0 0 0 3px rgba(110,78,40,.18)}
 html[data-skin="light"] .st-idea{--c:#8A735C}html[data-skin="light"] .st-spec{--c:#6B54C0}html[data-skin="light"] .st-plan{--c:#9A7412}
-html[data-skin="light"] .st-dev{--c:#2F64C0}html[data-skin="light"] .st-test{--c:#B8661E}html[data-skin="light"] .st-prod{--c:#3F7E3A}
+html[data-skin="light"] .st-dev{--c:#2F64C0}html[data-skin="light"] .st-test{--c:#B8661E}html[data-skin="light"] .st-prod{--c:#A8387A}html[data-skin="light"] .st-done{--c:#3F7E3A}
 html[data-skin="light"] .dv-pipe div{background:#fff;box-shadow:0 3px 10px rgba(92,60,26,.06)}
 html[data-skin="light"] .dv-pipe small{color:#76604B}
 html[data-skin="light"] .dv-bar i{background:rgba(110,78,40,.12)}html[data-skin="light"] .dv-bar i.on{background:var(--c)}
 html[data-skin="light"] .dv-nx{background:rgba(207,157,87,.18);color:#8C5E22}
-html[data-skin="light"] .dv-ver{background:rgba(80,130,66,.14);color:#3F6E33}
+html[data-skin="light"] .dv-ver{background:rgba(168,56,122,.1);color:#8E2F67}
+html[data-skin="light"] :is(.dv-done,.dv-close){background:rgba(80,130,66,.14);color:#3F6E33}
+html[data-skin="light"] .dv-st{background:rgba(110,78,40,.08);color:#76604B}
+html[data-skin="light"] .dv-it.closed .dv-bar i.on{background:#3F7E3A}
+html[data-skin="light"] .dv-pipe .st-done{background:rgba(80,130,66,.08)}
 html[data-skin="light"] .dv-fold{color:#3F7E3A;border-color:rgba(63,126,58,.4)}
 html[data-skin="light"] .dv-add .pl{background:rgba(207,157,87,.2);color:#8C5E22}
 /* small coloured labels: same hues, darker text so they read on white */
@@ -2570,9 +2580,11 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && Sta
 const DEV_KINDS = { feature:["💡","פיצ'ר","rgba(127,176,255,.14)"], improve:["✨","שיפור","rgba(143,211,168,.14)"], bug:["🐞","באג","rgba(232,112,90,.16)"] };
 const DEV_PRIO = { high:"דחוף", mid:"בינוני", low:"נמוך" };
 /* the road of every item: idea → spec → work plan → development → test → production */
-const DEV_STAGES = [["idea","רעיון","💡","רעיונות"],["spec","אפיון","✏️","אפיון"],["plan","תוכנית","📋","תוכנית עבודה"],["dev","פיתוח","🔧","בפיתוח"],["test","טסט","🧪","בטסט"],["prod","פרודקשן","✓","בפרודקשן"]];
+const DEV_STAGES = [["idea","רעיון","💡","רעיונות"],["spec","אפיון","✏️","אפיון"],["plan","תוכנית","📋","תוכנית עבודה"],["dev","פיתוח","🔧","בפיתוח"],["test","טסט","🧪","בטסט"],["prod","פרודקשן","🚀","בפרודקשן · בבחינה"]];
 const DEV_SI = Object.fromEntries(DEV_STAGES.map(([k], i) => [k, i]));
 const devStage = n => DEV_SI[n.stage] != null ? n.stage : n.done ? "prod" : "idea";      // older items had only done / not done
+/* "בוצע" is a status, not a stage: an item can be in production and still being checked. Old items marked done are closed. */
+const devClosed = n => typeof n.closed === "boolean" ? n.closed : !!(n.done && !n.stage);
 const DevNotes = {
   list:[], showProd:false, unsub:null,
   col(){ return Cloud.fb.collection(Cloud.db, "devnotes"); },
@@ -2584,36 +2596,43 @@ const DevNotes = {
   async del(id){ await Cloud.fb.deleteDoc(Cloud.fb.doc(this.col(), id)); },
   /* moving to a stage keeps the old done fields in step (production = done, with the date it went out) */
   withStage(n, st){
-    const prod = st === "prod", d = new Date();
-    return { ...n, stage:st, stageAt:Date.now(), done:prod,
-      doneAt: prod ? (n.done ? n.doneAt : Date.now()) : null,
-      doneVer: prod ? (n.done && n.doneVer ? n.doneVer : `${d.getDate()}.${d.getMonth() + 1}`) : "" };
+    const prod = st === "prod", was = devStage(n) === "prod" && n.doneVer, d = new Date();
+    return { ...n, stage:st, stageAt:Date.now(), closed:devClosed(n), done:devClosed(n),
+      doneAt: prod ? (was ? n.doneAt : Date.now()) : null,                       // when it went out to production
+      doneVer: prod ? (was ? n.doneVer : `${d.getDate()}.${d.getMonth() + 1}`) : "" };
   },
+  withClosed(n, c){ const d = new Date(); return { ...n, stage:devStage(n), closed:c, done:c, closedAt: c ? Date.now() : null, closedVer: c ? `${d.getDate()}.${d.getMonth() + 1}` : "" }; },
+  closedList(){ return this.list.filter(devClosed).sort((a, b) => (b.closedAt || b.doneAt || 0) - (a.closedAt || a.doneAt || 0)); },
   of(st){
     const P = { high:0, mid:1, low:2 };
-    return this.list.filter(n => devStage(n) === st)
+    return this.list.filter(n => !devClosed(n) && devStage(n) === st)
       .sort(st === "prod" ? (a, b) => (b.doneAt || 0) - (a.doneAt || 0) : (a, b) => (P[a.prio] ?? 1) - (P[b.prio] ?? 1) || b.created - a.created);
   },
   row(n){
-    const k = DEV_KINDS[n.kind] || DEV_KINDS.feature, st = devStage(n), si = DEV_SI[st], nx = DEV_STAGES[si + 1];
-    return `<div class="dv-it st-${st}" data-id="${esc(n.id)}" role="button" tabindex="0">
+    const k = DEV_KINDS[n.kind] || DEV_KINDS.feature, st = devStage(n), si = DEV_SI[st], nx = DEV_STAGES[si + 1], closed = devClosed(n);
+    const day = v => esc(String(v || "").replace(/^גרסה /, ""));
+    const tags = closed ? `<span class="dv-done">✓ בוצע${n.closedVer ? " " + day(n.closedVer) : ""}</span>${st !== "prod" ? `<span class="dv-st">${DEV_STAGES[si][1]}</span>` : ""}`
+      : st === "prod" ? `<span class="dv-ver">🚀 ${day(n.doneVer)}</span><span class="p-${n.prio || "mid"}">${DEV_PRIO[n.prio || "mid"]}</span>`
+      : `<span class="p-${n.prio || "mid"}">${DEV_PRIO[n.prio || "mid"]}</span>`;
+    const btn = closed ? "" : nx ? `<button type="button" class="dv-nx" data-next aria-label="העברה ל${nx[1]}">${nx[1]} ‹</button>`
+      : `<button type="button" class="dv-nx dv-close" data-close-it aria-label="סימון כבוצע">✓ בוצע</button>`;
+    return `<div class="dv-it st-${st}${closed ? " closed" : ""}" data-id="${esc(n.id)}" role="button" tabindex="0">
       <div class="t"><b>${esc(n.title)}</b>${n.note ? `<small>${esc(n.note)}</small>` : ""}
-        <div class="tg"><span class="k-${n.kind || "feature"}">${k[0]} ${k[1]}</span>${st === "prod" ? `<span class="dv-ver">✓ ${esc(String(n.doneVer || "").replace(/^גרסה /, ""))}</span>` : `<span class="p-${n.prio || "mid"}">${DEV_PRIO[n.prio || "mid"]}</span>`}</div></div>
-      <div class="dv-side"><span class="dv-bar" aria-label="שלב: ${DEV_STAGES[si][1]}">${DEV_STAGES.map((x, i) => `<i class="${i <= si ? "on" : ""}"></i>`).join("")}</span>
-        ${nx ? `<button type="button" class="dv-nx" data-next aria-label="העברה ל${nx[1]}">${nx[1]} ‹</button>` : ""}</div></div>`;
+        <div class="tg"><span class="k-${n.kind || "feature"}">${k[0]} ${k[1]}</span>${tags}</div></div>
+      <div class="dv-side"><span class="dv-bar" aria-label="שלב: ${DEV_STAGES[si][1]}">${DEV_STAGES.map((x, i) => `<i class="${i <= si ? "on" : ""}"></i>`).join("")}</span>${btn}</div></div>`;
   },
   html(){
-    const cnt = st => this.of(st).length, prod = cnt("prod"), open = this.list.length - prod;
-    const order = ["dev", "test", "plan", "spec", "idea"];
+    const cnt = st => this.of(st).length, done = this.closedList(), open = this.list.length - done.length;
+    const order = ["dev", "test", "prod", "plan", "spec", "idea"];
     return `${head("🛠 פנקס פיתוח")}
-      <p class="dv-sh">רק אתה רואה את זה · ${open} פתוחים${prod ? ` · ${prod} בפרודקשן` : ""}</p>
+      <p class="dv-sh">רק אתה רואה את זה · ${open} פתוחים${done.length ? ` · ${done.length} בוצעו` : ""}</p>
       <form class="dv-add" id="dvAdd"><input class="input" name="t" placeholder="רעיון חדש…" autocomplete="off" aria-label="רעיון חדש"><button type="submit" class="pl" aria-label="הוספה">${icon("plus")}</button></form>
-      <div class="dv-pipe" aria-label="כמה פריטים בכל שלב">${DEV_STAGES.map(([k, l]) => `<div class="st-${k}"><b>${cnt(k)}</b><small>${l}</small></div>`).join("")}</div>
+      <div class="dv-pipe" aria-label="כמה פריטים פתוחים בכל שלב, וכמה בוצעו">${DEV_STAGES.map(([k, l]) => `<div class="st-${k}"><b>${cnt(k)}</b><small>${l}</small></div>`).join("")}<div class="st-done"><b>${done.length}</b><small>בוצע</small></div></div>
       <div id="dvList">${order.map(st => { const items = this.of(st), S0 = DEV_STAGES[DEV_SI[st]]; if (!items.length) return "";
           return `<div class="dv-sec st-${st}">${S0[2]} ${S0[3]} <i>${items.length}</i></div>${items.map(n => this.row(n)).join("")}`; }).join("")
-        || (prod ? "" : `<p class="adm-note" style="text-align:center;margin:24px 0">עוד אין רעיונות. מה הדבר הבא ש-NIDO צריך?</p>`)}
-      ${prod ? `<button type="button" class="dv-fold" data-fold aria-expanded="${this.showProd}"><span>✓ בפרודקשן · ${prod}</span><span>${this.showProd ? "הסתר ▴" : "הצג ▾"}</span></button>
-        ${this.showProd ? `<div class="dv-prod">${this.of("prod").map(n => this.row(n)).join("")}</div>` : ""}` : ""}</div>`;
+        || (done.length ? "" : `<p class="adm-note" style="text-align:center;margin:24px 0">עוד אין רעיונות. מה הדבר הבא ש-NIDO צריך?</p>`)}
+      ${done.length ? `<button type="button" class="dv-fold" data-fold aria-expanded="${this.showProd}"><span>✓ בוצע · ${done.length}</span><span>${this.showProd ? "הסתר ▴" : "הצג ▾"}</span></button>
+        ${this.showProd ? `<div class="dv-prod">${done.map(n => this.row(n)).join("")}</div>` : ""}` : ""}</div>`;
   },
   open(){
     if (!(CLOUD && Cloud.isSuper)) return;
@@ -2638,9 +2657,13 @@ const DevNotes = {
     sh.querySelector("#dvList").onclick = async e => {
       if (e.target.closest("[data-fold]")){ this.showProd = !this.showProd; this.redraw(); return; }
       const row = e.target.closest("[data-id]"); if (!row) return; const n = this.list.find(x => x.id === row.dataset.id); if (!n) return;
+      if (e.target.closest("[data-close-it]")){
+        try { await this.put(this.withClosed(n, true)); toast("✓ בוצע — עבר לארכיון"); } catch(x){ toast(errText(x)); }
+        return;
+      }
       if (e.target.closest("[data-next]")){
         const nx = DEV_STAGES[DEV_SI[devStage(n)] + 1]; if (!nx) return;
-        try { await this.put(this.withStage(n, nx[0])); toast(nx[0] === "prod" ? "✓ עלה לפרודקשן" : `עבר ל${nx[1]}`); } catch(x){ toast(errText(x)); }
+        try { await this.put(this.withStage(n, nx[0])); toast(nx[0] === "prod" ? "🚀 עלה לפרודקשן — סמן ✓ בוצע כשסיימת לבחון" : `עבר ל${nx[1]}`); } catch(x){ toast(errText(x)); }
         return;
       }
       this.edit(n);
@@ -2656,12 +2679,15 @@ const DevNotes = {
           <div><span class="lbl">סוג</span>${radios("kind", Object.entries(DEV_KINDS).map(([k, v]) => [k, v[0] + " " + v[1]]), n.kind || "feature")}</div>
           <div><span class="lbl">עדיפות</span>${radios("prio", Object.entries(DEV_PRIO), n.prio || "mid")}</div>
           <div><span class="lbl">שלב</span>${radios("stage", DEV_STAGES.map(([k, l]) => [k, l]), devStage(n))}</div>
+          <div><span class="lbl">סטטוס</span>${radios("status", [["open","פתוח"],["done","✓ בוצע"]], devClosed(n) ? "done" : "open")}</div>
           <div class="actions"><button type="button" class="danger" id="dvDel">${icon("trash")}מחיקה</button><button class="primary" type="submit">שמירה</button></div>
         </form>`);
       const f = sh.querySelector("#dvf"), back = () => { closeSheet(); setTimeout(() => this.open(), 230); };
       f.onsubmit = async e => { e.preventDefault(); if (!f.title.value.trim()) return;
         const st = f.querySelector("input[name=stage]:checked")?.value || devStage(n), base = { ...n, title:f.title.value.trim(), note:f.note.value.trim(), kind:f.querySelector("input[name=kind]:checked")?.value || n.kind, prio:f.querySelector("input[name=prio]:checked")?.value || n.prio };
-        try { await this.put(st === devStage(n) && n.stage ? base : this.withStage(base, st)); } catch(x){ return toast(errText(x)); }
+        let out = st === devStage(n) && n.stage ? base : this.withStage(base, st);
+        const c = f.querySelector("input[name=status]:checked")?.value === "done"; if (c !== devClosed(n)) out = this.withClosed(out, c);
+        try { await this.put(out); } catch(x){ return toast(errText(x)); }
         back(); };
       sh.querySelector("#dvDel").onclick = async () => { if (!await askConfirm(`למחוק את "${n.title}"?`, "הפריט יימחק מהפנקס.")) return; try { await this.del(n.id); } catch(x){ return toast(errText(x)); } back(); };
     }, 230);

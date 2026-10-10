@@ -1,5 +1,5 @@
-// פנקס פיתוח: one list grouped by stage (idea → spec → plan → dev → test → prod), "next" button, production folded,
-// old items (only done / not done) shown in the right place. Local only, Firebase mocked.   node tests/devnotes.test.cjs
+// פנקס פיתוח: one list grouped by stage (idea → spec → plan → dev → test → prod), "next" button; "done" is a separate
+// status (an item can be in production and still being checked), done items folded; old items mapped correctly. Local only, Firebase mocked.   node tests/devnotes.test.cjs
 const path = require("path");
 let chromium;
 try { ({ chromium } = require("playwright")); } catch (e) { ({ chromium } = require("/opt/npm-tools/node_modules/playwright")); }
@@ -35,19 +35,25 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
     fold: document.querySelector("[data-fold]")?.textContent.replace(/\s+/g, " ").trim(), seg: !!document.querySelector(".dv-seg") }));
   let v = await view();
   ok(!v.seg, "no filter bar any more");
-  ok(v.pipe.join() === "1,0,0,1,1,1", `summary per stage: idea 1, dev 1, test 1, prod 1 (${v.pipe})`);
+  ok(v.pipe.join() === "1,0,0,1,1,0,1", `summary: idea 1, dev 1, test 1, prod 0 open, done 1 (${v.pipe})`);
   ok(v.secs.join("|") === "🔧 בפיתוח 1|🧪 בטסט 1|💡 רעיונות 1", `work in progress first, then ideas (${v.secs.join(" | ")})`);
-  ok(!v.rows.includes("ישן שבוצע") && /בפרודקשן · 1/.test(v.fold), `old "done" item is in production, folded ("${v.fold}")`);
+  ok(!v.rows.includes("ישן שבוצע") && /בוצע · 1/.test(v.fold), `old "done" item is done, folded at the bottom ("${v.fold}")`);
   await p.click("[data-fold]"); await p.waitForTimeout(200); v = await view();
-  ok(v.rows.includes("ישן שבוצע") && await p.evaluate(() => document.querySelector(".dv-prod .dv-ver").textContent.includes("9.10")), "unfold → production items with the date they went out");
+  ok(v.rows.includes("ישן שבוצע") && await p.evaluate(() => !!document.querySelector(".dv-prod .dv-done")), "unfold → done items, marked ✓ בוצע");
 
   await p.click('[data-id="a"] [data-next]'); await p.waitForTimeout(300);
   let a = await p.evaluate(() => ({ ...__db.get("a"), toast: __t.at(-1) }));
   ok(a.stage === "spec" && a.done === false && a.toast === "עבר לאפיון", `"הבא" moves an old open item idea → spec (${a.stage}, "${a.toast}")`);
   await p.click('[data-id="d"] [data-next]'); await p.waitForTimeout(300);
   const d = await p.evaluate(() => ({ ...__db.get("d"), toast: __t.at(-1) }));
-  ok(d.stage === "prod" && d.done === true && d.doneAt > 0 && /^\d+\.\d+$/.test(d.doneVer) && d.toast === "✓ עלה לפרודקשן", `test → production marks it done with today's date (${d.doneVer})`);
-  ok(await p.evaluate(() => !document.querySelector('[data-id="d"] [data-next]')), "production items have no 'next' button");
+  ok(d.stage === "prod" && d.closed === false && d.doneAt > 0 && /^\d+\.\d+$/.test(d.doneVer), `test → production: date it went out (${d.doneVer}), but NOT done yet`);
+  v = await view();
+  ok(v.secs.some(x => x.includes("בפרודקשן · בבחינה")) && v.rows.includes("בטסט"), `it shows under "בפרודקשן · בבחינה" (${v.secs.join(" | ")})`);
+  ok(await p.evaluate(() => !document.querySelector('[data-id="d"] [data-next]') && !!document.querySelector('[data-id="d"] [data-close-it]')), "in production the button is \"✓ בוצע\"");
+  await p.click('[data-id="d"] [data-close-it]'); await p.waitForTimeout(300);
+  const d2 = await p.evaluate(() => ({ ...__db.get("d"), pipe: [...document.querySelectorAll(".dv-pipe b")].map(x => +x.textContent).join() }));
+  ok(d2.closed === true && d2.done === true && d2.stage === "prod" && d2.closedAt > 0 && d2.doneVer === d.doneVer, "✓ בוצע closes it, keeps the production date");
+  ok(d2.pipe === "0,1,0,1,0,0,2", `…and it moves to the done count (${d2.pipe})`);
 
   await p.click('[data-id="c"] .t'); await p.waitForTimeout(700);
   ok(await p.evaluate(() => document.querySelector('#dvf input[name=stage][value=dev]')?.checked === true), "edit shows the item's stage");
@@ -55,8 +61,16 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await p.waitForTimeout(700);
   const c = await p.evaluate(() => __db.get("c"));
   ok(c.stage === "plan" && c.done === false && c.title === "בפיתוח עכשיו", `stage can be moved back by hand in edit (${c.stage})`);
-  const back = await p.evaluate(() => { const x = DevNotes.withStage({ id: "z", done: true, doneAt: 5, doneVer: "1.1", stage: "prod" }, "test"); return [x.done, x.doneAt, x.doneVer].join(); });
-  ok(back === "false,,", "taking an item back from production clears the done date");
+  const back = await p.evaluate(() => { const x = DevNotes.withStage({ id: "z", closed: false, doneAt: 5, doneVer: "1.1", stage: "prod" }, "test"); return [x.closed, x.doneAt, x.doneVer].join(); });
+  ok(back === "false,,", "taking an item back from production clears the production date");
+  await p.click("[data-fold]").catch(() => {}); await p.waitForTimeout(200);
+  if (!(await p.evaluate(() => !!document.querySelector('.dv-prod [data-id="b"]')))) { await p.click("[data-fold]"); await p.waitForTimeout(200); }
+  await p.click('[data-id="b"] .t'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => document.querySelector('#dvf input[name=status][value=done]')?.checked === true), "edit shows the status ✓ בוצע");
+  await p.evaluate(() => { document.querySelector('#dvf input[name=status][value=open]').checked = true; document.querySelector("#dvf").requestSubmit(); });
+  await p.waitForTimeout(700);
+  const b2 = await p.evaluate(() => __db.get("b"));
+  ok(b2.closed === false && b2.stage === "prod", `re-opened in edit → back in production, being checked (${b2.stage}, closed ${b2.closed})`);
   ok(errs.length === 0, `no page errors (${errs.join("; ") || "none"})`);
   await b.close(); console.log(`\n${f ? "✘ " + f + " FAILED" : "✔ all passed"} (${n} checks)`); process.exit(f ? 1 : 0);
 })();
