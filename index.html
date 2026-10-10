@@ -212,27 +212,41 @@ li+li .up{border-top:1px solid var(--line)}
 .t-empty{padding:34px 18px;border-radius:24px;background:var(--surface);border:1px solid var(--line);text-align:center;color:var(--muted)}
 
 
-/* ---------- Splash after login ---------- */
-#splash{position:fixed;inset:0;z-index:100;cursor:pointer;overflow:hidden}
-#splash .bg{position:absolute;inset:0;opacity:0;background:radial-gradient(80% 55% at 50% 42%,#16274D 0%,#0A1226 55%,#050A16 100%)}
-#splash .bg2{position:absolute;inset:0;opacity:0;background:radial-gradient(120% 50% at 50% -10%,#1A2C55 0%,transparent 60%),#0B1220}
-#splash .halo{position:absolute;left:50%;top:42%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;
-  background:radial-gradient(circle,rgba(110,160,255,.26) 0%,rgba(80,130,240,.09) 36%,transparent 66%);opacity:0}
-#splash .ring{position:absolute;left:50%;top:42%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;border:1px solid rgba(150,190,255,.35);opacity:0}
-#splash .dust{position:absolute;inset:0}
-#splash .dust i{position:absolute;width:2px;height:2px;border-radius:50%;background:#CFE0FF;opacity:0}
-#splash .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:12vh}
-#splash .logo-wrap{position:relative;width:150px;transform-origin:center}
-#splash .logo-wrap img{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 24px rgba(40,90,200,.45))}
-#splash .shine{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;opacity:0;
-  background:linear-gradient(110deg,transparent 32%,rgba(255,255,255,.75) 48%,rgba(190,220,255,.7) 52%,transparent 68%) no-repeat;background-size:260% 100%;background-position:120% 0}
-#splash h1{margin:26px 0 0;font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:66px;line-height:1;color:#EDF2FB;direction:ltr;transform-origin:center}
+/* ---------- Splash: "קן שנבנה" — the nest builds itself, giggles happily while the family's data loads, then hops into the app ---------- */
+#splash{position:fixed;inset:0;z-index:100;cursor:pointer;overflow:hidden;--sp-text:#F7EEE4;--sp-muted:#D0BBA5;--sp-faint:#8E7862;--sp-gold:#F2C48A}
+#splash .bg{position:absolute;inset:0;opacity:0;background:radial-gradient(75% 48% at 50% 40%,#3B2716 0%,#1E150E 55%,#120C08 100%)}
+#splash .bg2{position:absolute;inset:0;opacity:0;background:#1A120C}
+#splash .halo{position:absolute;left:50%;top:40%;width:460px;height:460px;margin:-230px 0 0 -230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(242,182,107,.24) 0%,rgba(217,154,85,.08) 38%,transparent 66%);opacity:0}
+#splash .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:10vh}
+#splash .nest{position:relative;width:140px;height:128px;transform-origin:50% 85%}
+#splash .nest img{position:absolute;left:0;top:0;width:140px;height:auto;display:block;
+  filter:sepia(1) saturate(2.3) hue-rotate(-12deg) brightness(1.06) drop-shadow(0 8px 26px rgba(200,120,40,.42))}
+#splash .nest .ghost{opacity:.13;filter:sepia(1) saturate(2) hue-rotate(-12deg) brightness(1.1)}
+#splash .nest .real{clip-path:inset(100% 0 0 0)}
+#splash .fx{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+#splash .fx i{position:absolute;left:0;top:0;font-style:normal;font-size:15px;color:var(--sp-gold);opacity:0;text-shadow:0 0 10px rgba(242,182,107,.6)}
+#splash h1{margin:22px 0 0;font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:62px;line-height:1;color:var(--sp-text);direction:ltr;opacity:0}
 #splash h1 em{font-style:italic}
-#splash .motto{margin:20px 0 0;font-size:18px;font-weight:300;color:#C9D3E8;transform-origin:center;white-space:nowrap}
-#splash .studio{position:absolute;left:0;right:0;bottom:calc(46px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;direction:ltr}
-#splash .studio .line{width:120px;height:1px;background:linear-gradient(90deg,transparent,rgba(170,200,255,.7),transparent);transform:scaleX(0)}
-#splash .studio span{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#8EA0C4}
-#splash .studio b{font-weight:600;color:#C9D6F0;letter-spacing:.32em}
+#splash .motto{margin:16px 0 0;font-size:17px;font-weight:300;color:var(--sp-muted);white-space:nowrap;opacity:0}
+#splash .load{margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0}
+#splash .bar{width:160px;height:3px;border-radius:3px;background:rgba(255,226,190,.12);overflow:hidden;direction:ltr}
+#splash .bar i{display:block;height:100%;width:8%;border-radius:3px;background:linear-gradient(90deg,#B9843D,#F2C48A);transition:width .5s cubic-bezier(.22,1,.36,1)}
+#splash .load small{font-size:12.5px;color:var(--sp-faint)}
+#splash .studio{position:absolute;left:0;right:0;bottom:calc(40px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;direction:ltr}
+#splash .studio .line{width:110px;height:1px;background:linear-gradient(90deg,transparent,rgba(242,196,138,.55),transparent)}
+#splash .studio span{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--sp-faint)}
+#splash .studio b{font-weight:600;color:var(--sp-muted);letter-spacing:.32em}
+/* Nido Light: the same nest on warm cream */
+html[data-skin="light"] #splash{--sp-text:#2A1D12;--sp-muted:#76604B;--sp-faint:#9C8670;--sp-gold:#C9964F}
+html[data-skin="light"] #splash .bg{background:radial-gradient(75% 48% at 50% 40%,#FFF9EF 0%,#F6EBDA 55%,#EBDCC5 100%)}
+html[data-skin="light"] #splash .bg2{background:#F6EFE5}
+html[data-skin="light"] #splash .halo{background:radial-gradient(circle,rgba(233,178,113,.32) 0%,rgba(217,154,85,.1) 40%,transparent 66%)}
+/* the logo's faint built-in glow (invisible on dark) is cut away on cream, and it turns golden brown */
+html[data-skin="light"] #splash .nest img{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg) drop-shadow(0 6px 14px rgba(150,98,40,.18))}
+html[data-skin="light"] #splash .nest .ghost{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg)}
+html[data-skin="light"] #splash .bar{background:rgba(110,78,40,.13)}
+html[data-skin="light"] #splash .fx i{text-shadow:none}
 
 
 /* ---------- Segmented ---------- */
@@ -798,8 +812,6 @@ span.st-cart{cursor:default}
 .cp-hist div{display:flex;justify-content:space-between;padding:7px 2px;border-top:1px solid rgba(255,214,170,.08)}
 .cp-img{width:100%;max-height:200px;object-fit:contain;border-radius:14px;margin-top:12px;background:#fff}
 
-/* splash hand-off now melts into the warm app */
-#splash .bg2{background:#1A120C}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* profile & admin */
@@ -5233,89 +5245,121 @@ function setAmbient(force){
 }
 function hideAmbient(){ document.getElementById("ambient").classList.remove("on"); clearInterval(ambientTimer); }
 
-/* ================= Splash ================= */
+/* ================= Splash: "קן שנבנה" =================
+   The nest builds itself from the bottom up, then giggles (a happy wiggle, little hearts and sparkles) while the
+   family's data loads; the bar follows the real loading. When everything is in, it hops and melts into the app.
+   About 3 s in all (at most ~5 s if the server is slow — the app already shows the copy saved on the phone); a tap skips it. Reopened within
+   10 minutes → no splash at all. */
 const EZ = "cubic-bezier(.22,1,.36,1)", IO = "cubic-bezier(.65,0,.35,1)";
+const SPLASH_MIN = 1700, SPLASH_MAX = 3600, SPLASH_QUIET = 10 * 60e3;
+function appProgress(){ return !CLOUD ? 1 : !Cloud.user ? .1 : !Cloud.loaded ? .2 : .2 + .8 * Cloud.loaded.size / COLS.length; }
+try { addEventListener("pagehide", () => { try { localStorage.setItem("nido.seenAt", String(Date.now())); } catch(e){} }); document.addEventListener("visibilitychange", () => { if (document.hidden) try { localStorage.setItem("nido.seenAt", String(Date.now())); } catch(e){} }); } catch(e){}
 function playSplash(onCovered){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cold = document.getElementById("login").hidden;
-  const L = { logo: document.querySelector("#login .brand .logo"), h1: document.querySelector("#login .brand h1"), p: document.querySelector("#login .brand p") };
-  const src = L.logo?.src || "";
+  let seenAt = 0; try { seenAt = +localStorage.getItem("nido.seenAt") || 0; } catch(e){}
+  if (cold && Date.now() - seenAt < SPLASH_QUIET){ onCovered && onCovered(); return; }      // just came back: straight in
+  const src = document.querySelector("#login .brand .logo")?.src || "";
   const el = document.createElement("div"); el.id = "splash"; el.setAttribute("role","presentation");
-  const dust = Array.from({length:24}, () => `<i style="left:${(Math.random()*100).toFixed(1)}%;top:${(25+Math.random()*45).toFixed(1)}%"></i>`).join("");
-  el.innerHTML = `<div class="bg"></div><div class="bg2"></div><div class="halo"></div><div class="ring"></div><div class="dust">${dust}</div>
+  el.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nestCut"><feComponentTransfer><feFuncA type="table" tableValues="0 0 0 .6 1 1"/></feComponentTransfer></filter></svg>
+    <div class="bg"></div><div class="bg2"></div><div class="halo"></div>
     <div class="center">
-      <div class="logo-wrap"><img src="${src}" alt=""><div class="shine"></div></div>
+      <div class="nest"><img class="ghost" src="${src}" alt=""><img class="real" src="${src}" alt=""><div class="fx"></div></div>
       <h1 aria-label="Nido">Ni<em>do</em></h1>
       <p class="motto">לא רק לנהל את הבית — להרגיש בבית</p>
+      <div class="load"><div class="bar"><i></i></div><small>מסנכרן את המשפחה…</small></div>
     </div>
     <div class="studio"><div class="line"></div><span>By <b>Borhovich</b> studio</span></div>`;
-  const sh = el.querySelector(".shine"); sh.style.webkitMaskImage = sh.style.maskImage = `url(${src})`;
   if (cold) el.querySelector(".bg").style.opacity = "1";            // opaque from the first frame: nothing flashes underneath
   document.body.appendChild(el);
   const $s = q => el.querySelector(q), A = (n, k, o) => n && n.animate ? n.animate(k, { fill:"both", ...o }) : null;
-  const T = { logo:$s(".logo-wrap"), h1:$s("h1"), p:$s(".motto") };
-
-  // 1 · shared elements: start exactly where the login brand is, then glide to centre
-  const from = (a, b, k) => { if (!a || !b) return null; const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect();
-    const s = k === "logo" ? r1.width / r2.width : parseFloat(getComputedStyle(a).fontSize) / parseFloat(getComputedStyle(b).fontSize); return `translate(${(r1.left + r1.width/2) - (r2.left + r2.width/2)}px, ${(r1.top + r1.height/2) - (r2.top + r2.height/2)}px) scale(${s})`; };
+  const nest = $s(".nest"), real = $s(".real"), fx = $s(".fx"), bar = $s(".bar i"), lbl = $s(".load small");
   const brand = document.querySelector("#login .brand"), form = document.querySelector("#login form"), rest = document.querySelectorAll("#login .demo, #login .phase-demo");
   const loginAnims = [];
   let covered = false; const cover = () => { if (covered) return; covered = true; onCovered && onCovered(); };
+  const t0 = Date.now(); let timers = [];
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
 
+  // 1 · the backdrop, then the nest builds itself bottom-up and settles with a little squash
+  if (!cold){
+    A($s(".bg"), [{opacity:0},{opacity:1}], { duration:reduce ? 300 : 650, easing:IO });
+    loginAnims.push(A(form, [{opacity:1, transform:"none"}, {opacity:0, transform:"translateY(14px)"}], { duration:500, easing:IO }));
+    rest.forEach(n => loginAnims.push(A(n, [{opacity:1},{opacity:0}], { duration:350 })));
+    if (brand) loginAnims.push(A(brand, [{opacity:1},{opacity:0}], { duration:450, easing:IO }));
+    later(cover, reduce ? 320 : 680);
+  } else cover();
+  const d0 = cold ? 80 : 380;
+  A($s(".halo"), [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"scale(1)"}], { duration:2200, delay:d0, easing:EZ });
   if (reduce){
-    A($s(".bg"), [{opacity: cold?1:0},{opacity:1}], { duration:400 }); A($s(".studio"), [{opacity:0},{opacity:1}], { duration:400 });
-    setTimeout(cover, 450);
-  } else if (cold){
-    // returning user: the brand rises into place on its own
-    A(T.logo, [{opacity:0, transform:"scale(.88) translateY(10px)"},{opacity:1, transform:"none"}], { duration:1700, delay:150, easing:EZ });
-    A(T.h1,   [{opacity:0, transform:"translateY(14px)"},{opacity:1, transform:"none"}], { duration:1500, delay:550, easing:EZ });
-    A(T.p,    [{opacity:0, transform:"translateY(10px)"},{opacity:1, transform:"none"}], { duration:1500, delay:900, easing:EZ });
-    A($s(".halo"), [{opacity:0, transform:"scale(.5)"},{opacity:1, transform:"scale(1)"}], { duration:3200, delay:200, easing:EZ });
-    A($s(".ring"), [{opacity:0, transform:"scale(.8)"},{opacity:.55, offset:.25},{opacity:0, transform:"scale(2.2)"}], { duration:2600, delay:800, easing:EZ });
-    el.querySelectorAll(".dust i").forEach(d => A(d, [{opacity:0, transform:"translateY(10px)"},{opacity:.7, offset:.35},{opacity:0, transform:"translateY(-50px)"}], { duration:4200, delay:500 + Math.random()*1400, easing:EZ }));
-    A(sh, [{opacity:1, backgroundPosition:"120% 0"},{opacity:1, backgroundPosition:"-20% 0"}], { duration:1800, delay:1300, easing:IO });
-    A($s(".studio"), [{opacity:0, transform:"translateY(8px)"},{opacity:1, transform:"none"}], { duration:1400, delay:1700, easing:EZ });
-    A($s(".studio .line"), [{transform:"scaleX(0)"},{transform:"scaleX(1)"}], { duration:1600, delay:1800, easing:EZ });
-    cover();
+    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
+    [".motto", "h1", ".load", ".studio"].forEach(q => A($s(q), [{opacity:0},{opacity:1}], { duration:400, delay:d0 + 200 }));
   } else {
-    [["logo",L.logo],["h1",L.h1],["p",L.p]].forEach(([k, n], i) => {
-      const t = from(n, T[k], k); if (t) A(T[k], [{ transform:t }, { transform:"none" }], { duration:1500, delay:60*i, easing:EZ, fill:"both" });
-    });
-    if (brand) brand.style.visibility = "hidden";
-    loginAnims.push(A(form, [{opacity:1, transform:"none"}, {opacity:0, transform:"translateY(14px)"}], { duration:600, easing:IO }));
-    rest.forEach(n => loginAnims.push(A(n, [{opacity:1},{opacity:0}], { duration:400 })));
-    A($s(".bg"), [{opacity:0},{opacity:1}], { duration:1000, easing:IO });
-    A($s(".halo"), [{opacity:0, transform:"scale(.5)"},{opacity:1, transform:"scale(1)"}], { duration:3200, delay:500, easing:EZ });
-    A($s(".ring"), [{opacity:0, transform:"scale(.8)"},{opacity:.55, offset:.25},{opacity:0, transform:"scale(2.2)"}], { duration:2600, delay:1100, easing:EZ });
-    el.querySelectorAll(".dust i").forEach(d => A(d, [{opacity:0, transform:"translateY(10px)"},{opacity:.7, offset:.35},{opacity:0, transform:"translateY(-50px)"}], { duration:4200, delay:700 + Math.random()*1400, easing:EZ }));
-    A(sh, [{opacity:1, backgroundPosition:"120% 0"},{opacity:1, backgroundPosition:"-20% 0"}], { duration:1800, delay:1400, easing:IO });
-    A($s(".studio"), [{opacity:0, transform:"translateY(8px)"},{opacity:1, transform:"none"}], { duration:1400, delay:1900, easing:EZ });
-    A($s(".studio .line"), [{transform:"scaleX(0)"},{transform:"scaleX(1)"}], { duration:1600, delay:2000, easing:EZ });
-    setTimeout(cover, 1050);                                   // background is opaque by now → swap the app in underneath
+    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:1050, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
+    A(nest, [{transform:"scale(.92) translateY(8px)", opacity:.4},{transform:"none", opacity:1}], { duration:900, delay:d0, easing:EZ });
+    later(() => A(nest, [{transform:"none"},{transform:"scale(1.07,.92)", offset:.35},{transform:"scale(.97,1.04) translateY(-3px)", offset:.7},{transform:"none"}], { duration:420, easing:"ease-out", fill:"none" }), d0 + 1050);
+    A($s("h1"), [{opacity:0, transform:"translateY(12px)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 650, easing:EZ });
+    A($s(".motto"), [{opacity:0, transform:"translateY(10px)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 850, easing:EZ });
+    A($s(".load"), [{opacity:0},{opacity:1}], { duration:700, delay:d0 + 1100, easing:EZ });
+    A($s(".studio"), [{opacity:0, transform:"translateY(8px)"},{opacity:1, transform:"none"}], { duration:1100, delay:d0 + 1200, easing:EZ });
   }
 
-  // 2 · hand-off: content dissolves, the backdrop melts into the app's own background, the app cascades in
+  // 2 · while loading: giggles — a ticklish wiggle with a tiny hop, and hearts / sparkles popping out
+  const pops = ["♥", "✦", "✧", "♥", "✦"];
+  const giggle = () => {
+    if (finished || reduce) return;
+    A(nest, [{transform:"none"},{transform:"rotate(-6deg) scale(1.04,.96)", offset:.12},{transform:"rotate(5deg) translateY(-4px)", offset:.26},
+      {transform:"rotate(-4deg) scale(1.03,.97)", offset:.4},{transform:"rotate(3deg) translateY(-2px)", offset:.54},{transform:"rotate(-1.5deg)", offset:.68},{transform:"none"}],
+      { duration:900, easing:"ease-in-out", fill:"none" });
+    for (let k = 0; k < 3; k++){
+      const p = document.createElement("i"), ang = (-140 + Math.random() * 100) * Math.PI / 180, r = 70 + Math.random() * 30;
+      p.textContent = pops[(Math.random() * pops.length) | 0]; p.style.fontSize = (11 + Math.random() * 8) + "px"; fx.appendChild(p);
+      const x = Math.cos(ang) * r, y = Math.sin(ang) * r - 10;
+      A(p, [{opacity:0, transform:"translate(-50%,-50%) scale(.4)"},{opacity:1, transform:`translate(calc(-50% + ${x * .55}px), calc(-50% + ${y * .55}px)) scale(1)`, offset:.35},
+        {opacity:0, transform:`translate(calc(-50% + ${x}px), calc(-50% + ${y - 26}px)) scale(.8) rotate(${Math.random() * 40 - 20}deg)`}], { duration:1300, delay:120 + k * 140, easing:"cubic-bezier(.2,.7,.3,1)", fill:"forwards" });
+      later(() => p.remove(), 1700 + k * 140);
+    }
+    later(giggle, 1400);
+  };
+  later(giggle, d0 + 1550);
+
+  // 3 · the bar follows the real loading; when it's all in (and the nest had its moment) → a happy hop, then into the app
   let finished = false;
+  const tick = () => {
+    if (finished) return;
+    const pr = appProgress(); if (bar) bar.style.width = Math.max(8, Math.round(pr * 100)) + "%";
+    const t = Date.now() - t0;
+    if ((pr >= 1 && t >= (reduce ? 700 : SPLASH_MIN)) || t >= SPLASH_MAX){ if (lbl) lbl.textContent = pr >= 1 ? "הכול מוכן 🤎" : "פותח…"; return happy(); }
+    later(tick, 120);
+  };
+  later(tick, 150);
+  const happy = () => {
+    if (finished) return;
+    if (reduce) return finish();
+    A(nest, [{transform:"none"},{transform:"scale(1.06,.9)", offset:.25},{transform:"translateY(-14px) scale(.96,1.06)", offset:.55},{transform:"scale(1.04,.95)", offset:.8},{transform:"none"}], { duration:520, easing:"ease-out", fill:"none" });
+    later(finish, 300);
+  };
+
+  // 4 · hand-off: content dissolves, the backdrop melts into the app's own background, the app cascades in
   const finish = () => {
-    if (finished) return; finished = true; cover();
+    if (finished) return; finished = true; cover(); timers.forEach(clearTimeout); timers = [];
     el.style.pointerEvents = "none";
     const parts = [...$("#screen").children, document.querySelector("nav.tabs .row")].filter(Boolean);
-    if (reduce){ A(el, [{opacity:1},{opacity:0}], { duration:400 }); setTimeout(() => { el.remove(); if (brand) brand.style.visibility = ""; }, 450); return; }
+    const done = () => { el.remove(); if (brand) brand.style.visibility = ""; loginAnims.forEach(a => a && a.cancel()); };
+    if (reduce){ A(el, [{opacity:1},{opacity:0}], { duration:350 }); setTimeout(done, 400); return; }
     parts.forEach(n => { n.style.opacity = "0"; });
-    [".center", ".studio", ".halo", ".dust"].forEach(q => A($s(q), [{opacity:1, transform:"none"},{opacity:0, transform: q===".center" ? "scale(1.04) translateY(-8px)" : "none"}], { duration:700, easing:IO }));
-    A($s(".bg2"), [{opacity:0},{opacity:1}], { duration:700, easing:IO });
+    [".center", ".studio", ".halo"].forEach(q => A($s(q), [{opacity:1, transform:"none"},{opacity:0, transform: q === ".center" ? "scale(1.04) translateY(-8px)" : "none"}], { duration:450, easing:IO }));
+    A($s(".bg2"), [{opacity:0},{opacity:1}], { duration:450, easing:IO });
     setTimeout(() => {
-      A(el, [{opacity:1},{opacity:0}], { duration:900, easing:IO });
+      A(el, [{opacity:1},{opacity:0}], { duration:600, easing:IO });
       parts.forEach((n, i) => {
-        const anim = n.animate([{opacity:0, transform:"translateY(18px)"},{opacity:1, transform:"none"}], { duration:1000, delay:90*i, easing:EZ, fill:"backwards" });
+        const anim = n.animate([{opacity:0, transform:"translateY(18px)"},{opacity:1, transform:"none"}], { duration:900, delay:80*i, easing:EZ, fill:"backwards" });
         n.style.opacity = "";
         anim.onfinish = () => { n.style.transform = ""; };
       });
-      setTimeout(() => { el.remove(); if (brand) brand.style.visibility = ""; loginAnims.forEach(a => a && a.cancel()); }, 950);
-    }, 550);
+      setTimeout(done, 650);
+    }, 350);
   };
-  el.addEventListener("click", finish);
-  setTimeout(finish, reduce ? 1400 : 4300);
+  el.addEventListener("click", () => { if (!covered) cover(); finish(); });
 }
 
 /* ================= Profile & users admin ================= */
