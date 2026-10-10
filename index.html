@@ -1092,13 +1092,19 @@ html[data-skin="light"] :is(#app,#sheetRoot,#toast,body){
 html[data-skin="light"] body{color:#2A1D12}
 /* the photo of this screen across the top, fading into cream */
 html[data-skin="light"] #ambient{background:#F6EFE5}
-html[data-skin="light"] #ambient .main{inset:0 0 auto 0;height:min(44vh,360px);object-fit:cover;object-position:50% 45%;
-  -webkit-mask-image:linear-gradient(180deg,#000 72%,transparent 100%);mask-image:linear-gradient(180deg,#000 72%,transparent 100%)}
+html[data-skin="light"] #ambient .main{inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;-webkit-mask-image:none;mask-image:none}
+@media (min-aspect-ratio:3/4){ html[data-skin="light"] #ambient .main{object-fit:cover;-webkit-mask-image:none;mask-image:none} html[data-skin="light"] #ambient .fill{display:none} }
 html[data-skin="light"] #ambient .fill{display:none}
-html[data-skin="light"] #ambient::after{background:linear-gradient(180deg,rgba(44,26,10,.50) 0,rgba(44,26,10,.22) 110px,rgba(44,26,10,.06) 210px,transparent 260px)}
+/* a soft warm veil over the whole photo: deeper at the top (titles) and bottom (nav) so light text stays readable */
+html[data-skin="light"] #ambient::after{background:linear-gradient(180deg,rgba(40,24,10,.52) 0%,rgba(40,24,10,.30) 22%,rgba(40,24,10,.24) 55%,rgba(40,24,10,.40) 100%)}
 /* titles sit on the photo → light text with a soft shadow */
 html[data-skin="light"] #app :is(.t-head,.t-greet,.top>h1,.top .title-sm,.t-date,.t-legend){color:#FFF8EE;text-shadow:0 1px 12px rgba(40,22,6,.55)}
 html[data-skin="light"] #app :is(.t-greet p,.t-date,.top .title-sm){color:rgba(255,246,232,.9)}
+/* everything that sits straight on the photo (not inside a white window): light text + soft shadow */
+html[data-skin="light"] #app :is(.t-sec>h3,.t-sec h3 span,.shop-head .section-title,.shop-head .shop-tip,.month-nav strong,.month-nav button,.cv-legend,.cv-legend span,.wrap>.hint,.t-legend span){
+  color:#FFF8EE;text-shadow:0 1px 10px rgba(30,16,4,.7)}
+html[data-skin="light"] #app :is(.t-sec h3 span,.shop-head .shop-tip,.wrap>.hint){color:rgba(255,246,232,.88)}
+html[data-skin="light"] #app .t-sec>button{color:#FFE2AE;text-shadow:0 1px 10px rgba(30,16,4,.7)}
 html[data-skin="light"] #app .t-date .pill{background:rgba(255,250,242,.22);border-color:rgba(255,250,242,.35);color:#FFF8EE}
 /* clear cream/white cards with a soft shadow instead of dark glass */
 html[data-skin="light"] #app :is(.panel,.ttile,.t-empty,.sv-card,.offer,.cal,.idea,.sv-sum div,.seg){
