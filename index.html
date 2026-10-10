@@ -1214,6 +1214,28 @@ html[data-skin="light"] #app .mn-cmpbox .mn-sec{color:var(--text);text-shadow:no
 html[data-skin="light"] #app .mn-mon button{background:rgba(255,250,242,.22);color:#FFF8EE}
 html[data-skin="light"] #app .mn-hero{background:var(--surface)}
 
+/* ---------- "מזל טוב, מנהל המשפחה" ---------- */
+.cfm.crown{text-align:center;padding-top:22px}
+.crown-tile{position:relative;width:132px;height:132px;margin:0 auto 14px;border-radius:30px;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 38%,#4A321C 0%,#2C1E13 70%);border:1px solid rgba(255,214,170,.18);box-shadow:inset 0 1px 0 rgba(255,236,200,.08),0 14px 34px rgba(0,0,0,.35)}
+.crown-svg{width:92px;height:auto;filter:drop-shadow(0 6px 10px rgba(185,132,61,.45));animation:crownBob 2.6s ease-in-out infinite;transform-origin:50% 80%}
+@keyframes crownBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+.crown-tile .sp{position:absolute;font-style:normal;color:#F2C48A;font-size:14px;animation:crownTw 2.2s ease-in-out infinite;text-shadow:0 0 8px rgba(242,182,107,.6)}
+.crown-tile .s1{top:14px;right:22px}.crown-tile .s2{top:30px;left:16px;animation-delay:.6s;font-size:11px}.crown-tile .s3{bottom:22px;left:24px;animation-delay:1.1s}.crown-tile .s4{bottom:30px;right:16px;animation-delay:1.6s;font-size:11px}
+.crown-tile .dot{position:absolute;width:5px;height:5px;border-radius:50%;background:#E9B271;opacity:.7;animation:crownTw 2.8s ease-in-out infinite}
+.crown-tile .d1{top:52px;right:12px;animation-delay:.3s}.crown-tile .d2{top:18px;left:46px;animation-delay:1.3s}.crown-tile .d3{bottom:14px;right:52px;animation-delay:2s}
+@keyframes crownTw{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.15)}}
+.cfm.crown h3{font-size:24px;margin:4px 0 2px}
+.cfm.crown .crown-sub{margin:0 0 12px;font-size:13px;color:var(--faint);letter-spacing:.04em;direction:ltr}
+.cfm.crown hr{border:0;border-top:1px solid var(--line);margin:0 0 14px}
+.crown-p{font-size:16px!important;line-height:1.55}.crown-p b{font-weight:700}
+.cfm.crown .crown-big{margin:14px 0 6px;font-size:22px;font-weight:700;color:var(--text)}
+.cfm.crown .crown-hint{margin:6px 0 4px;font-size:12.5px;color:var(--faint)}
+.cfm.crown .row .go{width:100%;height:52px;font-size:16.5px;font-weight:600}
+@media (prefers-reduced-motion:reduce){.crown-svg,.crown-tile .sp,.crown-tile .dot{animation:none}}
+html[data-skin="light"] .crown-tile{background:radial-gradient(circle at 50% 38%,#FFF6E6 0%,#F4E2C4 75%);border-color:rgba(185,132,61,.25);box-shadow:0 12px 28px rgba(150,98,40,.18)}
+html[data-skin="light"] .crown-tile .sp{color:#C9964F;text-shadow:none}html[data-skin="light"] .crown-tile .dot{background:#D9A962}
+
 /* ================= Skin: Nido Light (user preference; Nido Home = everything above, unchanged) =================
    Only colors, surfaces and backgrounds change here — never layout, features or behaviour. */
 html[data-skin="light"]{background:#F6EFE5;color-scheme:light}      /* native checkboxes, dates and scrollbars in light colours */
@@ -2646,14 +2668,27 @@ function famAdminWelcome(){
   const go = () => {
     if (!me || $("#app").hidden || document.getElementById("splash") || $("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim,.note-scrim")){ setTimeout(go, 1500); return; }
     try { localStorage.setItem(k, "1"); } catch(e){}
-    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim";
-    w.innerHTML = `<div class="cfm upd" role="dialog" aria-modal="true" aria-labelledby="faT">
-      <div class="ic upd-ic">👑</div>
-      <h3 id="faT">שלום ${esc(meU().name)},</h3>
-      <p class="upd-p">מעכשיו אתה זה שלובש את המכנסים בבית.</p>
-      <p class="upd-p">הכוח בידיים שלך, אך תיזהר לא לעצבן את האישה 😏</p>
-      <p class="upd-p" style="font-size:13px;color:#A8917A">ניהול המשפחה נמצא בפרופיל שלך ← "ניהול המשפחה".</p>
-      <div class="row"><button type="button" class="go">קיבלתי</button></div></div>`;
+    const w = document.createElement("div"); w.className = "cfm-scrim upd-scrim crown-scrim";
+    w.innerHTML = `<div class="cfm upd crown" role="dialog" aria-modal="true" aria-labelledby="faT">
+      <div class="crown-tile" aria-hidden="true">
+        <svg viewBox="0 0 120 100" class="crown-svg"><defs>
+          <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE3A3"/><stop offset=".55" stop-color="#F2B66B"/><stop offset="1" stop-color="#C98C45"/></linearGradient>
+          <linearGradient id="cg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#D99A55"/><stop offset=".5" stop-color="#FFE0A0"/><stop offset="1" stop-color="#D99A55"/></linearGradient></defs>
+          <path d="M18 72 L12 30 L38 50 L60 20 L82 50 L108 30 L102 72 Z" fill="url(#cg1)" stroke="#B9843D" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="16" y="70" width="88" height="14" rx="6" fill="url(#cg2)" stroke="#B9843D" stroke-width="2"/>
+          <circle cx="12" cy="29" r="5" fill="#FFE3A3" stroke="#B9843D" stroke-width="1.5"/><circle cx="60" cy="18" r="6" fill="#FFE3A3" stroke="#B9843D" stroke-width="1.5"/><circle cx="108" cy="29" r="5" fill="#FFE3A3" stroke="#B9843D" stroke-width="1.5"/>
+          <circle cx="60" cy="77" r="4" fill="#E8705A"/><circle cx="38" cy="77" r="3" fill="#8FD3A8"/><circle cx="82" cy="77" r="3" fill="#7FB0FF"/>
+          <path d="M60 40 l3 6 6 1 -4.5 4 1 6 -5.5-3 -5.5 3 1-6 -4.5-4 6-1z" fill="#FFF3D6" opacity=".9"/></svg>
+        <i class="sp s1">✦</i><i class="sp s2">✧</i><i class="sp s3">✦</i><i class="sp s4">✧</i><i class="dot d1"></i><i class="dot d2"></i><i class="dot d3"></i>
+      </div>
+      <h3 id="faT">מזל טוב, ${esc(meU().name)}! 👑</h3>
+      <p class="crown-sub">NIDO Update</p>
+      <hr>
+      <p class="upd-p crown-p">קיבלת הרשאת <b>מנהל המשפחה</b> ☄️</p>
+      <p class="upd-p crown-p">מעכשיו, את/ה זה שלובש/ת את המכנסיים בבית…</p>
+      <p class="crown-big">נא להתנהג בהתאם 😅🤪</p>
+      <p class="crown-hint">ניהול המשפחה נמצא בפרופיל ← "ניהול המשפחה"</p>
+      <div class="row"><button type="button" class="go">יאללה, יצאנו לדרך! 🏠</button></div></div>`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
     w.querySelector(".go").onclick = () => { w.classList.remove("show"); setTimeout(() => w.remove(), 220); };
   };
