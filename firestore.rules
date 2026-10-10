@@ -13,14 +13,31 @@ service cloud.firestore {
     function inFamily(fid) { return (member() || boot()) && myFamily() == fid; }
     function canEditIn(fid){ return inFamily(fid) && (boot() || role() in ['admin', 'editor']); }
     function isFamAdmin(fid){ return member() && role() == 'admin' && myFamily() == fid; }
+    function moneyIn(fid)  { return inFamily(fid) && (boot() || role() == 'admin'); }
 
     // families: name + content. Test environment only for the first family.
     match /families/{fid} {
       allow read:  if boot() || inFamily(fid);
       allow write: if boot();
       match /envs/{env}/{col}/{id} {
-        allow read:  if col != 'photos' && inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
-        allow write: if col != 'photos' && canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow read:  if !(col in ['photos', 'expenses', 'expmonths', 'expmeta']) && inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow write: if !(col in ['photos', 'expenses', 'expmonths', 'expmeta']) && canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+      }
+      // family expenses: only the family's admin (and the system admin inside his own family) — never editors or view-only members
+      match /envs/{env}/expenses/{id} {
+        allow read, delete: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        allow create, update: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'))
+                         && request.resource.data.amount is int && request.resource.data.amount > 0 && request.resource.data.amount <= 1000000000
+                         && request.resource.data.month is string && request.resource.data.month.matches('[0-9]{4}-[0-9]{2}')
+                         && request.resource.data.date is string && request.resource.data.date.matches(request.resource.data.month + '-[0-9]{2}')
+                         && request.resource.data.desc is string && request.resource.data.desc.size() <= 80
+                         && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 80;
+      }
+      match /envs/{env}/expmonths/{month} {
+        allow read, write: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+      }
+      match /envs/{env}/expmeta/{doc} {
+        allow read, write: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
       }
       // an idea's photos: id = idea_seq, seq 1..the family's maxPhotos (set by the system admin, default 6)
       match /envs/{env}/photos/{id} {

@@ -1529,7 +1529,7 @@ const HOME_FAMILY = "home";            // the first family (ours). Other familie
 const ALLUSERS = {};                   // every family's people — only the system admin sees this
 const FAMILIES = {};                   // id → { name, city, features, active }
 const CITIES = [["293397","תל אביב"],["281184","ירושלים"],["294801","חיפה"],["295530","באר שבע"],["293703","ראשון לציון"],["293918","פתח תקווה"],["294071","נתניה"],["295629","אשדוד"],["294751","חולון"],["293788","רמת גן"],["294778","הרצליה"]];
-const FEATURES = [["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
+const FEATURES = [["expenses","ניהול הוצאות","מסך הוצאות ותקציב — רק למנהלי המשפחה"],["notes","פתק על המקרר","הכפתור הצף לפתק יומי"],["coupons","קופונים","לשונית קופונים ושוברים בקניות"],["survey","סקר שוק","השוואת מחירים לפני קנייה גדולה"]];
 let FAM = { city:"293397", features:{}, maxUsers:0 };   // the current family's settings
 const feat = k => !(FAM.features && FAM.features[k] === false);   // first admin (slava) — can always get in to set things up
 /* where are we running? GitHub Pages = real cloud app; anything else = local demo */
@@ -3023,7 +3023,7 @@ const Admin = {
       <section class="adm-card"><h3>עיר לזמני שבת וחגים</h3>
         <select class="input" data-city>${CITIES.map(([id, n]) => `<option value="${id}" ${id === (f.city || "293397") ? "selected" : ""}>${n}</option>`).join("")}</select></section>
       <section class="adm-card"><h3>פיצ׳רים</h3>
-        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${feats[k] !== false ? "checked" : ""}></label>`).join("")}</section>
+        ${FEATURES.map(([k, l, d]) => `<label class="toggle-row"><span>${l}<br><small class="note" style="margin:0">${d}</small></span><input type="checkbox" data-feat="${k}" ${(k === "expenses" ? moneyFeat(fid, feats) : feats[k] !== false) ? "checked" : ""}></label>`).join("")}</section>
       ${!home ? `<section class="adm-card danger-zone"><h3>השבתת המשפחה</h3>
         <p class="adm-note">${f.active === false ? "המשפחה מושבתת — אף אחד ממנה לא יכול להיכנס." : "כל המשתמשים של המשפחה ייחסמו. הנתונים שלהם נשמרים, ואפשר להחזיר בכל רגע."}</p>
         <button type="button" class="${f.active === false ? "primary" : "danger"}" data-active="${f.active === false ? "on" : "off"}">${f.active === false ? "הפעלת המשפחה מחדש" : "השבתת המשפחה"}</button></section>
@@ -3491,12 +3491,14 @@ function completeTask(t){
      envs/{env}/expmonths/{YYYY-MM} running totals (total, n, cats{}, payers{}) kept with atomic increments
      envs/{env}/expmeta/settings   categories + the monthly budget (total + per category)
    Unlike tasks or shopping, expenses are NOT in COLS: the app never loads all of them — only the open month,
-   and only while the expenses screen is open. Shown to the family admin and the system admin only; in production only for a family
-   whose admin switched it on (families/{fid}.features.expenses = true). */
+   and only while the expenses screen is open. Shown to the family admin and the system admin only. In production: on for the
+   first family unless switched off, any other family only once the system admin switches it on (features.expenses). */
 const EXP_CATS0 = [["food","סופר ומזון","🛒"],["bills","חשבונות","💡"],["car","רכב ודלק","⛽"],["fun","בילויים","🎈"],["home","לבית","🏠"],["clothes","ביגוד","👕"],["health","בריאות","💊"],["kids","ילדים","🧸"],["other","אחר","✨"]];
 const TOGETHER = "together";
 /* who sees it: the family's admin and the system admin — not editors or view-only members */
-function moneyOn(){ return !!me && (roleOf() === "admin" || (CLOUD && Cloud.isSuper)) && (!CLOUD || ENV === "test" || !!(FAM.features && FAM.features.expenses === true)); }
+function moneyOn(){ return !!me && (roleOf() === "admin" || (CLOUD && Cloud.isSuper)) && (!CLOUD || ENV === "test" || moneyFeat(Cloud.fam, FAM.features)); }
+/* on for our own family unless switched off; any other family only once the system admin switches it on */
+function moneyFeat(fid, feats){ const v = feats && feats.expenses; return v === true || (fid === HOME_FAMILY && v !== false); }
 const nis = a => (a < 0 ? "−" : "") + "₪" + (Math.abs(a) / 100).toLocaleString("he-IL", { minimumFractionDigits: Math.abs(a) % 100 ? 2 : 0, maximumFractionDigits: 2 });
 const ilsR = a => "₪" + Math.round(a / 100).toLocaleString("he-IL");
 const monthOf = d => String(d).slice(0, 7);
