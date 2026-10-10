@@ -14,7 +14,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   const scope = new URL(self.registration.scope);
   // static libraries & fonts: cache first
-  if (["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname)) {
+  if (["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname) || (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/npm/pdfjs-dist@"))) {
     e.respondWith(caches.open(CACHE).then(async c => {
       const hit = await c.match(req);
       if (hit) return hit;

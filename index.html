@@ -516,6 +516,23 @@ li+li .ev{border-top:1px solid var(--line)}
 .tk-pick{cursor:pointer;width:100%;justify-content:center}
 .tk-wait{font-size:13px;color:var(--faint);margin:4px 2px}
 .meta .att svg{width:13px;height:13px}
+.tk-open img.tk-pdf{object-fit:cover;object-position:top;background:#fff;border:1px solid rgba(255,214,170,.15)}
+/* the file view (inside the app) */
+.fv{z-index:85;display:flex;flex-direction:column}
+.fv-top{position:relative;top:auto;left:auto;right:auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 10px;gap:10px;background:rgba(11,7,5,.92)}
+.fv-t{flex:1;min-width:0;text-align:right}.fv-t b{display:block;font-size:15px;font-weight:600;color:#F7EEE4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fv-t small{font-size:11.5px;color:#C8B8A6}
+.fv-body{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.fv-body.img{justify-content:center}
+.fv-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;cursor:zoom-in}
+.fv-body.zoom{justify-content:flex-start;align-items:flex-start}.fv-body.zoom .fv-img{max-width:none;max-height:none;width:240%;cursor:zoom-out;border-radius:0}
+.fv-page{background:#fff;border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.45);flex:none}
+.fv-wait{color:#C8B8A6;font-size:14px;margin:auto}
+.fv-other{margin:auto;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;max-width:280px;color:#F7EEE4}
+.fv-other .tk-doc{width:72px;height:72px;font-size:22px;border-radius:18px}.fv-other small{color:#C8B8A6;font-size:13.5px;line-height:1.5}
+.fv-pg{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:rgba(0,0,0,.65);color:#fff;padding:5px 12px;border-radius:99px;font-size:12.5px;z-index:3;pointer-events:none}
+.fv-bar{display:flex;justify-content:space-around;padding:10px 12px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(11,7,5,.92);border-top:1px solid rgba(255,255,255,.06)}
+.fv-bar button{border:0;background:none;color:#E8DCCD;display:flex;flex-direction:column;align-items:center;gap:5px;font:inherit;font-size:12px;min-width:72px}
+.fv-bar svg{width:20px;height:20px;padding:9px;box-sizing:content-box;border-radius:50%;background:rgba(255,255,255,.1)}
 .sheet .actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
 .sheet .actions .primary{flex:1}
 .rate{display:flex;gap:4px}
@@ -1332,6 +1349,8 @@ html[data-skin="light"] .phase-demo button[aria-pressed="true"]{background:rgba(
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></g></symbol>
   <symbol id="i-gift" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M3.5 12h17M12 8v12"/><path d="M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8zM12 8c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8z"/></g></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></g></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/></g></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></g></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/></g></symbol>
@@ -3153,6 +3172,7 @@ const Back = {
     this.warnT = setTimeout(() => { if (me && history.state && history.state.nido === "base") this.arm(); }, 2000);
   },
   close(){
+    if (FileView.el){ FileView.close(); return true; }
     if (Viewer.el){ Viewer.close(); return true; }
     const ns = document.querySelector(".note-scrim");
     if (ns){ const x = ns.querySelector(".send .x"); if (x) x.click(); return true; }      // writing a note: cancel; a received note waits for "קיבלתי"
@@ -3446,8 +3466,12 @@ function taskSheet(t){
   };
   /* files (applied only when the task is saved) */
   const shown = () => [...files.filter(p => !dels.includes(p)), ...adds];
-  const drawFiles = () => { sh.querySelector("#tkFiles").innerHTML = shown().map((p, k) => { const img = /^image\//.test(p.mime || "") || /^data:image/.test((p.img || p.data || "").slice(0, 11));
-      return `<div class="tk-it tk-file"><button type="button" class="tk-open" data-of="${k}">${img ? `<img src="${esc(p.img || p.data)}" alt="">` : `<span class="tk-doc">${/pdf/.test(p.mime || "") ? "PDF" : "📄"}</span>`}<span><b>${esc(p.name || "קובץ")}</b><small>${kb(p.size || 0)}${p.data ? " · יישמר בשמירה" : ""}</small></span></button><button type="button" class="tk-x" data-xf="${k}" aria-label="הסרת הקובץ">${icon("close")}</button></div>`; }).join(""); };
+  const asView = p => p.data ? { img:p.data, mime:p.mime, name:p.name, size:p.size, by:me } : p;
+  const drawFiles = () => { const box = sh.querySelector("#tkFiles"); box.innerHTML = shown().map((p, k) => { const v = asView(p), kind = fileKind(v);
+      return `<div class="tk-it tk-file"><button type="button" class="tk-open" data-of="${k}">${kind === "img" ? `<img src="${esc(v.img)}" alt="">` : `<span class="tk-doc ${kind}" data-thumb="${k}">${kind === "pdf" ? "PDF" : "📄"}</span>`}<span><b>${esc(p.name || "קובץ")}</b><small data-meta="${k}">${kb(p.size || 0)}${p.data ? " · יישמר בשמירה" : ""}</small></span></button><button type="button" class="tk-x" data-xf="${k}" aria-label="הסרת הקובץ">${icon("close")}</button></div>`; }).join("");
+    shown().forEach((p, k) => { const v = asView(p); if (fileKind(v) !== "pdf") return;
+      pdfThumb(v).then(t => { const el = box.querySelector(`[data-thumb="${k}"]`); if (!el || !box.isConnected) return; el.outerHTML = `<img class="tk-pdf" src="${t.src}" alt="">`;
+        const m = box.querySelector(`[data-meta="${k}"]`); if (m) m.textContent = `PDF · ${t.pages === 1 ? "עמוד אחד" : t.pages + " עמ׳"} · ${kb(p.size || 0)}${p.data ? " · יישמר בשמירה" : ""}`; }).catch(() => {}); }); };
   if (t.fileCount) TaskFiles.list(t).then(a => { files = a; if (sh.isConnected) drawFiles(); }).catch(e => { console.warn("[task files]", e); if (sh.isConnected) sh.querySelector("#tkFiles").innerHTML = `<p class="tk-wait">לא הצלחתי לטעון את הקבצים</p>`; });
   sh.querySelector("#tkFile").onchange = async e => {
     for (const file of [...e.target.files]){
@@ -3459,7 +3483,7 @@ function taskSheet(t){
   sh.querySelector("#tkFiles").onclick = e => {
     const x = e.target.closest("[data-xf]"), o = e.target.closest("[data-of]"), list = shown();
     if (x){ const p = list[+x.dataset.xf]; if (adds.includes(p)) adds.splice(adds.indexOf(p), 1); else dels.push(p); drawFiles(); }
-    else if (o){ const p = list[+o.dataset.of]; TaskFiles.open(p.data ? { img:p.data, mime:p.mime, name:p.name } : p); }
+    else if (o) FileView.open(list.map(asView), +o.dataset.of);
   };
   sh.querySelectorAll("[data-r]").forEach(c => c.onclick = () => {
     const box = sh.querySelector(`[data-f="${c.dataset.r}"]`);
@@ -4401,14 +4425,98 @@ const TaskFiles = {
     const d = await readFile(file); if (d.length >= this.MAX_CHARS) throw { code:"big" };
     return { data:d, name, mime:file.type || "application/octet-stream", size:file.size };
   },
-  open(p){
-    try {
-      const [h, b64] = p.img.split(","), mime = (h.match(/data:([^;]+)/) || [])[1] || p.mime || "application/octet-stream";
-      const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-      const url = URL.createObjectURL(new Blob([u8], { type:mime })), a = document.createElement("a");
-      a.href = url; a.target = "_blank"; a.rel = "noopener"; if (!/^image\/|pdf/.test(mime)) a.download = p.name || "file";
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60e3);
-    } catch(e){ toast("לא הצלחתי לפתוח את הקובץ"); }
+};
+/* a stored file (data URL) → bytes / Blob / File */
+function dataBytes(d){ const b64 = String(d).split(",")[1] || "", bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return u8; }
+const dataMime = (d, fallback) => (String(d).match(/^data:([^;,]+)/) || [])[1] || fallback || "application/octet-stream";
+const fileKind = p => { const m = dataMime(p.img, p.mime); return /^image\//.test(m) ? "img" : /pdf/.test(m) ? "pdf" : "other"; };
+
+/* PDF pages are drawn by pdf.js (Mozilla, free, open source). It is loaded from a public CDN only when a PDF is
+   opened, and the service worker keeps a copy for offline use. */
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/";      // the "legacy" build runs on older phones too
+function loadPdfJs(){
+  return loadPdfJs.p || (loadPdfJs.p = import(PDFJS + "pdf.min.mjs").then(m => { m.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.mjs"; return m; })
+    .catch(e => { loadPdfJs.p = null; throw { code:"pdfjs", e }; }));
+}
+const PDFJS_ROOT = PDFJS.replace(/(legacy\/)?build\/$/, "");                                     // fonts, character maps, decoders
+async function pdfOpen(p){ const lib = await loadPdfJs();
+  return lib.getDocument({ data:dataBytes(p.img), isEvalSupported:false, useSystemFonts:false, standardFontDataUrl:PDFJS_ROOT + "standard_fonts/",
+    cMapUrl:PDFJS_ROOT + "cmaps/", cMapPacked:true, wasmUrl:PDFJS_ROOT + "wasm/", iccUrl:PDFJS_ROOT + "iccs/" }).promise; }
+const pdfClose = d => { try { if (d.loadingTask) d.loadingTask.destroy(); else if (d.destroy) d.destroy(); } catch(e){} };
+/* first page as a small picture (for the file list); cached per file */
+const pdfThumbs = {};
+async function pdfThumb(p, w = 84){
+  const key = p.id || p.name + p.size; if (pdfThumbs[key]) return pdfThumbs[key];
+  const doc = await pdfOpen(p), pg = await doc.getPage(1), v0 = pg.getViewport({ scale:1 }), sc = (w * 2) / v0.width, v = pg.getViewport({ scale:sc });
+  const c = document.createElement("canvas"); c.width = Math.ceil(v.width); c.height = Math.ceil(v.height); c.dir = "ltr";
+  await pg.render({ canvasContext:c.getContext("2d"), viewport:v, canvas:c }).promise;
+  pdfThumbs[key] = { src:c.toDataURL("image/jpeg", .8), pages:doc.numPages }; pdfClose(doc); return pdfThumbs[key];
+}
+
+/* a task's file, full screen inside the app: pictures, PDF pages, share / download / next */
+const FileView = {
+  el:null,
+  open(list, k = 0, meta = {}){
+    if (!list.length) return;
+    this.close(true);
+    const w = document.createElement("div"); w.className = "vw fv"; w.setAttribute("role", "dialog"); w.setAttribute("aria-label", "קובץ");
+    document.body.appendChild(w); this.el = w; requestAnimationFrame(() => w.classList.add("show"));
+    let run = 0;
+    const draw = async () => {
+      const my = ++run, p = list[k], kind = fileKind(p), who = p.by && (USERS[p.by] || ALLUSERS[p.by]);
+      const sub = [kind === "pdf" ? `<span data-pages></span>` : "", kb(p.size || 0), who ? "הועלה ע״י " + esc(who.name) : ""].filter(Boolean).join(" · ");
+      w.innerHTML = `<div class="vw-top fv-top"><button type="button" class="vw-x" data-x aria-label="סגירה">${icon("close")}</button>
+          <div class="fv-t"><b>${esc(p.name || "קובץ")}</b><small>${sub}</small></div>
+          ${list.length > 1 ? `<span class="vw-cnt tabular">${k + 1} / ${list.length}</span>` : "<span></span>"}</div>
+        <div class="fv-body ${kind}" data-body>${kind === "img" ? `<img class="fv-img" src="${esc(p.img)}" alt="">`
+          : kind === "pdf" ? `<p class="fv-wait">טוען את המסמך…</p>`
+          : `<div class="fv-other"><span class="tk-doc">📄</span><b>${esc(p.name || "קובץ")}</b><small>את הקובץ הזה אי אפשר להציג בתוך האפליקציה. אפשר להוריד או לשתף אותו.</small></div>`}</div>
+        ${kind === "pdf" ? `<span class="fv-pg tabular" data-pg hidden></span>` : ""}
+        <div class="fv-bar"><button type="button" data-share>${icon("share")}<span>שיתוף</span></button><button type="button" data-down>${icon("down")}<span>הורדה</span></button>
+          ${list.length > 1 ? `<button type="button" data-nextf>${icon("prev")}<span>הקובץ הבא</span></button>` : ""}</div>`;
+      if (kind !== "pdf") return;
+      const body = w.querySelector("[data-body]");
+      try {
+        const doc = await pdfOpen(p); if (my !== run || !w.isConnected){ pdfClose(doc); return; }
+        w.querySelector("[data-pages]").textContent = doc.numPages === 1 ? "עמוד אחד" : `${doc.numPages} עמודים`;
+        body.innerHTML = ""; const width = body.clientWidth - 24, dpr = Math.min(2.5, devicePixelRatio || 1), cvs = [];
+        for (let i = 1; i <= doc.numPages; i++){
+          const pg = await doc.getPage(i); if (my !== run) return;
+          const v0 = pg.getViewport({ scale:1 }), v = pg.getViewport({ scale:width * dpr / v0.width }), c = document.createElement("canvas");
+          c.width = Math.ceil(v.width); c.height = Math.ceil(v.height); c.style.width = width + "px"; c.className = "fv-page"; c.dataset.n = i; c.dir = "ltr";   // an RTL canvas shifts the PDF's letters
+          body.appendChild(c); cvs.push(c); await pg.render({ canvasContext:c.getContext("2d"), viewport:v, canvas:c }).promise;
+        }
+        const pgEl = w.querySelector("[data-pg]"), upd = () => { const mid = body.scrollTop + body.clientHeight / 3; let n = 1; cvs.forEach(c => { if (c.offsetTop <= mid) n = +c.dataset.n; }); pgEl.textContent = `עמוד ${n} מתוך ${doc.numPages}`; };
+        if (doc.numPages > 1){ pgEl.hidden = false; upd(); body.addEventListener("scroll", upd, { passive:true }); }
+      } catch(e){
+        console.warn("[pdf]", e);
+        if (my === run) body.innerHTML = `<div class="fv-other"><span class="tk-doc">PDF</span><b>לא הצלחתי להציג את המסמך</b><small>${navigator.onLine ? "אפשר להוריד אותו או לשתף אותו." : "צריך חיבור לאינטרנט בפעם הראשונה שפותחים PDF. אפשר להוריד אותו."}</small></div>`;
+      }
+    };
+    const fileOf = p => new File([dataBytes(p.img)], p.name || "file", { type:dataMime(p.img, p.mime) });
+    const download = p => { const url = URL.createObjectURL(fileOf(p)), a = document.createElement("a"); a.href = url; a.download = p.name || "file"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60e3); };
+    w.onclick = async e => {
+      const p = list[k];
+      if (e.target.closest("[data-x]")) return this.close();
+      if (e.target.closest("[data-nextf]")){ k = (k + 1) % list.length; return draw(); }
+      if (e.target.closest("[data-down]")){ download(p); return toast("הקובץ ירד למכשיר"); }
+      if (e.target.closest("[data-share]")){
+        const f = fileOf(p);
+        if (navigator.canShare && navigator.canShare({ files:[f] })){ try { await navigator.share({ files:[f], title:p.name || "" }); } catch(x){ if (x && x.name !== "AbortError") toast("השיתוף לא הצליח"); } }
+        else { download(p); toast("המכשיר לא תומך בשיתוף — הקובץ ירד למכשיר"); }
+        return;
+      }
+      if (e.target.closest(".fv-img")) return e.target.closest("[data-body]").classList.toggle("zoom");
+    };
+    this.key = e => { if (e.key === "Escape") this.close(); };
+    document.addEventListener("keydown", this.key);
+    draw();
+  },
+  close(now){
+    const w = this.el; if (!w) return; this.el = null;
+    document.removeEventListener("keydown", this.key);
+    if (now) return w.remove();
+    w.classList.remove("show"); setTimeout(() => w.remove(), 200);
   },
 };
 const kb = n => n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`;
