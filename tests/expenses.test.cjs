@@ -18,6 +18,10 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await p.evaluate(() => parseAmount("186.40") === 18640 && parseAmount("1,200") === 120000 && parseAmount("₪ 12") === 1200 && parseAmount("0") === null && parseAmount("1.234") === null && parseAmount("abc") === null),
      "amounts become whole agorot (186.40 → 18640); 0, 3 decimals and text are refused");
   ok(await p.evaluate(() => tabsNow().map(t => t[0]).join() === "today,tasks,shop,money,cal,ideas"), "the הוצאות tab sits between קניות and יומן");
+  ok(await p.evaluate(() => { Money.settings = { cats: [{ id: "food", name: "סופר ומזון", emoji: "🛒" }, { id: "pets", name: "חיות מחמד", emoji: "🐶" }] };
+    const ids = Money.cats().map(c => c.id); Money.settings = null;
+    return ids.includes("pets") && ids.includes("rent") && ids.includes("eatout") && ids.filter(x => x === "food").length === 1; }),
+    "new built-in categories (שכר דירה, אוכל בחוץ) also reach a family that already saved its own list, without duplicates");
 
   // ---- the cloud path, with an in-memory Firestore ----
   await p.evaluate(() => {
