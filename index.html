@@ -3543,7 +3543,7 @@ function completeTask(t){
    Unlike tasks or shopping, expenses are NOT in COLS: the app never loads all of them — only the open month,
    and only while the expenses screen is open. Shown to the family admin and the system admin only. In production: on for the
    first family unless switched off, any other family only once the system admin switches it on (features.expenses). */
-const EXP_CATS0 = [["food","סופר ומזון","🛒"],["eatout","אוכל בחוץ","🍽️"],["rent","שכר דירה","🔑"],["bills","חשבונות","💡"],["car","רכב ודלק","⛽"],["fun","בילויים","🎈"],["home","לבית","🏠"],["clothes","ביגוד","👕"],["health","בריאות","💊"],["kids","ילדים","🧸"],["other","אחר","✨"]];
+const EXP_CATS0 = [["food","סופר ומזון","🛒"],["eatout","אוכל בחוץ","🍽️"],["rent","שכר דירה","🔑"],["bills","חשבונות","💡"],["fuel","דלק","⛽"],["car","רכב","🚗"],["insurance","ביטוחים","🛡️"],["fun","בילויים","🎈"],["home","לבית","🏠"],["clothes","ביגוד","👕"],["health","בריאות","💊"],["kids","ילדים","🧸"],["other","אחר","✨"]];
 const TOGETHER = "together";
 /* who sees it: the family's admin and the system admin — not editors or view-only members */
 function moneyOn(){ return !!me && (roleOf() === "admin" || (CLOUD && Cloud.isSuper)) && (!CLOUD || ENV === "test" || moneyFeat(Cloud.fam, FAM.features)); }
@@ -3565,7 +3565,8 @@ const Money = {
   /* the family's own list (from the budget window) + any built-in category added since it was saved */
   cats(){ const c = this.settings && this.settings.cats, base = EXP_CATS0.map(([id, name, emoji]) => ({ id, name, emoji }));
     if (!Array.isArray(c) || !c.length) return base;
-    const have = new Set(c.map(x => x.id)); return [...c, ...base.filter(x => !have.has(x.id))]; },
+    const byId = Object.fromEntries(base.map(x => [x.id, x])), have = new Set(c.map(x => x.id));
+    return [...c.map(x => byId[x.id] || x), ...base.filter(x => !have.has(x.id))]; },     // built-in ones keep their current name (e.g. "רכב ודלק" → "רכב")
   cat(id){ return this.cats().find(c => c.id === id) || { id, name:"אחר", emoji:"✨" }; },
   budget(){ const b = this.settings && this.settings.budget; return { total: +(b && b.total) || 0, cats: (b && b.cats) || {} }; },
   /* demo mode (no cloud): everything in this device's storage */
