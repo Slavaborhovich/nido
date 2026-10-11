@@ -1193,7 +1193,9 @@ body.admin-open .note-fab{display:none}
 .mn-form .lbl{display:block;margin:12px 2px 7px}.mn-form .lbl small{color:var(--faint);font-weight:400}
 .mn-chips{margin-top:0}.mn-chips .chip{height:34px;font-size:13.5px}
 .mn-row2{display:flex;gap:10px}.mn-row2 label{flex:1;min-width:0}
-.mn-kind{margin:2px 0 4px}.mn-kind button{font-size:13.5px}
+.mn-kind{display:flex;justify-content:center;gap:8px;margin:0 0 14px}
+.mn-kind button{height:34px;padding:0 15px;border-radius:17px;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:13.5px;transition:background .18s,color .18s,border-color .18s}
+.mn-kind button[aria-pressed=true]{background:#F2B66B;border-color:#F2B66B;color:#2A1A0C;font-weight:600}
 .mn-planf .input{direction:ltr;text-align:center}
 .mn-planp{margin:8px 2px 0;font-size:13px;color:var(--muted);line-height:1.5}
 .mn-inplan{display:block;width:100%;margin:0 0 4px;padding:9px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(242,182,107,.1);color:var(--text);font:inherit;font-size:13px;text-align:start}
@@ -1220,6 +1222,7 @@ html[data-skin="light"] .mn-cmp .b i{background:rgba(201,150,79,.4)}html[data-sk
 html[data-skin="light"] .mn-line{border-top-color:rgba(110,78,40,.35)}
 html[data-skin="light"] .mn-ex{background:rgba(255,253,250,.95);backdrop-filter:none}
 html[data-skin="light"] :is(.mn-due.near,.mn-tag){background:rgba(201,150,79,.16);color:#8A5A1E}html[data-skin="light"] .mn-inplan{background:rgba(201,150,79,.1)}
+html[data-skin="light"] .mn-kind button[aria-pressed=true]{background:#C9964F;border-color:#C9964F;color:#fff}
 html[data-skin="light"] .cfm .col button:not(.del){background:rgba(110,78,40,.06)}
 html[data-skin="light"] #app :is(.mn-top h1,.mn-mon b){color:#FFF8EE;text-shadow:0 1px 12px rgba(40,22,6,.55)}
 html[data-skin="light"] #app :is(.mn-sec,.mn-day){color:#FFF8EE;text-shadow:0 1px 10px rgba(30,16,4,.7)}
@@ -3771,9 +3774,10 @@ function expenseSheet(e){
   const sh = openSheet(`${head(edit ? "עריכת הוצאה" : "הוצאה חדשה")}
     <form id="xf" class="mn-form">
       ${edit ? (pl ? `<button type="button" class="mn-inplan" id="xPlan">${pl.kind === "inst" ? `💳 תשלום ${pl.k} מתוך ${pl.n}` : "🔁 הוצאה קבועה"} · השינוי כאן רק לחודש הזה ›</button>` : "")
-        : `<div class="seg mn-kind" role="group" aria-label="סוג"><button type="button" data-k="once" aria-pressed="true">חד פעמית</button><button type="button" data-k="inst" aria-pressed="false">💳 תשלומים</button><button type="button" data-k="rec" aria-pressed="false">🔁 קבועה</button></div>`}
+        : ""}
       <label class="mn-amt"><span>₪</span><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${edit ? (e.amount / 100).toString() : ""}" aria-label="סכום"></label>
       <p class="mn-amt-l" id="xAmtL">סכום</p>
+      ${edit ? "" : `<div class="mn-kind" role="group" aria-label="סוג ההוצאה"><button type="button" data-k="once" aria-pressed="true">חד פעמית</button><button type="button" data-k="inst" aria-pressed="false">תשלומים</button><button type="button" data-k="rec" aria-pressed="false">קבועה</button></div>`}
       ${edit ? "" : `<div class="mn-planf" id="xInst" hidden><label><span class="lbl">מספר תשלומים</span><input class="input" name="n" type="number" inputmode="numeric" min="2" max="${PLAN_MAX.inst}" value="10"></label></div>
         <div class="mn-planf" id="xRec" hidden><label><span class="lbl">עד חודש <small>(סוף חוזה)</small></span><input class="input" name="end" type="month"></label></div>
         <p class="mn-planp" id="xPrev" hidden></p>`}
