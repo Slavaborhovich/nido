@@ -682,7 +682,11 @@ nav.tabs button[aria-current="page"]{color:var(--ink);background:linear-gradient
 .sh-card{padding:0;overflow:hidden;margin-bottom:12px;--sc:#F2B66B;--sb:rgba(242,182,107,.17)}
 .sh-card[data-sl="home"]{--sc:#8FD3A6;--sb:rgba(143,211,166,.15)}.sh-card[data-sl="noam"]{--sc:#9DBBFF;--sb:rgba(157,187,255,.16)}
 .sh-hd{display:flex;align-items:center;gap:11px;width:100%;padding:12px 14px;border:0;background:linear-gradient(to left,var(--sb),transparent 75%);color:var(--text);font:inherit;text-align:start}
-.sh-ic{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--sb);color:var(--sc)}.sh-ic svg{width:20px;height:20px}
+.sh-ic{flex:none;width:42px;height:42px;display:grid;place-items:center}.sh-ic .flu{width:40px;height:40px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+.flu{display:block;flex:none;user-select:none;-webkit-user-drag:none}
+.seg.lists .flu{width:20px;height:20px}
+.cfm .al-row .flu{width:22px;height:22px}
+.cfm .ic.flu-ic{background:none}.cfm .ic.flu-ic .flu{width:44px;height:44px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
 .sh-hd .t{flex:1;min-width:0}.sh-hd b{display:block;font-size:16px;font-weight:600;color:var(--sc)}.sh-hd small{font-size:12.5px;color:var(--faint)}
 .sh-chev{width:16px;height:16px;color:var(--faint);transform:rotate(-90deg);transition:transform .2s}.sh-card.closed .sh-chev{transform:none}
 .sh-list{list-style:none;margin:0;padding:0 6px}.sh-list:empty{display:none}
@@ -4116,12 +4120,15 @@ const shopKey = k => SHOPS.some(x => x[0] === k) ? k : "super";
 const shopOf = k => SHOPS.find(x => x[0] === shopKey(k));
 const shopTo = k => "רשימת " + shopOf(k)[2];                      // "רשימת הסופר" / "רשימת לבית" / "רשימת לנועם"
 const shopIcon = k => icon(shopOf(k)[3]);
+/* colourful 3D pictures (Fluent Emoji by Microsoft, MIT licence, stored with the app — free) */
+const FLU = { super:"cart", home:"house", noam:"teddy", shop:"cart", survey:"bulb", coupons:"gift" };
+const flu = (k, cls = "") => `<img class="flu ${cls}" src="icons/fluent/${FLU[k] || "cart"}.png" alt="" aria-hidden="true" draggable="false">`;
 const LISTS = [["shop","קניות","cart"],["survey","סקר שוק","bulb"],["coupons","קופונים","gift"]];
 function listsSeg(){
   const n = k => k==="survey" ? DB.survey.length : k==="coupons" ? DB.coupons.filter(c=>!c.archived && !cpExpired(c)).length : DB.shop.length;
   if (!LISTS.some(x => x[0] === S.shopList) || !feat(S.shopList)) S.shopList = "shop";
   return `<div class="seg lists" role="tablist">${LISTS.filter(([k]) => feat(k)).map(([k,l,ic]) =>
-    `<button role="tab" data-list="${k}" aria-pressed="${S.shopList===k}">${icon(ic)}${l} <span class="n">${n(k)}</span></button>`).join("")}</div>`;
+    `<button role="tab" data-list="${k}" aria-pressed="${S.shopList===k}">${flu(k)}${l} <span class="n">${n(k)}</span></button>`).join("")}</div>`;
 }
 function bindSeg(){ $("#screen").querySelectorAll("[data-list]").forEach(b => b.onclick = () => { S.shopList = b.dataset.list; S.take = false; S.surveyOpen = null; renderShop(); }); }
 function renderShop(){
@@ -4135,7 +4142,7 @@ function renderShop(){
     ${listsSeg()}
     ${SHOPS.map(([k, name, to, ic]) => { const its = items.filter(i => shopKey(i.list) === k), closed = ShopUI.closed(k) && !(S.shopAdd === k), taken = its.filter(i => i.takenBy).length;
       return `<section class="panel sh-card ${closed ? "closed" : ""}" data-sl="${k}">
-        <button type="button" class="sh-hd" data-fold="${k}" aria-expanded="${!closed}"><span class="sh-ic">${icon(ic)}</span><span class="t"><b>${name}</b><small>${its.length ? `${its.length} ${its.length === 1 ? "פריט" : "פריטים"}${taken ? ` · ${taken} ${taken === 1 ? "נלקח" : "נלקחו"}` : ""}` : "ריק"}</small></span>${icon("next", "i sh-chev")}</button>
+        <button type="button" class="sh-hd" data-fold="${k}" aria-expanded="${!closed}"><span class="sh-ic">${flu(k)}</span><span class="t"><b>${name}</b><small>${its.length ? `${its.length} ${its.length === 1 ? "פריט" : "פריטים"}${taken ? ` · ${taken} ${taken === 1 ? "נלקח" : "נלקחו"}` : ""}` : "ריק"}</small></span>${icon("next", "i sh-chev")}</button>
         <ul class="sh-list">${its.map(i => {
           const mine = i.takenBy===me, other = i.takenBy && !mine;
           const sub = [i.qty, i.note].filter(Boolean).map(esc).join(" · ");
@@ -5768,8 +5775,8 @@ function askList(title){
   return new Promise(resolve => {
     const w = document.createElement("div"); w.className = "cfm-scrim";
     w.innerHTML = `<div class="cfm" role="alertdialog" aria-modal="true" aria-labelledby="alT">
-      <div class="ic buy">${icon("cart")}</div><h3 id="alT">להוסיף לרשימת קניות?</h3><p></p>
-      <div class="row al-row">${SHOPS.map(([k, n, , ic]) => `<button type="button" data-l="${k}" class="al-${k}">${icon(ic)}${n}</button>`).join("")}</div>
+      <div class="ic buy flu-ic">${flu("shop")}</div><h3 id="alT">להוסיף לרשימת קניות?</h3><p></p>
+      <div class="row al-row">${SHOPS.map(([k, n]) => `<button type="button" data-l="${k}" class="al-${k}">${flu(k)}${n}</button>`).join("")}</div>
       <button type="button" class="skip">לא, רק משימה</button></div>`;
     w.querySelector("p").textContent = `"${buyName(title)}"`;
     document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
