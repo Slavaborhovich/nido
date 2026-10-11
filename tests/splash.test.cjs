@@ -1,5 +1,5 @@
 // Splash "קן שנבנה": waits for the real loading (~3 s in all, at most ~5 s), a tap skips it,
-// reopening within 10 minutes shows no splash, Light gets the cream version. Local demo mode, no network.
+// shown on every start of the app, Light gets the cream version. Local demo mode, no network.
 //   node tests/splash.test.cjs
 const path = require("path");
 let chromium;
@@ -36,8 +36,9 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await p.waitForTimeout(500); await p.mouse.click(200, 400); await p.waitForTimeout(1500);
   ok(await gone(), "a tap skips it");
 
-  await run(() => { localStorage.setItem("nido.seenAt", String(Date.now() - 3 * 60e3)); playSplash(null); });
-  ok(await run(() => !document.getElementById("splash")), "reopened 3 minutes later → no splash at all");
+  await run(() => { localStorage.setItem("nido.seenAt", String(Date.now() - 60e3)); playSplash(null); });
+  ok(await run(() => !!document.getElementById("splash")), "every start shows it — also a minute after the last one");
+  await p.mouse.click(200, 400); await p.waitForTimeout(1500);
 
   await run(() => { localStorage.removeItem("nido.seenAt"); Skin.apply("light"); window.appProgress = () => .3; playSplash(null); });
   await p.waitForTimeout(800);

@@ -5585,17 +5585,14 @@ function hideAmbient(){ document.getElementById("ambient").classList.remove("on"
 /* ================= Splash: "קן שנבנה" =================
    The nest builds itself from the bottom up, then giggles (a happy wiggle, little hearts and sparkles) while the
    family's data loads; the bar follows the real loading. When everything is in, it hops and melts into the app.
-   About 3 s in all (at most ~5 s if the server is slow — the app already shows the copy saved on the phone); a tap skips it. Reopened within
-   10 minutes → no splash at all. */
+   About 3 s in all (at most ~5 s if the server is slow — the app already shows the copy saved on the phone); a tap skips it.
+   Shown every time the app starts (owner's choice, 11.10) — not when it only comes back from the background. */
 const EZ = "cubic-bezier(.22,1,.36,1)", IO = "cubic-bezier(.65,0,.35,1)";
-const SPLASH_MIN = 1700, SPLASH_MAX = 3600, SPLASH_QUIET = 10 * 60e3;
+const SPLASH_MIN = 1700, SPLASH_MAX = 3600;
 function appProgress(){ return !CLOUD ? 1 : !Cloud.user ? .1 : !Cloud.loaded ? .2 : .2 + .8 * Cloud.loaded.size / COLS.length; }
-try { addEventListener("pagehide", () => { try { localStorage.setItem("nido.seenAt", String(Date.now())); } catch(e){} }); document.addEventListener("visibilitychange", () => { if (document.hidden) try { localStorage.setItem("nido.seenAt", String(Date.now())); } catch(e){} }); } catch(e){}
 function playSplash(onCovered){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cold = document.getElementById("login").hidden;
-  let seenAt = 0; try { seenAt = +localStorage.getItem("nido.seenAt") || 0; } catch(e){}
-  if (cold && Date.now() - seenAt < SPLASH_QUIET){ onCovered && onCovered(); return; }      // just came back: straight in
   const src = document.querySelector("#login .brand .logo")?.src || "";
   const el = document.createElement("div"); el.id = "splash"; el.setAttribute("role","presentation");
   el.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nestCut"><feComponentTransfer><feFuncA type="table" tableValues="0 0 0 .6 1 1"/></feComponentTransfer></filter></svg>
