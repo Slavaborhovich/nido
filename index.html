@@ -1193,6 +1193,18 @@ body.admin-open .note-fab{display:none}
 .mn-form .lbl{display:block;margin:12px 2px 7px}.mn-form .lbl small{color:var(--faint);font-weight:400}
 .mn-chips{margin-top:0}.mn-chips .chip{height:34px;font-size:13.5px}
 .mn-row2{display:flex;gap:10px}.mn-row2 label{flex:1;min-width:0}
+.mn-kind{margin:2px 0 4px}.mn-kind button{font-size:13.5px}
+.mn-planf .input{direction:ltr;text-align:center}
+.mn-planp{margin:8px 2px 0;font-size:13px;color:var(--muted);line-height:1.5}
+.mn-inplan{display:block;width:100%;margin:0 0 4px;padding:9px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(242,182,107,.1);color:var(--text);font:inherit;font-size:13px;text-align:start}
+.mn-due{font-size:11.5px;padding:3px 8px;border-radius:9px;background:rgba(255,226,190,.08);color:var(--muted);white-space:nowrap}.mn-due.near{background:rgba(242,182,107,.2);color:#F2C48A}
+.mn-soon{border-style:dashed}
+.mn-tag{font-style:normal;font-size:10.5px;padding:1px 6px;border-radius:7px;background:rgba(242,182,107,.18);color:#F2C48A}
+.mn-plans{padding:4px 12px}
+.mn-plan{display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;background:none;color:var(--text);font:inherit;text-align:start}.mn-plan + .mn-plan{border-top:1px solid var(--line)}
+.mn-plan .t{flex:1;min-width:0}.mn-plan b{display:block;font-size:14px;font-weight:500}.mn-plan small{font-size:12px;color:var(--faint)}.mn-plan .mn-pb{display:block;margin-top:6px}.mn-plan .a{font-size:12px;color:var(--muted);white-space:nowrap}
+.mn-pinfo{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}.mn-pinfo > div span{display:block;font-size:12px;color:var(--faint)}.mn-pinfo > div b{font-size:16px;font-weight:600}.mn-pinfo .mn-pb{grid-column:1 / -1;display:block}
+.cfm .col{display:flex;flex-direction:column;gap:8px;margin-top:16px}.cfm .col button{height:46px;border-radius:14px;font-size:15px;font-weight:600;border:1px solid var(--line);background:rgba(255,226,190,.08);color:var(--text)}.cfm .col .del{border:0;background:#E5735F;color:#1E0F0A}
 .mn-bcats{display:flex;flex-direction:column;gap:6px}
 .mn-bc{display:flex;align-items:center;gap:10px}.mn-bc .t{flex:1;font-size:14px}.mn-bc .input{width:110px;min-height:42px;height:42px;text-align:center;direction:ltr}
 .mn-addcat{display:flex;gap:8px;margin-top:10px}.mn-addcat #ncEmoji{width:58px;text-align:center;padding:0}.mn-addcat #ncName{flex:1}.mn-addcat .secondary{width:52px;justify-content:center;padding:0;height:52px}
@@ -1207,6 +1219,8 @@ html[data-skin="light"] .mn-delta div{background:rgba(110,78,40,.05)}
 html[data-skin="light"] .mn-cmp .b i{background:rgba(201,150,79,.4)}html[data-skin="light"] .mn-cmp .b.now i{background:#C9964F}html[data-skin="light"] .mn-cmp .b.over i{background:#C0614A}
 html[data-skin="light"] .mn-line{border-top-color:rgba(110,78,40,.35)}
 html[data-skin="light"] .mn-ex{background:rgba(255,253,250,.95);backdrop-filter:none}
+html[data-skin="light"] :is(.mn-due.near,.mn-tag){background:rgba(201,150,79,.16);color:#8A5A1E}html[data-skin="light"] .mn-inplan{background:rgba(201,150,79,.1)}
+html[data-skin="light"] .cfm .col button:not(.del){background:rgba(110,78,40,.06)}
 html[data-skin="light"] #app :is(.mn-top h1,.mn-mon b){color:#FFF8EE;text-shadow:0 1px 12px rgba(40,22,6,.55)}
 html[data-skin="light"] #app :is(.mn-sec,.mn-day){color:#FFF8EE;text-shadow:0 1px 10px rgba(30,16,4,.7)}
 html[data-skin="light"] #app :is(.mn-sec small){color:rgba(255,246,232,.88)}
@@ -3563,7 +3577,7 @@ function parseAmount(v){ const t = String(v || "").replace(/[,\s₪]/g, ""); if 
 const payerName = k => k === TOGETHER ? "משותף" : (USERS[k] || ALLUSERS[k] || {}).name || "—";
 
 const Money = {
-  month:null, m:null, list:[], settings:null, months:{}, unsub:[], ready:false,
+  month:null, m:null, list:[], settings:null, plans:[], months:{}, unsub:[], ready:false,
   col(c){ return Cloud.fb.collection(Cloud.db, "families", Cloud.fam, "envs", ENV, c); },
   ref(c, id){ return Cloud.fb.doc(Cloud.db, "families", Cloud.fam, "envs", ENV, c, id); },
   /* the family's own list (from the budget window) + any built-in category added since it was saved */
@@ -3574,10 +3588,10 @@ const Money = {
   cat(id){ return this.cats().find(c => c.id === id) || { id, name:"אחר", emoji:"✨" }; },
   budget(){ const b = this.settings && this.settings.budget; return { total: +(b && b.total) || 0, cats: (b && b.cats) || {} }; },
   /* demo mode (no cloud): everything in this device's storage */
-  L(){ try { return JSON.parse(localStorage.getItem("nido.money") || "null") || { ex:[], settings:null }; } catch(e){ return { ex:[], settings:null }; } },
+  L(){ let d; try { d = JSON.parse(localStorage.getItem("nido.money") || "null"); } catch(e){} d = d || { ex:[], settings:null }; d.plans = d.plans || []; return d; },
   saveL(d){ localStorage.setItem("nido.money", JSON.stringify(d)); },
   sums(ex){ const o = {}; ex.forEach(e => { const s = o[e.month] || (o[e.month] = { total:0, n:0, cats:{}, payers:{} }); s.total += e.amount; s.n++; s.cats[e.cat] = (s.cats[e.cat] || 0) + e.amount; s.payers[e.payer] = (s.payers[e.payer] || 0) + e.amount; }); return o; },
-  refreshLocal(){ const d = this.L(); this.settings = d.settings; this.list = d.ex.filter(e => e.month === this.m); this.months = this.sums(d.ex); this.ready = true; },
+  refreshLocal(){ const d = this.L(); this.settings = d.settings; this.plans = d.plans; this.list = d.ex.filter(e => e.month === this.m); this.months = this.sums(d.ex); this.ready = true; },
   open(m){
     m = m || this.month || iso(new Date()).slice(0, 7);
     if (this.m === m && (this.unsub.length || !CLOUD)) return;
@@ -3588,6 +3602,7 @@ const Money = {
       qs => { this.list = qs.docs.map(d => ({ id:d.id, ...d.data() })); this.ready = true; this.redraw(); },
       e => { console.warn("[money]", e); this.ready = true; this.err = errText(e); this.redraw(); }));
     this.unsub.push(F.onSnapshot(this.ref("expmeta", "settings"), d => { this.settings = d.exists() ? d.data() : null; this.redraw(); }, () => {}));
+    this.unsub.push(F.onSnapshot(this.ref("expmeta", "plans"), d => { this.plans = (d.exists() && d.data().list) || []; this.redraw(); }, () => {}));
     this.loadMonths();
   },
   /* the 6 months before this one, for the comparison: 6 small documents, read once per month opened */
@@ -3614,28 +3629,100 @@ const Money = {
     b.delete(this.ref("expenses", e.id)); b.set(this.ref("expmonths", e.month), this.inc(e, -1), { merge:true });
     await b.commit(); this.loadMonths();
   },
+  /* installments & recurring: every month of the plan is written up front (ids "<plan>_<k>"), so it counts by itself each
+     month and stops by itself after the last one — no server needed. Months whose date hasn't come yet show as "expected". */
+  async savePlans(list, b){
+    if (!CLOUD){ const d = this.L(); d.plans = list; this.saveL(d); this.plans = list; return; }
+    b.set(this.ref("expmeta", "plans"), { list });
+  },
+  async addPlan(p, items){
+    items = items || planItems(p);
+    const list = [...this.plans.filter(x => x.id !== p.id), p];
+    if (!CLOUD){ const d = this.L(); const ids = new Set(items.map(x => x.id)); d.ex = d.ex.filter(x => !ids.has(x.id)).concat(items); d.plans = list; this.saveL(d); this.refreshLocal(); return; }
+    const F = Cloud.fb, b = F.writeBatch(Cloud.db);
+    items.forEach(e => { const { id, ...x } = e; b.set(this.ref("expenses", id), x); b.set(this.ref("expmonths", e.month), this.inc(e, 1), { merge:true }); });
+    this.savePlans(list, b); await b.commit(); this.plans = list; this.loadMonths();
+  },
+  /* remove payments k >= fromK (what's left of the plan stays). fromK 1 = the whole plan */
+  async cutPlan(p, fromK){
+    const ids = planItems(p).filter(x => x.plan.k >= fromK).map(x => x.id);
+    const list = fromK <= 1 ? this.plans.filter(x => x.id !== p.id) : this.plans.map(x => x.id === p.id ? { ...x, stop: fromK - 1 } : x);
+    if (!CLOUD){ const d = this.L(), s = new Set(ids); d.ex = d.ex.filter(x => !s.has(x.id)); d.plans = list; this.saveL(d); this.refreshLocal(); return; }
+    const F = Cloud.fb, docs = await Promise.all(ids.map(id => F.getDoc(this.ref("expenses", id)))), b = F.writeBatch(Cloud.db);
+    docs.forEach((d, i) => { if (!d.exists()) return; const e = d.data(); b.delete(this.ref("expenses", ids[i])); b.set(this.ref("expmonths", e.month), this.inc(e, -1), { merge:true }); });
+    this.savePlans(list, b); await b.commit(); this.plans = list; this.loadMonths();
+  },
+  /* recurring: move the end month (later → adds the new months, earlier → removes the extra ones) */
+  async setPlanEnd(p, end){
+    const was = planItems(p).length, np = { ...p, end }; delete np.stop;
+    const now = planItems(np), n = now.length;
+    if (n > was) return this.addPlan(np, now.slice(was));
+    if (n < was) await this.cutPlan(p, n + 1);
+    const list = this.plans.map(x => x.id === p.id ? np : x);
+    if (!CLOUD){ const d = this.L(); d.plans = list; this.saveL(d); this.refreshLocal(); return; }
+    await Cloud.fb.setDoc(this.ref("expmeta", "plans"), { list }); this.plans = list;
+  },
   async saveSettings(st){
     if (!CLOUD){ const d = this.L(); d.settings = st; this.saveL(d); this.refreshLocal(); return; }
     await Cloud.fb.setDoc(this.ref("expmeta", "settings"), st); this.settings = st;
   },
 };
 
+const PLAN_MAX = { inst:36, rec:60 };
+const monthsBetween = (a, b) => (+b.slice(0, 4) - +a.slice(0, 4)) * 12 + (+b.slice(5, 7) - +a.slice(5, 7));
+function planCount(p){ const n = p.kind === "inst" ? p.n : monthsBetween(monthOf(p.start), p.end) + 1; return Math.max(0, Math.min(n, PLAN_MAX[p.kind] || 36, p.stop || 1e9)); }
+/* all the payments of a plan: same day each month (the 31st becomes the month's last day); installments split the total
+   in whole agorot, the first payment takes the remainder */
+function planItems(p){
+  const n = planCount(p), full = p.kind === "inst" ? p.n : n, m0 = monthOf(p.start), d0 = +p.start.slice(8, 10);
+  const base = p.kind === "inst" ? Math.floor(p.amount / full) : p.amount, first = p.kind === "inst" ? p.amount - base * (full - 1) : p.amount;
+  return Array.from({ length:n }, (_, i) => { const month = addMonth(m0, i), dim = new Date(+month.slice(0, 4), +month.slice(5, 7), 0).getDate();
+    return { id:p.id + "_" + (i + 1), amount: i ? base : first, desc:p.desc, cat:p.cat, payer:p.payer, note:p.note || "", date: month + "-" + String(Math.min(d0, dim)).padStart(2, "0"), month,
+      by:p.by, at:p.at, upd:p.at, plan:{ id:p.id, kind:p.kind, k:i + 1, n: p.kind === "inst" ? full : n } }; });
+}
+function planLeft(p, today = iso(new Date())){ const it = planItems(p), up = it.filter(x => x.date > today); return { it, up, paid: it.length - up.length, left: up.reduce((a, x) => a + x.amount, 0) }; }
+const planTag = pl => pl ? (pl.kind === "inst" ? `💳 ${pl.k}/${pl.n}` : "🔁 קבועה") : "";
+function dueIn(ds, today = iso(new Date())){ const d = Math.round((new Date(ds) - new Date(today)) / 864e5); return d <= 0 ? "היום" : d === 1 ? "מחר" : `בעוד ${d} ימים`; }
+function askChoice(title, text, opts){
+  return new Promise(resolve => {
+    const w = document.createElement("div"); w.className = "cfm-scrim";
+    w.innerHTML = `<div class="cfm" role="alertdialog" aria-modal="true" aria-labelledby="chT"><div class="ic">${icon("trash")}</div><h3 id="chT"></h3><p></p>
+      <div class="col">${opts.map(([v, l, cls]) => `<button type="button" class="${cls || ""}" data-v="${v}">${l}</button>`).join("")}</div><button type="button" class="skip">ביטול</button></div>`;
+    w.querySelector("h3").textContent = title; w.querySelector("p").textContent = text || "";
+    document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+    const done = v => { w.classList.remove("show"); setTimeout(() => w.remove(), 200); document.removeEventListener("keydown", key); resolve(v); };
+    const key = e => { if (e.key === "Escape") done(null); };
+    document.addEventListener("keydown", key);
+    w.querySelectorAll("[data-v]").forEach(b => b.onclick = () => done(b.dataset.v));
+    w.querySelector(".skip").onclick = () => done(null);
+    w.onclick = e => { if (e.target === w) done(null); };
+  });
+}
+
 function renderMoney(){
   if (!moneyOn()){ S.tab = "today"; return render(); }
   Money.open(Money.month);
-  const m = Money.m, list = Money.list, B = Money.budget(), view = S.moneyView || "over";
-  const total = list.reduce((a, e) => a + e.amount, 0), byCat = {}, byPayer = {};
+  const m = Money.m, B = Money.budget(), view = S.moneyView || "over", today = iso(new Date()), isNow = today.slice(0, 7) === m;
+  const list = Money.list.filter(e => e.date <= today), soon = Money.list.filter(e => e.date > today).sort((a, b) => a.date < b.date ? -1 : 1);
+  const total = list.reduce((a, e) => a + e.amount, 0), upSum = soon.reduce((a, e) => a + e.amount, 0), byCat = {}, byPayer = {};
   list.forEach(e => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; byPayer[e.payer] = (byPayer[e.payer] || 0) + e.amount; });
-  const today = iso(new Date()), isNow = today.slice(0, 7) === m;
   const daysIn = new Date(+m.slice(0, 4), +m.slice(5, 7), 0).getDate(), daysLeft = isNow ? daysIn - +today.slice(8, 10) + 1 : 0;
-  const pct = B.total ? Math.round(total * 100 / B.total) : 0, left = B.total - total;
+  const pct = B.total ? Math.round(total * 100 / B.total) : 0, left = B.total - total - upSum;
   const ring = `<div class="mn-ring ${pct > 100 ? "over" : pct >= 85 ? "near" : ""}" style="--p:${Math.min(100, pct)}"><div><b class="tabular">${B.total ? pct + "%" : "—"}</b><small>${B.total ? "מהתקציב" : "אין תקציב"}</small></div></div>`;
   const hero = `<button type="button" class="panel mn-hero" data-budget>${ring}
     <div class="mn-hk"><span>${isNow ? "הוצאנו החודש" : "הוצאנו ב" + monthLabel(m).split(" ")[0]}</span><b class="mn-big tabular">${ilsR(total)}</b>
       ${B.total ? `<span>מתוך ${ilsR(B.total)}</span>
         <em class="${left < 0 ? "bad" : "ok"}">${left < 0 ? "חריגה של " + ilsR(-left) : "נשארו " + ilsR(left) + (isNow ? ` · ${daysLeft} ימים` : "")}</em>
+        ${upSum ? `<small>כולל ${ilsR(upSum)} שעוד צפויים החודש</small>` : ""}
         ${isNow && left > 0 && daysLeft ? `<small>כ-${ilsR(left / daysLeft)} ליום כדי לעמוד ביעד</small>` : ""}`
-      : `<em class="ok">קביעת תקציב חודשי ›</em>`}</div></button>`;
+      : `${upSum ? `<small>+ ${ilsR(upSum)} צפויים עד סוף החודש</small>` : ""}<em class="ok">קביעת תקציב חודשי ›</em>`}</div></button>`;
+  const soonHtml = soon.length ? `<div class="mn-sec">צפוי החודש <small class="tabular">${ilsR(upSum)}</small></div>${soon.map(e => { const c = Money.cat(e.cat), d = Math.round((new Date(e.date) - new Date(today)) / 864e5);
+      return `<button type="button" class="mn-ex mn-soon" data-ex="${esc(e.id)}"><span class="mn-e">${esc(c.emoji)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(planTag(e.plan) || c.name)} · ${esc(payerName(e.payer))}</small></span><span class="mn-due ${d <= 3 ? "near" : ""}">${esc(dueIn(e.date, today))}</span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}` : "";
+  const act = isNow ? Money.plans.map(p => ({ p, ...planLeft(p, today) })).filter(x => x.up.length) : [];
+  const plansHtml = act.length ? `<div class="mn-sec">תשלומים והוצאות קבועות</div><div class="panel mn-plans">${act.map(({ p, it, paid, left }) => { const c = Money.cat(p.cat), last = it[it.length - 1];
+      return `<button type="button" class="mn-plan" data-plan="${esc(p.id)}"><span class="mn-e">${p.kind === "inst" ? "💳" : "🔁"}</span><span class="t"><b>${esc(p.desc || c.name)}</b>
+        <small>${p.kind === "inst" ? `תשלום ${paid} מתוך ${it.length} · נשארו ${ilsR(left)}` : `${ilsR(p.amount)} לחודש · עד ${esc(monthLabel(last.month))}`}</small>
+        ${p.kind === "inst" ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</span><span class="a tabular">${p.kind === "inst" ? `${it.length - paid} נותרו` : `${it.length - paid} חודשים`}</span></button>`; }).join("")}</div>` : "";
   const catIds = [...new Set([...Object.keys(byCat), ...Object.keys(B.cats).filter(k => +B.cats[k] > 0)])].sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
   const catRows = catIds.map(id => { const c = Money.cat(id), sp = byCat[id] || 0, bud = +B.cats[id] || 0, p = bud ? sp * 100 / bud : 0;
     return `<div class="mn-cat"><span class="mn-e">${esc(c.emoji)}</span><div class="t"><div class="r"><span>${esc(c.name)}</span><small class="tabular">${ilsR(sp)}${bud ? " / " + Math.round(bud / 100).toLocaleString("he-IL") : ""}</small></div>
@@ -3645,10 +3732,10 @@ function renderMoney(){
       <div class="row">${payers.map(k => `<div><i class="mn-dot" style="background:${k === TOGETHER ? "#B8A48C" : (USERS[k] || ALLUSERS[k] || {}).color || "#F2B66B"}"></i><span>${esc(payerName(k))}</span><b class="tabular">${ilsR(byPayer[k])}</b><small class="tabular">${Math.round(byPayer[k] * 100 / total)}%</small></div>`).join("")}</div>
       <div class="mn-split">${payers.map(k => `<i style="width:${(byPayer[k] * 100 / total).toFixed(1)}%;background:${k === TOGETHER ? "#B8A48C" : (USERS[k] || {}).color || "#F2B66B"}"></i>`).join("")}</div></div>` : "";
   // history: by day, newest first
-  const sorted = [...list].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0));
+  const sorted = [...Money.list].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0));
   let hist = "", lastD = "";
   sorted.forEach(e => { if (e.date !== lastD){ lastD = e.date; hist += `<div class="mn-day">${esc(dayLabel(e.date))}</div>`; }
-    const c = Money.cat(e.cat); hist += `<button type="button" class="mn-ex" data-ex="${esc(e.id)}"><span class="mn-e">${esc(c.emoji)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(payerName(e.payer))} · ${esc(c.name)}${e.note ? " · " + esc(e.note) : ""}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; });
+    const c = Money.cat(e.cat); hist += `<button type="button" class="mn-ex" data-ex="${esc(e.id)}"><span class="mn-e">${esc(c.emoji)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : ""}${esc(payerName(e.payer))} · ${esc(c.name)}${e.plan ? " · " + esc(planTag(e.plan)) : ""}${e.note ? " · " + esc(e.note) : ""}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; });
   // comparison: this month + the 6 before it
   const months = Array.from({ length:6 }, (_, i) => addMonth(m, -5 + i)).map(k => ({ k, t: k === m ? total : +((Money.months[k] || {}).total) || 0 }));
   const maxT = Math.max(B.total, ...months.map(x => x.t), 1), prev = months[4].t;
@@ -3657,13 +3744,14 @@ function renderMoney(){
     <div class="mn-cmp">${B.total ? `<div class="mn-line" style="bottom:calc(22px + ${(B.total * 100 / maxT * .86).toFixed(1)}px)"></div>` : ""}
       ${months.map(x => `<div class="b ${x.k === m ? "now" : ""} ${B.total && x.t > B.total ? "over" : ""}"><small class="tabular">${x.t ? Math.round(x.t / 100).toLocaleString("he-IL") : ""}</small><i style="height:${(x.t * 100 / maxT * .86).toFixed(1)}px"></i><span>${esc(monthShort(x.k))}</span></div>`).join("")}</div>
     <div class="mn-delta"><div>לעומת ${esc(monthShort(addMonth(m, -1)))}<b class="${prev && total > prev ? "up" : ""}">${prev ? (total >= prev ? "+" : "−") + Math.abs(Math.round((total - prev) * 100 / prev)) + "%" : "—"}</b></div>
-      <div>ממוצע חודשי<b>${avg ? ilsR(avg) : "—"}</b></div><div>הוצאות החודש<b>${list.length}</b></div></div></div>`;
+      <div>ממוצע חודשי<b>${avg ? ilsR(avg) : "—"}</b></div><div>הוצאות החודש<b>${Money.list.length}</b></div></div></div>`;
   $("#screen").innerHTML = `
     <header class="top mn-top"><h1>הוצאות</h1><div class="mn-mon"><button type="button" data-mon="-1" aria-label="החודש הקודם">${icon("next")}</button><b>${esc(monthLabel(m))}</b><button type="button" data-mon="1" aria-label="החודש הבא" ${isNow ? "disabled" : ""}>${icon("prev")}</button></div></header>
-    <div class="seg" role="group" aria-label="תצוגה"><button data-mv="over" aria-pressed="${view === "over"}">סקירה</button><button data-mv="hist" aria-pressed="${view === "hist"}">היסטוריה והשוואה <span class="n">${list.length}</span></button></div>
+    <div class="seg" role="group" aria-label="תצוגה"><button data-mv="over" aria-pressed="${view === "over"}">סקירה</button><button data-mv="hist" aria-pressed="${view === "hist"}">היסטוריה והשוואה <span class="n">${Money.list.length}</span></button></div>
     ${!Money.ready ? `<p class="hint">טוען…</p>` : Money.err ? `<p class="hint">${esc(Money.err)}</p>` : view === "over" ? `
       ${hero}
       ${catRows ? `<div class="mn-sec">לפי קטגוריה <small>${B.total ? "מול התקציב" : ""}</small></div><div class="panel mn-cats">${catRows}</div>` : `<div class="panel t-empty mn-empty">עוד אין הוצאות ב${esc(monthLabel(m).split(" ")[0])}. לחצו ＋ כדי להוסיף.</div>`}
+      ${soonHtml}${plansHtml}
       ${payerHtml}` : `${cmp}${hist || `<div class="panel t-empty mn-empty">אין הוצאות בחודש הזה.</div>`}`}
     <button class="fab" id="fab" aria-label="הוצאה חדשה">${icon("plus")}</button>`;
   const sc = $("#screen");
@@ -3671,6 +3759,7 @@ function renderMoney(){
   sc.querySelectorAll("[data-mon]").forEach(b => b.onclick = () => { if (b.disabled) return; Money.month = addMonth(m, +b.dataset.mon); renderMoney(); });
   sc.querySelector("[data-budget]")?.addEventListener("click", () => budgetSheet());
   sc.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => expenseSheet(Money.list.find(x => x.id === b.dataset.ex)));
+  sc.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => planSheet(Money.plans.find(x => x.id === b.dataset.plan)));
   $("#fab").onclick = () => expenseSheet();
 }
 
@@ -3678,29 +3767,64 @@ function expenseSheet(e){
   const edit = !!e, m = Money.m || iso(new Date()).slice(0, 7), isNow = iso(new Date()).slice(0, 7) === m;
   const d0 = edit ? e.date : isNow ? iso(new Date()) : m + "-01";
   e = e || { id:uid(), amount:0, desc:"", cat:"food", payer:me, date:d0, note:"" };
-  const cats = Money.cats(), payers = [...people(), TOGETHER];
+  const cats = Money.cats(), payers = [...people(), TOGETHER], pl = e.plan;
   const sh = openSheet(`${head(edit ? "עריכת הוצאה" : "הוצאה חדשה")}
     <form id="xf" class="mn-form">
+      ${edit ? (pl ? `<button type="button" class="mn-inplan" id="xPlan">${pl.kind === "inst" ? `💳 תשלום ${pl.k} מתוך ${pl.n}` : "🔁 הוצאה קבועה"} · השינוי כאן רק לחודש הזה ›</button>` : "")
+        : `<div class="seg mn-kind" role="group" aria-label="סוג"><button type="button" data-k="once" aria-pressed="true">חד פעמית</button><button type="button" data-k="inst" aria-pressed="false">💳 תשלומים</button><button type="button" data-k="rec" aria-pressed="false">🔁 קבועה</button></div>`}
       <label class="mn-amt"><span>₪</span><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${edit ? (e.amount / 100).toString() : ""}" aria-label="סכום"></label>
-      <p class="mn-amt-l">סכום</p>
+      <p class="mn-amt-l" id="xAmtL">סכום</p>
+      ${edit ? "" : `<div class="mn-planf" id="xInst" hidden><label><span class="lbl">מספר תשלומים</span><input class="input" name="n" type="number" inputmode="numeric" min="2" max="${PLAN_MAX.inst}" value="10"></label></div>
+        <div class="mn-planf" id="xRec" hidden><label><span class="lbl">עד חודש <small>(סוף חוזה)</small></span><input class="input" name="end" type="month"></label></div>
+        <p class="mn-planp" id="xPrev" hidden></p>`}
       <input class="input" name="desc" maxlength="80" placeholder="על מה? למשל: קניות שבועיות" value="${esc(e.desc || "")}" autocomplete="off" aria-label="תיאור">
       <span class="lbl">קטגוריה</span>
       <div class="chips mn-chips">${cats.map(c => `<button type="button" class="chip ${c.id === e.cat ? "on" : ""}" data-cat="${esc(c.id)}">${esc(c.emoji)} ${esc(c.name)}</button>`).join("")}</div>
       <span class="lbl">מי שילם</span>
       ${radios("payer", payers.map(k => [k, payerName(k)]), e.payer)}
-      <div class="mn-row2"><label><span class="lbl">תאריך</span><input class="input" type="date" name="date" value="${esc(e.date)}" max="${iso(new Date())}"></label>
+      <div class="mn-row2"><label><span class="lbl" id="xDateL">תאריך</span><input class="input" type="date" name="date" value="${esc(e.date)}" ${pl ? "" : `max="${iso(new Date())}"`}></label>
         <label><span class="lbl">הערה</span><input class="input" name="note" maxlength="80" value="${esc(e.note || "")}" placeholder="לא חובה" autocomplete="off"></label></div>
       <p class="error" id="xErr"></p>
       <div class="actions">${edit ? `<button type="button" class="danger" id="xDel">${icon("trash")}מחיקה</button>` : ""}<button class="primary" type="submit">${edit ? "שמירה" : "הוספה"}</button></div>
     </form>`);
-  const f = sh.querySelector("#xf"); let cat = e.cat;
+  const f = sh.querySelector("#xf"); let cat = e.cat, kind = "once";
   if (!edit) setTimeout(() => f.amount.focus(), 260);
+  /* new plan = one of these from the form (or null when something is missing) */
+  const draft = () => { if (kind === "once") return null; const amount = parseAmount(f.amount.value), start = f.date.value;
+    if (!amount || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+    const p = { id:uid(), kind, amount, start, desc:f.desc.value.trim().slice(0, 80), cat, payer:f.payer.value || me, note:f.note.value.trim().slice(0, 80), by:me, at:Date.now() };
+    if (kind === "inst"){ p.n = Math.round(+f.n.value); if (!(p.n >= 2 && p.n <= PLAN_MAX.inst)) return null; }
+    else { p.end = f.end.value; if (!/^\d{4}-\d{2}$/.test(p.end) || p.end < monthOf(start)) return null; }
+    return p; };
+  const preview = () => { if (edit) return; const pv = sh.querySelector("#xPrev"), p = draft(); pv.hidden = kind === "once";
+    if (kind === "once") return; if (!p){ pv.textContent = kind === "inst" ? "סכום כולל ומספר תשלומים (2–" + PLAN_MAX.inst + ")" : "סכום חודשי וחודש סיום"; return; }
+    const it = planItems(p), a = it[0], z = it[it.length - 1];
+    pv.textContent = kind === "inst" ? `${it.length} תשלומים של ${nis(it[1] ? it[1].amount : a.amount)}${a.amount !== (it[1] || a).amount ? `, הראשון ${nis(a.amount)}` : ""} · ${monthLabel(a.month)} עד ${monthLabel(z.month)}`
+      : `${nis(p.amount)} בכל ${+p.start.slice(8, 10)} לחודש · ${it.length} חודשים${it.length >= PLAN_MAX.rec ? " (המקסימום)" : ""} · ${monthLabel(a.month)} עד ${monthLabel(z.month)}`; };
+  if (!edit){
+    sh.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { kind = b.dataset.k; sh.querySelectorAll("[data-k]").forEach(x => x.setAttribute("aria-pressed", x === b));
+      sh.querySelector("#xInst").hidden = kind !== "inst"; sh.querySelector("#xRec").hidden = kind !== "rec";
+      sh.querySelector("#xAmtL").textContent = kind === "inst" ? "סכום כולל" : kind === "rec" ? "סכום חודשי" : "סכום";
+      sh.querySelector("#xDateL").textContent = kind === "once" ? "תאריך" : "תשלום ראשון";
+      if (kind === "once") f.date.max = iso(new Date()), f.date.value > f.date.max && (f.date.value = f.date.max); else f.date.removeAttribute("max");
+      if (kind === "rec" && !f.end.value) f.end.value = addMonth(monthOf(f.date.value || iso(new Date())), 11);
+      preview(); });
+    f.addEventListener("input", preview);
+  }
+  if (pl) sh.querySelector("#xPlan").onclick = () => { const p = Money.plans.find(x => x.id === pl.id); if (p){ closeSheet(); setTimeout(() => planSheet(p), 220); } else toast("התוכנית כבר לא קיימת"); };
   sh.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { cat = b.dataset.cat; sh.querySelectorAll("[data-cat]").forEach(x => x.classList.toggle("on", x === b)); });
   f.onsubmit = async ev => {
     ev.preventDefault();
     const amount = parseAmount(f.amount.value), err = sh.querySelector("#xErr");
     if (!amount){ err.textContent = "מה הסכום? למשל 186.40"; f.amount.focus(); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date.value)){ err.textContent = "חסר תאריך"; return; }
+    if (kind !== "once"){ const p = draft();
+      if (!p){ err.textContent = kind === "inst" ? `מספר תשלומים בין 2 ל-${PLAN_MAX.inst}` : "חודש הסיום צריך להיות אחרי התשלום הראשון"; return; }
+      if (kind === "inst" && p.amount < p.n){ err.textContent = "הסכום קטן מדי לחלוקה"; return; }
+      const b = f.querySelector("[type=submit]"); busyBtn(b, true, "שומר…");
+      try { await Money.addPlan(p); } catch(x){ busyBtn(b, false, "הוספה"); err.textContent = errText(x); return; }
+      const n = planCount(p); closeSheet(); renderMoney();
+      return toast(kind === "inst" ? `נוספו ${n} תשלומים · ${nis(p.amount)}` : `נוספה הוצאה קבועה ל-${n} חודשים`); }
     const ne = { ...e, amount, desc:f.desc.value.trim().slice(0, 80), cat, payer:f.payer.value || me, date:f.date.value, month:monthOf(f.date.value), note:f.note.value.trim().slice(0, 80), by:e.by || me, at:e.at || Date.now(), upd:Date.now() };
     const b = f.querySelector("[type=submit]"); busyBtn(b, true, "שומר…");
     try { await Money.put(ne, edit ? e : null); }
@@ -3709,10 +3833,52 @@ function expenseSheet(e){
     renderMoney(); toast(edit ? "נשמר" : `נוספה הוצאה · ${nis(amount)}`);
   };
   if (edit) sh.querySelector("#xDel").onclick = async () => {
-    if (!await askConfirm("למחוק את ההוצאה?", `${nis(e.amount)} · ${e.desc || Money.cat(e.cat).name}`)) return;
+    const what = `${nis(e.amount)} · ${e.desc || Money.cat(e.cat).name}`, p = pl && Money.plans.find(x => x.id === pl.id);
+    if (p){ const v = await askChoice("למחוק את התשלום?", what, [["one", "רק את החודש הזה"], ["rest", pl.k > 1 ? "את זה וכל הבאים" : "את כל התוכנית", "del"]]);
+      if (!v) return;
+      try { if (v === "one") await Money.del(e); else await Money.cutPlan(p, pl.k); } catch(x){ return toast(errText(x)); }
+      closeSheet(); renderMoney(); return toast(v === "one" ? "התשלום נמחק" : "התשלומים נמחקו"); }
+    if (!await askConfirm("למחוק את ההוצאה?", what)) return;
     try { await Money.del(e); } catch(x){ return toast(errText(x)); }
     closeSheet(); renderMoney(); toast("ההוצאה נמחקה");
   };
+}
+
+function planSheet(p){
+  if (!p) return;
+  const today = iso(new Date()), { it, up, paid, left } = planLeft(p, today), c = Money.cat(p.cat), inst = p.kind === "inst", last = it[it.length - 1];
+  const sh = openSheet(`${head(p.desc || c.name)}
+    <div class="mn-form mn-plansh">
+      <div class="panel mn-pinfo"><div><span>${inst ? "💳 תשלומים" : "🔁 הוצאה קבועה"}</span><b class="tabular">${inst ? nis(p.amount) : nis(p.amount) + " לחודש"}</b></div>
+        <div><span>${inst ? "שולמו" : "חודשים שעברו"}</span><b>${paid} מתוך ${it.length}</b></div>
+        <div><span>נשאר לשלם</span><b class="tabular">${nis(left)}</b></div>
+        <div><span>${esc(c.emoji)} ${esc(c.name)} · ${esc(payerName(p.payer))}</span><b>${up.length ? "הבא: " + +up[0].date.slice(8, 10) + "/" + +up[0].date.slice(5, 7) : "הסתיים"}</b></div>
+        ${inst ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</div>
+      ${inst ? "" : `<label><span class="lbl">עד חודש <small>(סוף חוזה)</small></span><input class="input" type="month" id="pEnd" value="${esc(last ? last.month : p.end)}" min="${esc(monthOf(p.start))}"></label>`}
+      <p class="mn-planp">${inst ? `מ${esc(monthLabel(monthOf(p.start)))} עד ${esc(monthLabel(last.month))}. כל חודש נספר לבד, ואחרי התשלום האחרון זה נעצר.` : `בכל ${+p.start.slice(8, 10)} לחודש, עד ${esc(monthLabel(last.month))}. אחרי זה נעצר לבד.`}</p>
+      <p class="error" id="pErr"></p>
+      <div class="actions">${up.length ? `<button type="button" class="danger" id="pStop">${icon("trash")}עצירה</button>` : `<button type="button" class="danger" id="pAll">${icon("trash")}מחיקה מלאה</button>`}${inst ? "" : `<button class="primary" type="button" id="pSave">שמירה</button>`}</div>
+    </div>`);
+  const err = sh.querySelector("#pErr");
+  sh.querySelector("#pStop")?.addEventListener("click", async () => {
+    const v = await askChoice(inst ? "לעצור את התשלומים?" : "לעצור את ההוצאה הקבועה?", `${up.length} ${inst ? "תשלומים" : "חודשים"} שעוד לא הגיעו · ${nis(left)}`,
+      [["rest", "למחוק רק את מה שעוד לא הגיע", "del"], ["all", "למחוק הכל, כולל מה ששולם"]]);
+    if (!v) return;
+    try { await Money.cutPlan(p, v === "all" ? 1 : up[0].plan.k); } catch(x){ err.textContent = errText(x); return; }
+    closeSheet(); renderMoney(); toast("נעצר");
+  });
+  sh.querySelector("#pAll")?.addEventListener("click", async () => {
+    if (!await askConfirm("למחוק את כל התשלומים?", `${it.length} · ${nis(it.reduce((a, x) => a + x.amount, 0))}`)) return;
+    try { await Money.cutPlan(p, 1); } catch(x){ err.textContent = errText(x); return; }
+    closeSheet(); renderMoney(); toast("נמחק");
+  });
+  sh.querySelector("#pSave")?.addEventListener("click", async () => {
+    const end = sh.querySelector("#pEnd").value;
+    if (!/^\d{4}-\d{2}$/.test(end) || end < monthOf(p.start)){ err.textContent = "חודש הסיום צריך להיות אחרי התשלום הראשון"; return; }
+    if (end < today.slice(0, 7) && !await askConfirm("לסיים בחודש שכבר עבר?", "יימחקו גם חודשים שכבר נספרו", "כן")) return;
+    try { await Money.setPlanEnd(p, end); } catch(x){ err.textContent = errText(x); return; }
+    closeSheet(); renderMoney(); toast("נשמר");
+  });
 }
 
 function budgetSheet(){
