@@ -1002,17 +1002,11 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .note-fab.snap{transition:left .25s cubic-bezier(.2,.9,.3,1.2),top .25s}
 .note-fab:active{transform:scale(.92)}
 .note-fab.bye{transform:scale(.4) rotate(-20deg);opacity:0}
-/* the button: a little stack of fridge notes (yellow on top, pink + blue behind) + how many are left today */
-.note-fab{width:62px;height:62px;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;filter:drop-shadow(0 8px 12px rgba(10,5,2,.45))}
-.note-fab.dragging{box-shadow:none;filter:drop-shadow(0 14px 18px rgba(10,5,2,.5))}
-.note-fab .nf-p{position:absolute;inset:9px;display:block;width:44px;height:44px;border-radius:2px 2px 12px 2px;pointer-events:none;outline:1.5px solid #120B06}  /* thin dark edge so the notes never melt into the photo */
-.note-fab .nf-3{background:#CFE3F7;transform:rotate(16deg) translate(9px,3px)}
-.note-fab .nf-2{background:#F9CFD3;transform:rotate(6deg) translate(5px,1px)}
-.note-fab .nf-1{background:linear-gradient(180deg,#FFF3C4,#F8DE8E);transform:rotate(-7deg)}
-.note-fab .nf-1::after{content:"";position:absolute;left:0;bottom:0;width:12px;height:12px;background:linear-gradient(45deg,rgba(0,0,0,.1) 50%,rgba(255,255,255,.55) 50%);border-radius:0 6px 0 0}
-.note-fab .nf-1 i{position:absolute;top:-8px;left:50%;margin-left:-8px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FF9E85,#D9573F 60%,#A93C2A);box-shadow:0 2px 4px rgba(0,0,0,.35)}
-.note-fab .nf-1 b{position:absolute;right:8px;left:10px;top:19px;height:2px;border-radius:2px;background:rgba(167,131,74,.55)}
-.note-fab .nf-1 b+b{top:27px;left:16px}
+/* the button: a picture of a sticky note with a red pin (icons/note.webp), a thin dark edge + soft shadow, and how many notes are left today */
+.note-fab{width:62px;height:62px;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+  filter:drop-shadow(1px 0 0 #120B06) drop-shadow(-1px 0 0 #120B06) drop-shadow(0 1px 0 #120B06) drop-shadow(0 -1px 0 #120B06) drop-shadow(0 7px 8px rgba(10,5,2,.55))}
+.note-fab.dragging{box-shadow:none}
+.note-fab .nf-img{position:absolute;left:2px;top:2px;width:58px;height:58px;pointer-events:none;-webkit-user-drag:none}
 .note-fab .nf-n{position:absolute;top:-2px;left:-4px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:#3A2516;color:#FFE9C9;border:2px solid #F2BC77;font:600 12px/16px var(--font);font-style:normal;text-align:center;pointer-events:none}
 .note-fab .nf-n:empty{display:none}
 .note-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:26px;background:rgba(12,7,3,.5);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
@@ -1348,7 +1342,6 @@ html[data-skin="light"] nav.tabs button[aria-current="page"]{--nv1:#FFF3E2;--nv2
 html[data-skin="light"] .primary:hover{background:#D9A962}
 html[data-skin="light"] .fab{box-shadow:0 10px 26px rgba(170,112,44,.35)}
 html[data-skin="light"] .add-btn{background:rgba(255,253,250,.94);color:#8C5E22;box-shadow:0 4px 14px rgba(60,36,12,.18)}
-html[data-skin="light"] .note-fab{filter:drop-shadow(0 8px 12px rgba(120,80,30,.3))}
 html[data-skin="light"] .note-fab .nf-n{background:#fff;color:#5A3A1C;border-color:#C8964F}
 /* sheets, popups, toast */
 html[data-skin="light"] .scrim{background:rgba(52,32,12,.32)}
@@ -1562,8 +1555,7 @@ html[data-skin="light"] .phase-demo button[aria-pressed="true"]{background:rgba(
   <nav class="tabs" aria-label="ניווט ראשי"><div class="row" id="tabs"></div></nav>
 </div>
 <button type="button" id="noteFab" class="note-fab" aria-label="פתק על המקרר" hidden>
-  <span class="nf-p nf-3" aria-hidden="true"></span><span class="nf-p nf-2" aria-hidden="true"></span>
-  <span class="nf-p nf-1" aria-hidden="true"><i></i><b></b><b></b></span><em class="nf-n" id="noteFabN" aria-hidden="true"></em>
+  <img class="nf-img" src="icons/note.webp" alt="" draggable="false"><em class="nf-n" id="noteFabN" aria-hidden="true"></em>
 </button>
 <div id="admin" hidden></div>
 <div id="sheetRoot"></div>
