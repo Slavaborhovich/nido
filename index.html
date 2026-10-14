@@ -1194,7 +1194,25 @@ body.admin-open .note-fab{display:none}
 .mn-sec{display:flex;justify-content:space-between;align-items:center;margin:16px 4px 8px;font-size:15px;font-weight:600}.mn-sec small{font-size:12.5px;color:var(--muted);font-weight:400}
 .mn-sec.in{margin:0 2px 8px}
 .mn-cats{padding:4px 12px}
-.mn-cat{display:flex;align-items:center;gap:10px;padding:9px 0}.mn-cat + .mn-cat{border-top:1px solid var(--line)}
+.mn-cat{display:flex;align-items:center;gap:10px;width:100%;padding:9px 0;border:0;background:none;color:var(--text);font:inherit;text-align:start;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mn-cg + .mn-cg{border-top:1px solid var(--line)}
+.mn-cat .cnt{font-size:11.5px;color:var(--faint);margin-inline-start:6px}
+.mn-chev{width:18px;height:18px;flex:none;color:var(--faint);transition:transform .25s ease,color .2s}
+.mn-cg.open .mn-chev{transform:rotate(180deg);color:var(--muted)}
+.mn-cg.open > .mn-cat .mn-e{background:rgba(242,182,107,.18)}
+.mn-drop{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+.mn-cg.open .mn-drop{grid-template-rows:1fr}
+.mn-drop > div{overflow:hidden;min-height:0}
+.mn-items{margin:0 0 10px;padding:4px 0 2px;border-radius:14px;background:rgba(255,226,190,.045)}
+.mn-it{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:0;background:none;color:var(--text);font:inherit;text-align:start;cursor:pointer}
+.mn-it[hidden]{display:none}
+.mn-it + .mn-it{border-top:1px solid rgba(255,214,170,.07)}
+.mn-it .t{flex:1;min-width:0}.mn-it b{display:block;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mn-it small{font-size:11.5px;color:var(--faint)}.mn-it .a{font-size:14px;font-weight:600;direction:ltr}.mn-it.soon{opacity:.75}
+.mn-more{display:block;width:calc(100% - 24px);margin:4px 12px 8px;padding:7px;border-radius:11px;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}
+.mn-cfoot{display:flex;justify-content:space-between;gap:8px;padding:6px 12px 8px;font-size:11.5px;color:var(--faint)}
+.mn-e .mn-fl{width:24px;height:24px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.mn-fl.in{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-inline-end:3px}
 .mn-e{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;background:rgba(255,226,190,.07);flex:none}
 .mn-cat .t{flex:1;min-width:0}.mn-cat .r{display:flex;justify-content:space-between;gap:8px;font-size:14px}.mn-cat .r small{color:var(--muted);font-size:12.5px;direction:ltr}
 .mn-pb{height:6px;border-radius:6px;background:rgba(255,226,190,.1);margin-top:6px;overflow:hidden}.mn-pb i{display:block;height:100%;border-radius:6px;background:#F2B66B}
@@ -1247,6 +1265,7 @@ html[data-skin="light"] .mn-ring:not(.near):not(.over){--c:#C9964F}
 html[data-skin="light"] :is(.mn-pb,.mn-mon button){background:rgba(110,78,40,.1)}
 html[data-skin="light"] .mn-pb i{background:#C9964F}html[data-skin="light"] .mn-pb i.mid{background:#D0A23E}html[data-skin="light"] .mn-pb i.hi{background:#C0614A}html[data-skin="light"] .mn-pb i.free{background:rgba(201,150,79,.55)}
 html[data-skin="light"] .mn-e{background:rgba(110,78,40,.07)}
+html[data-skin="light"] .mn-items{background:rgba(110,78,40,.05)}html[data-skin="light"] .mn-it + .mn-it{border-top-color:rgba(110,78,40,.1)}
 html[data-skin="light"] .mn-hk em.ok,html[data-skin="light"] .mn-delta b{color:#3F7E3A}html[data-skin="light"] .mn-hk em.bad,html[data-skin="light"] .mn-delta b.up{color:#B5452F}
 html[data-skin="light"] .mn-delta div{background:rgba(110,78,40,.05)}
 html[data-skin="light"] .mn-cmp .b i{background:rgba(201,150,79,.4)}html[data-skin="light"] .mn-cmp .b.now i{background:#C9964F}html[data-skin="light"] .mn-cmp .b.over i{background:#C0614A}
@@ -3607,6 +3626,9 @@ const TOGETHER = "together";
 /* who sees it: the family's admin and the system admin — not editors or view-only members */
 function moneyOn(){ return !!me && (roleOf() === "admin" || (CLOUD && Cloud.isSuper)) && (!CLOUD || ENV === "test" || moneyFeat(Cloud.fam, FAM.features)); }
 /* on for our own family unless switched off; any other family only once the system admin switches it on */
+/* built-in categories get a 3D Fluent Emoji picture (MIT, stored with the app); the family's own categories keep their emoji */
+const EXP_FLU = { food:"cart", eatout:"plate", rent:"key", bills:"bulb", fuel:"fuel", car:"car", insurance:"shield", fun:"balloon", home:"house", clothes:"tshirt", health:"pill", kids:"teddy", other:"sparkles" };
+const catIc = (c, cls = "") => EXP_FLU[c.id] ? `<img class="flu mn-fl ${cls}" src="icons/fluent/${EXP_FLU[c.id]}.png" alt="" aria-hidden="true" draggable="false">` : esc(c.emoji);
 function moneyFeat(fid, feats){ const v = feats && feats.expenses; return v === true || (fid === HOME_FAMILY && v !== false); }
 const nis = a => (a < 0 ? "−" : "") + "₪" + (Math.abs(a) / 100).toLocaleString("he-IL", { minimumFractionDigits: Math.abs(a) % 100 ? 2 : 0, maximumFractionDigits: 2 });
 const ilsR = a => "₪" + Math.round(a / 100).toLocaleString("he-IL");
@@ -3758,16 +3780,27 @@ function renderMoney(){
         ${isNow && left > 0 && daysLeft ? `<small>כ-${ilsR(left / daysLeft)} ליום כדי לעמוד ביעד</small>` : ""}`
       : `${upSum ? `<small>+ ${ilsR(upSum)} צפויים עד סוף החודש</small>` : ""}<em class="ok">קביעת תקציב חודשי ›</em>`}</div></button>`;
   const soonHtml = soon.length ? `<div class="mn-sec">צפוי החודש <small class="tabular">${ilsR(upSum)}</small></div>${soon.map(e => { const c = Money.cat(e.cat), d = Math.round((new Date(e.date) - new Date(today)) / 864e5);
-      return `<button type="button" class="mn-ex mn-soon" data-ex="${esc(e.id)}"><span class="mn-e">${esc(c.emoji)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(planTag(e.plan) || c.name)} · ${esc(payerName(e.payer))}</small></span><span class="mn-due ${d <= 3 ? "near" : ""}">${esc(dueIn(e.date, today))}</span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}` : "";
+      return `<button type="button" class="mn-ex mn-soon" data-ex="${esc(e.id)}"><span class="mn-e">${catIc(c)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(planTag(e.plan) || c.name)} · ${esc(payerName(e.payer))}</small></span><span class="mn-due ${d <= 3 ? "near" : ""}">${esc(dueIn(e.date, today))}</span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}` : "";
   const act = isNow ? Money.plans.map(p => ({ p, ...planLeft(p, today) })).filter(x => x.up.length) : [];
   const plansHtml = act.length ? `<div class="mn-sec">תשלומים והוצאות קבועות</div><div class="panel mn-plans">${act.map(({ p, it, paid, left }) => { const c = Money.cat(p.cat), last = it[it.length - 1];
       return `<button type="button" class="mn-plan" data-plan="${esc(p.id)}"><span class="mn-e">${p.kind === "inst" ? "💳" : "🔁"}</span><span class="t"><b>${esc(p.desc || c.name)}</b>
         <small>${p.kind === "inst" ? `תשלום ${paid} מתוך ${it.length} · נשארו ${ilsR(left)}` : `${ilsR(p.amount)} לחודש · עד ${esc(monthLabel(last.month))}`}</small>
         ${p.kind === "inst" ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</span><span class="a tabular">${p.kind === "inst" ? `${it.length - paid} נותרו` : `${it.length - paid} חודשים`}</span></button>`; }).join("")}</div>` : "";
   const catIds = [...new Set([...Object.keys(byCat), ...Object.keys(B.cats).filter(k => +B.cats[k] > 0)])].sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
+  const payColor = k => k === TOGETHER ? "#B8A48C" : (USERS[k] || ALLUSERS[k] || {}).color || "#F2B66B";
+  const byDate = (a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0), SHOW = 5;
+  const chev = `<svg class="mn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+  /* each category opens (one at a time) to show its expenses for the month — tap one to edit it */
   const catRows = catIds.map(id => { const c = Money.cat(id), sp = byCat[id] || 0, bud = +B.cats[id] || 0, p = bud ? sp * 100 / bud : 0;
-    return `<div class="mn-cat"><span class="mn-e">${esc(c.emoji)}</span><div class="t"><div class="r"><span>${esc(c.name)}</span><small class="tabular">${ilsR(sp)}${bud ? " / " + Math.round(bud / 100).toLocaleString("he-IL") : ""}</small></div>
-      ${bud ? `<div class="mn-pb"><i class="${p > 100 ? "hi" : p >= 85 ? "mid" : ""}" style="width:${Math.min(100, p).toFixed(1)}%"></i></div>` : `<div class="mn-pb"><i class="free" style="width:${total ? (sp * 100 / total).toFixed(1) : 0}%"></i></div>`}</div></div>`; }).join("");
+    const its = Money.list.filter(e => e.cat === id).sort(byDate), done = its.filter(e => e.date <= today), open = S.mnOpen === id, all = S.mnAll === id;
+    const rows = its.map((e, i) => `<button type="button" class="mn-it ${e.date > today ? "soon" : ""}" data-ex="${esc(e.id)}" ${i >= SHOW && !all ? "hidden" : ""}><i class="mn-dot" style="background:${payColor(e.payer)}"></i>
+        <span class="t"><b>${esc(e.desc || c.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : e.plan ? `<em class="mn-tag">${esc(planTag(e.plan))}</em> ` : ""}${e.date.slice(8, 10)}.${e.date.slice(5, 7)} · ${esc(payerName(e.payer))}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`).join("");
+    const more = its.length > SHOW && !all ? `<button type="button" class="mn-more" data-more="${esc(id)}">עוד ${its.length - SHOW} הוצאות ›</button>` : "";
+    const foot = its.length ? `<div class="mn-cfoot"><span>${done.length} הוצאות${done.length ? " · ממוצע " + ilsR(sp / done.length) : ""}</span>${bud ? `<span>${sp <= bud ? "נשארו " + ilsR(bud - sp) : "חריגה של " + ilsR(sp - bud)}</span>` : ""}</div>`
+      : `<div class="mn-cfoot"><span>אין הוצאות בקטגוריה הזו החודש</span></div>`;
+    return `<div class="mn-cg ${open ? "open" : ""}" data-cg="${esc(id)}"><button type="button" class="mn-cat" aria-expanded="${open}"><span class="mn-e">${catIc(c)}</span><div class="t"><div class="r"><span>${esc(c.name)}${its.length ? `<span class="cnt">· ${its.length}</span>` : ""}</span><small class="tabular">${ilsR(sp)}${bud ? " / " + Math.round(bud / 100).toLocaleString("he-IL") : ""}</small></div>
+      ${bud ? `<div class="mn-pb"><i class="${p > 100 ? "hi" : p >= 85 ? "mid" : ""}" style="width:${Math.min(100, p).toFixed(1)}%"></i></div>` : `<div class="mn-pb"><i class="free" style="width:${total ? (sp * 100 / total).toFixed(1) : 0}%"></i></div>`}</div>${chev}</button>
+      <div class="mn-drop"><div><div class="mn-items">${rows}${more}${foot}</div></div></div></div>`; }).join("");
   const payers = Object.keys(byPayer).sort((a, b) => byPayer[b] - byPayer[a]);
   const payerHtml = payers.length ? `<div class="mn-sec">מי שילם</div><div class="panel mn-who">
       <div class="row">${payers.map(k => `<div><i class="mn-dot" style="background:${k === TOGETHER ? "#B8A48C" : (USERS[k] || ALLUSERS[k] || {}).color || "#F2B66B"}"></i><span>${esc(payerName(k))}</span><b class="tabular">${ilsR(byPayer[k])}</b><small class="tabular">${Math.round(byPayer[k] * 100 / total)}%</small></div>`).join("")}</div>
@@ -3776,7 +3809,7 @@ function renderMoney(){
   const sorted = [...Money.list].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0));
   let hist = "", lastD = "";
   sorted.forEach(e => { if (e.date !== lastD){ lastD = e.date; hist += `<div class="mn-day">${esc(dayLabel(e.date))}</div>`; }
-    const c = Money.cat(e.cat); hist += `<button type="button" class="mn-ex" data-ex="${esc(e.id)}"><span class="mn-e">${esc(c.emoji)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : ""}${esc(payerName(e.payer))} · ${esc(c.name)}${e.plan ? " · " + esc(planTag(e.plan)) : ""}${e.note ? " · " + esc(e.note) : ""}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; });
+    const c = Money.cat(e.cat); hist += `<button type="button" class="mn-ex" data-ex="${esc(e.id)}"><span class="mn-e">${catIc(c)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : ""}${esc(payerName(e.payer))} · ${esc(c.name)}${e.plan ? " · " + esc(planTag(e.plan)) : ""}${e.note ? " · " + esc(e.note) : ""}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; });
   // comparison: this month + the 6 before it
   const months = Array.from({ length:6 }, (_, i) => addMonth(m, -5 + i)).map(k => ({ k, t: k === m ? total : +((Money.months[k] || {}).total) || 0 }));
   const maxT = Math.max(B.total, ...months.map(x => x.t), 1), prev = months[4].t;
@@ -3800,6 +3833,11 @@ function renderMoney(){
   sc.querySelectorAll("[data-mon]").forEach(b => b.onclick = () => { if (b.disabled) return; Money.month = addMonth(m, +b.dataset.mon); renderMoney(); });
   sc.querySelector("[data-budget]")?.addEventListener("click", () => budgetSheet());
   sc.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => expenseSheet(Money.list.find(x => x.id === b.dataset.ex)));
+  sc.querySelectorAll(".mn-cat").forEach(b => b.onclick = () => { const g = b.parentElement, was = g.classList.contains("open");
+    sc.querySelectorAll(".mn-cg.open").forEach(x => { x.classList.remove("open"); x.firstElementChild.setAttribute("aria-expanded", "false"); });
+    S.mnOpen = was ? null : g.dataset.cg; S.mnAll = null;
+    if (!was){ g.classList.add("open"); b.setAttribute("aria-expanded", "true"); setTimeout(() => g.scrollIntoView({ behavior:"smooth", block:"nearest" }), 290); } });
+  sc.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { S.mnAll = b.dataset.more; b.parentElement.querySelectorAll(".mn-it[hidden]").forEach(x => x.hidden = false); b.remove(); });
   sc.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => planSheet(Money.plans.find(x => x.id === b.dataset.plan)));
   $("#fab").onclick = () => expenseSheet();
 }
@@ -3821,7 +3859,7 @@ function expenseSheet(e){
         <p class="mn-planp" id="xPrev" hidden></p>`}
       <input class="input" name="desc" maxlength="80" placeholder="על מה? למשל: קניות שבועיות" value="${esc(e.desc || "")}" autocomplete="off" aria-label="תיאור">
       <span class="lbl">קטגוריה</span>
-      <div class="chips mn-chips">${cats.map(c => `<button type="button" class="chip ${c.id === e.cat ? "on" : ""}" data-cat="${esc(c.id)}">${esc(c.emoji)} ${esc(c.name)}</button>`).join("")}</div>
+      <div class="chips mn-chips">${cats.map(c => `<button type="button" class="chip ${c.id === e.cat ? "on" : ""}" data-cat="${esc(c.id)}">${catIc(c, "in")} ${esc(c.name)}</button>`).join("")}</div>
       <span class="lbl">מי שילם</span>
       ${radios("payer", payers.map(k => [k, payerName(k)]), e.payer)}
       <div class="mn-row2"><label><span class="lbl" id="xDateL">תאריך</span><input class="input" type="date" name="date" value="${esc(e.date)}" ${pl ? "" : `max="${iso(new Date())}"`}></label>
@@ -3894,7 +3932,7 @@ function planSheet(p){
       <div class="panel mn-pinfo"><div><span>${inst ? "💳 תשלומים" : "🔁 הוצאה קבועה"}</span><b class="tabular">${inst ? nis(p.amount) : nis(p.amount) + " לחודש"}</b></div>
         <div><span>${inst ? "שולמו" : "חודשים שעברו"}</span><b>${paid} מתוך ${it.length}</b></div>
         <div><span>נשאר לשלם</span><b class="tabular">${nis(left)}</b></div>
-        <div><span>${esc(c.emoji)} ${esc(c.name)} · ${esc(payerName(p.payer))}</span><b>${up.length ? "הבא: " + +up[0].date.slice(8, 10) + "/" + +up[0].date.slice(5, 7) : "הסתיים"}</b></div>
+        <div><span>${catIc(c, "in")} ${esc(c.name)} · ${esc(payerName(p.payer))}</span><b>${up.length ? "הבא: " + +up[0].date.slice(8, 10) + "/" + +up[0].date.slice(5, 7) : "הסתיים"}</b></div>
         ${inst ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</div>
       ${inst ? "" : `<label><span class="lbl">עד חודש <small>(סוף חוזה)</small></span><input class="input" type="month" id="pEnd" value="${esc(last ? last.month : p.end)}" min="${esc(monthOf(p.start))}"></label>`}
       <p class="mn-planp">${inst ? `מ${esc(monthLabel(monthOf(p.start)))} עד ${esc(monthLabel(last.month))}. כל חודש נספר לבד, ואחרי התשלום האחרון זה נעצר.` : `בכל ${+p.start.slice(8, 10)} לחודש, עד ${esc(monthLabel(last.month))}. אחרי זה נעצר לבד.`}</p>
@@ -3938,7 +3976,7 @@ function budgetSheet(){
       <div class="actions"><button class="primary" type="submit">שמירה</button></div>
     </form>`);
   const f = sh.querySelector("#bf"), box = sh.querySelector("#bCats"), vals = { ...B.cats };
-  const draw = () => { box.innerHTML = cats.map(c => `<label class="mn-bc"><span class="mn-e">${esc(c.emoji)}</span><span class="t">${esc(c.name)}</span><input class="input" inputmode="numeric" data-bc="${esc(c.id)}" value="${n(+vals[c.id] || 0)}" placeholder="—"></label>`).join("");
+  const draw = () => { box.innerHTML = cats.map(c => `<label class="mn-bc"><span class="mn-e">${catIc(c)}</span><span class="t">${esc(c.name)}</span><input class="input" inputmode="numeric" data-bc="${esc(c.id)}" value="${n(+vals[c.id] || 0)}" placeholder="—"></label>`).join("");
     box.querySelectorAll("[data-bc]").forEach(i => i.oninput = () => { const v = parseAmount(i.value); vals[i.dataset.bc] = v || 0; }); };
   draw();
   sh.querySelector("#ncAdd").onclick = () => { const nm = sh.querySelector("#ncName").value.trim(), em = sh.querySelector("#ncEmoji").value.trim() || "•";
