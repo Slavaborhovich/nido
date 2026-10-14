@@ -31,17 +31,17 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
 
   let st = await R(() => ({ cgs: document.querySelectorAll(".mn-cg").length, open: document.querySelectorAll(".mn-cg.open").length,
     food: document.querySelector('[data-cg="food"] .mn-e img')?.getAttribute("src"), fuel: document.querySelector('[data-cg="fuel"] .mn-e img')?.getAttribute("src"),
-    pets: document.querySelector('[data-cg="pets"] .mn-e')?.textContent, cnt: document.querySelector('[data-cg="food"] .cnt')?.textContent }));
+    pets: document.querySelector('[data-cg="pets"] .mn-e')?.textContent, cnt: document.querySelector('[data-cg="food"] .r2')?.textContent }));
   ok(st.cgs === 3 && st.open === 0, `3 categories listed, all closed (${st.cgs})`);
   ok(st.food === "icons/fluent/cart.png" && st.fuel === "icons/fluent/fuel.png" && st.pets === "🐶", "built-in categories show 3D pictures; the family's own category keeps its emoji");
   ok(/7/.test(st.cnt || ""), `the category shows how many expenses it has (${st.cnt})`);
 
   await R(() => document.querySelector('[data-cg="food"] .mn-cat').click()); await p.waitForTimeout(400);
   st = await R(() => { const g = document.querySelector('[data-cg="food"]'); return { open: g.classList.contains("open"), exp: g.querySelector(".mn-cat").getAttribute("aria-expanded"),
-    vis: [...g.querySelectorAll(".mn-it")].filter(x => !x.hidden).length, all: g.querySelectorAll(".mn-it").length, more: g.querySelector(".mn-more")?.textContent, h: g.querySelector(".mn-drop").offsetHeight, foot: g.querySelector(".mn-cfoot").textContent }; });
+    vis: [...g.querySelectorAll(".mn-it")].filter(x => !x.hidden).length, all: g.querySelectorAll(".mn-it").length, more: g.querySelector(".mn-more")?.textContent, h: g.querySelector(".mn-drop").offsetHeight, foot: g.querySelector(".r2").textContent }; });
   ok(st.open && st.exp === "true" && st.h > 100, `tap → the category opens (${st.h}px)`);
   ok(st.vis === 5 && st.all === 7 && /עוד 2/.test(st.more), `5 expenses shown, "${st.more}" for the rest`);
-  ok(/7 הוצאות/.test(st.foot) && /נשארו/.test(st.foot), `footer: "${st.foot}"`);
+  ok(/7 הוצאות/.test(st.foot) && /נשארו/.test(st.foot), `card line: "${st.foot}"`);
   await R(() => document.querySelector('[data-cg="food"] .mn-more').click());
   ok(await R(() => [...document.querySelectorAll('[data-cg="food"] .mn-it')].every(x => !x.hidden) && !document.querySelector('[data-cg="food"] .mn-more')), "עוד → all 7 shown");
 
@@ -57,6 +57,24 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await R(() => document.querySelector('[data-cg="fuel"] .mn-it').click()); await p.waitForTimeout(400);
   ok(await R(() => document.querySelector('#xf input[name=desc]')?.value === "תדלוק"), "tapping an expense opens it for editing");
   ok(await R(() => !!document.querySelector('#xf [data-cat="fuel"] img.mn-fl')), "the category chips in the edit window show the 3D pictures too");
+
+  // pace dot on the ring, trend from the months before, quick add from repeating expenses
+  await R(() => { closeSheet(); });
+  await p.waitForTimeout(300);
+  ok(await R(() => !!document.querySelector(".mn-ring .pc") && !!document.querySelector(".mn-pace")), "ring shows the 'where we should be today' dot and a pace line");
+  await R(() => { const d = JSON.parse(localStorage.getItem("nido.money")), pm = addMonth(iso(new Date()).slice(0, 7), -1);
+    d.ex.push({ id:"o1", amount:200000, desc:"סופר 0", cat:"food", payer:"tehila", date:pm + "-05", month:pm, by:"slava", at:1 });
+    d.ex.push({ id:"o2", amount:30000, desc:"תדלוק", cat:"fuel", payer:"slava", date:pm + "-07", month:pm, by:"slava", at:2 });
+    localStorage.setItem("nido.money", JSON.stringify(d)); Money.m = null; Money.prev = {}; S.mnOpen = "food"; renderMoney(); });
+  await p.waitForTimeout(400);
+  st = await R(() => ({ tr: document.querySelector('[data-cg="food"] .mn-trend .tx')?.textContent, bars: document.querySelectorAll('[data-cg="food"] .mn-trend .bars i').length }));
+  ok(st.bars === 4 && /ממוצע ₪2,000/.test(st.tr || ""), `trend: 3 months before + this one ("${st.tr}")`);
+  await R(() => document.getElementById("fab").click()); await p.waitForTimeout(500);
+  st = await R(() => [...document.querySelectorAll("#xQk [data-qk]")].map(b => b.textContent));
+  ok(st.length === 2 && st.some(t => /תדלוק/.test(t)) && st.some(t => /סופר 0/.test(t)), `quick add lists the repeating expenses (${st.join(" | ")})`);
+  await R(() => [...document.querySelectorAll("#xQk [data-qk]")].find(b => /תדלוק/.test(b.textContent)).click());
+  st = await R(() => ({ d: document.querySelector("#xf [name=desc]").value, c: document.querySelector('#xf [data-cat].on')?.dataset.cat, p: document.querySelector("#xf [name=payer]:checked")?.value, f: document.activeElement?.name }));
+  ok(st.d === "תדלוק" && st.c === "fuel" && st.p === "slava" && st.f === "amount", `tap fills description, category and payer, then the amount gets focus (${JSON.stringify(st)})`);
 
   ok(!errs.length, "no page errors" + (errs.length ? ": " + errs.join(" | ") : ""));
   await b.close();
