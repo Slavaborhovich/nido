@@ -698,9 +698,17 @@ nav.tabs button[aria-current="page"]{--nv1:#FFF0DC;--nv2:#4A2A10;--nv3:#fff}
 .sh-plus{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;border:0;border-top:1px dashed var(--line);background:none;color:var(--faint);font:inherit;font-size:14px;text-align:start}.sh-plus svg{width:16px;height:16px}
 .sh-add{padding:10px 12px 12px;border-top:1px dashed var(--line)}
 .sh-tip{text-align:center;margin:6px 0 0}
+.sh-chips{display:flex;gap:8px;overflow-x:auto;margin:-6px -16px 12px;padding:2px 16px 4px;scrollbar-width:none;overscroll-behavior-x:contain}.sh-chips::-webkit-scrollbar{display:none}
+.sh-chip{flex:none;height:40px;padding:0 12px 0 10px;border-radius:999px;border:1px solid rgba(255,214,170,.14);background:rgba(36,25,15,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--muted);font:inherit;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.sh-chip .flu{width:22px;height:22px}.sh-chip b{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,226,190,.1);font-size:11.5px;font-weight:600;display:grid;place-items:center;color:var(--faint)}
+.sh-chip.on{background:rgba(242,182,107,.2);border-color:rgba(242,182,107,.55);color:var(--text)}.sh-chip.on b{background:#F2B66B;color:#2A1D12}
+html[data-skin="light"] .sh-chip{background:rgba(255,253,250,.86);border-color:rgba(110,78,40,.14)}html[data-skin="light"] .sh-chip b{background:rgba(110,78,40,.08)}
+html[data-skin="light"] .sh-chip.on{background:#F7E6CC;border-color:rgba(201,138,62,.6);color:#2A1D12}html[data-skin="light"] .sh-chip.on b{background:#C98A3E;color:#fff}
+.sh-card.closed{margin-bottom:8px}.sh-card.closed .sh-hd{padding:8px 14px;background:linear-gradient(to left,var(--sb),transparent 55%)}.sh-card.closed .sh-ic{width:34px;height:34px}.sh-card.closed .sh-ic .flu{width:30px;height:30px}.sh-card.closed .sh-hd b{font-size:15px}
+.sh-card:not(.closed){margin-bottom:14px}
 .sh-top{position:relative}.sh-top .sh-hd{padding-inline-end:58px}
 .sh-edit{position:absolute;top:50%;inset-inline-end:34px;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:12px;background:none;color:var(--faint);display:grid;place-items:center;padding:0}.sh-edit svg{width:16px;height:16px}
-.sh-new{width:100%;height:54px;border:1.5px dashed rgba(255,214,170,.28);border-radius:20px;background:rgba(30,20,12,.45);color:var(--muted);font:inherit;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px;cursor:pointer}.sh-new svg{width:18px;height:18px}
+.sh-new{width:100%;height:46px;border:1.5px dashed rgba(255,214,170,.28);border-radius:20px;background:rgba(30,20,12,.45);color:var(--muted);font:inherit;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px;cursor:pointer}.sh-new svg{width:18px;height:18px}
 .sh-list li.miss{display:flex;align-items:center;gap:6px}.sh-list li.miss .item{flex:1;min-width:0}
 .sh-list li.miss .name{opacity:.8}
 .sh-list li.has-link{display:flex;align-items:center;gap:6px}.sh-list li.has-link .item{flex:1;min-width:0}
@@ -4330,6 +4338,10 @@ function renderShop(){
   if (S.shopList==="coupons") return renderCoupons();
   const items = DB.shop;
   const takeable = items.some(i => !i.takenBy || i.takenBy===me);
+  /* one list open at a time (remembered on this phone); the open one comes first, the rest below as small cards */
+  if (S.shopAdd && shopLists().some(x => x.id === S.shopAdd)) ShopUI.set(S.shopAdd);
+  const open = ShopUI.open(), count = k => items.filter(i => shopKey(i.list) === k).length;
+  const order = [...shops().filter(x => x[0] === open), ...shops().filter(x => x[0] !== open)];
   const row = i => {
     const mine = i.takenBy===me, other = i.takenBy && !mine;
     const sub = [i.qty, i.note].filter(Boolean).map(esc).join(" · ");
@@ -4343,7 +4355,9 @@ function renderShop(){
   $("#screen").innerHTML = `
     <header class="top"><h1>קניות</h1></header>
     ${listsSeg()}
-    ${shops().map(([k, name]) => { const its = items.filter(i => shopKey(i.list) === k), closed = ShopUI.closed(k) && !(S.shopAdd === k), taken = its.filter(i => i.takenBy).length;
+    <div class="sh-chips" role="tablist" aria-label="רשימות הקניות" data-noswipe>${shops().map(([k, name]) => { const on = open === k;
+      return `<button type="button" role="tab" class="sh-chip ${on ? "on" : ""}" data-chip="${k}" aria-selected="${on}" style="${shopStyle(k)}">${flu(k)}<span>${esc(name)}</span><b>${count(k)}</b></button>`; }).join("")}</div>
+    ${order.map(([k, name]) => { const its = items.filter(i => shopKey(i.list) === k), closed = open !== k, taken = its.filter(i => i.takenBy).length;
       const ok = its.filter(i => !i.missing), miss = its.filter(i => i.missing);
       return `<section class="panel sh-card ${closed ? "closed" : ""}" data-sl="${k}" style="${shopStyle(k)}">
         <div class="sh-top"><button type="button" class="sh-hd" data-fold="${k}" aria-expanded="${!closed}"><span class="sh-ic">${flu(k)}</span><span class="t"><b>${esc(name)}</b><small>${its.length ? `${its.length} ${its.length === 1 ? "פריט" : "פריטים"}${taken ? ` · ${taken} ${taken === 1 ? "נלקח" : "נלקחו"}` : ""}${miss.length ? ` · <span class="mcount">${miss.length} ${miss.length === 1 ? "חסר" : "חסרים"}</span>` : ""}` : "ריק"}</small></span>${icon("next", "i sh-chev")}</button>${canLists() ? `<button type="button" class="sh-edit" data-edit="${k}" aria-label="עריכת הרשימה ${esc(name)}">${icon("edit")}</button>` : ""}</div>
@@ -4363,7 +4377,9 @@ function renderShop(){
 
   bindSeg();
   const sc = $("#screen");
-  sc.querySelectorAll("[data-fold]").forEach(b => b.onclick = () => { const k = b.dataset.fold; ShopUI.toggle(k); if (S.shopAdd === k) S.shopAdd = null; renderShop(); });
+  sc.querySelectorAll("[data-fold]").forEach(b => b.onclick = () => { const k = b.dataset.fold; ShopUI.toggle(k); if (S.shopAdd && S.shopAdd !== ShopUI.open()) S.shopAdd = null; renderShop(); shopToCard(); });
+  sc.querySelectorAll("[data-chip]").forEach(b => b.onclick = () => { const k = b.dataset.chip; if (ShopUI.open() !== k){ ShopUI.set(k); if (S.shopAdd !== k) S.shopAdd = null; } renderShop(); shopToCard(); });
+  const ch = sc.querySelector(".sh-chip.on"); if (ch) ch.scrollIntoView({ block:"nearest", inline:"center" });
   sc.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => { S.shopAdd = b.dataset.plus; S.addMore = false; renderShop(); sc.querySelector(".sh-add input[name=name]")?.focus(); });
   sc.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => listSheet(shopList(b.dataset.edit)));
   sc.querySelectorAll("[data-move]").forEach(b => b.onclick = () => { const it = DB.shop.find(i => i.id === b.dataset.move); if (it) moveSheet(it); });
@@ -4399,11 +4415,19 @@ function renderShop(){
   });
 }
 /* which cards are folded — this phone only */
+/* which list is open — one at a time, this phone only. "" = all closed; nothing saved yet → the first list */
 const ShopUI = {
-  get(){ try { return JSON.parse(localStorage.getItem("nido.shopFold") || "[]"); } catch(e){ return []; } },
-  closed(k){ return this.get().includes(k); },
-  toggle(k){ const a = this.get(), i = a.indexOf(k); i < 0 ? a.push(k) : a.splice(i, 1); try { localStorage.setItem("nido.shopFold", JSON.stringify(a)); } catch(e){} },
+  KEY: "nido.shopOpen",
+  open(){ let v = null; try { v = localStorage.getItem(this.KEY); } catch(e){}
+    if (v === "") return "";
+    return v && shopLists().some(x => x.id === v) ? v : shopKey("super"); },
+  set(k){ try { localStorage.setItem(this.KEY, k); } catch(e){} },
+  closed(k){ return this.open() !== k; },
+  toggle(k){ this.set(this.open() === k ? "" : k); },
 };
+/* after switching lists: bring the open card into view (it is first, just under the list row) */
+function shopToCard(){ const c = $("#screen .sh-card:not(.closed)"); if (!c) return; const top = c.getBoundingClientRect().top;
+  if (top < 70 || top > innerHeight * .45) window.scrollTo({ top: Math.max(0, scrollY + top - 140), behavior: "smooth" }); }
 function confirmTake(){
   let task = myShopTask();
   if (!task && S.takeSel.size){
@@ -4520,7 +4544,7 @@ function listSheet(l){
     if (shopLists().some(x => x.name === name && (!edit || x.id !== l.id))){ toast("כבר יש רשימה בשם הזה"); return; }
     own();
     if (edit){ const x = DB.shoplists.find(y => y.id === l.id); Object.assign(x, { name, to: name.startsWith("ל") ? name : (x.id === "super" && name === "סופר" ? "הסופר" : name), pic, color }); }
-    else { const id = uid(); DB.shoplists.push({ id, name, to: name, pic, color }); S.shopAdd = id; }
+    else { const id = uid(); DB.shoplists.push({ id, name, to: name, pic, color }); S.shopAdd = id; ShopUI.set(id); }
     save(); closeSheet(); renderShop(); toast(edit ? "הרשימה עודכנה" : `נוצרה הרשימה ${name}`);
   };
   const del = sh.querySelector("#ldel");

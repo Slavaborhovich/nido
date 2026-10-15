@@ -19,13 +19,15 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   const cnt = await R(() => ({ s: document.querySelectorAll('[data-sl="super"] .item').length, h: document.querySelectorAll('[data-sl="home"] .item').length, all: DB.shop.length }));
   ok(cnt.s + cnt.h === cnt.all && cnt.all > 0, `every existing item shows in its own card (סופר ${cnt.s}, לבית ${cnt.h})`);
   // add inside לנועם
+  await p.click('[data-chip="noam"]'); await p.waitForTimeout(300);
   await p.click('[data-plus="noam"]'); await p.waitForTimeout(200);
   await p.fill('.sh-add input[name=name]', "חיתולים מידה 4"); await p.fill('.sh-add input[name=qty]', "2 חבילות"); await p.press('.sh-add input[name=name]', "Enter"); await p.waitForTimeout(300);
   ok(await R(() => { const i = DB.shop.find(x => x.name === "חיתולים מידה 4"); return i && i.list === "noam" && i.qty === "2 חבילות" && !!document.querySelector('[data-sl="noam"] .item'); }), "＋ inside לנועם adds the item to לנועם");
   // fold
-  await p.click('[data-fold="home"]'); await p.waitForTimeout(200);
-  ok(await R(() => document.querySelector('[data-sl="home"]').classList.contains("closed") && JSON.parse(localStorage.getItem("nido.shopFold")).includes("home")), "a card folds (and is remembered on this phone)");
-  await p.click('[data-fold="home"]'); await p.waitForTimeout(200);
+  await p.click('[data-fold="home"]'); await p.waitForTimeout(300);
+  ok(await R(() => !document.querySelector('[data-sl="home"]').classList.contains("closed") && document.querySelectorAll(".sh-card:not(.closed)").length === 1 && localStorage.getItem("nido.shopOpen") === "home"), "opening a card closes the others (and is remembered on this phone)");
+  await p.click('[data-fold="home"]'); await p.waitForTimeout(300);
+  ok(await R(() => document.querySelectorAll(".sh-card:not(.closed)").length === 0), "the open card can be closed too");
   // move between lists
   await R(() => itemSheet(DB.shop.find(x => x.name === "חיתולים מידה 4"))); await p.waitForTimeout(400);
   await R(() => document.querySelector('#if input[name=list][value="home"]').click()); await p.click("#if [type=submit]"); await p.waitForTimeout(400);
