@@ -2386,7 +2386,7 @@ const Notify = {
         if (c === "tasks" && (after.spawned || after.kind === "idea" || after.kind === "survey")) continue;
         if (c === "tasks" && after.kind === "shop"){
           const n = DB.shop.filter(i => i.taskId === after.id).length;
-          this.send(this.others("done"), "shop", { title:"🛍️ יוצאים לקניות", body:`${who} לוקח/ת ${n === 1 ? "פריט אחד" : n + " פריטים"}`, tag: this.tagOf("take-" + after.id) });
+          this.send(this.others("done"), "shop", { title:`🛍️ יוצאים ל${after.list ? after.title : "קניות"}`, body:`${who} לוקח/ת ${n === 1 ? "פריט אחד" : n + " פריטים"}`, tag: this.tagOf("take-" + after.id) });
           continue;
         }
         let skip = null;
@@ -3532,7 +3532,7 @@ function upcoming(){
   if (out.length < UPCOMING_COUNT){
     const undated = DB.tasks.filter(t => !t.done && !t.date && !onEvent(t)).sort((a,b) => a.created - b.created)
       .map(t => { const shop = t.kind==="shop", n = shop ? DB.shop.filter(i=>i.taskId===t.id).length : 0;
-        return { kind:"task", ty:shop?"sh":"tk", ref:t, title: shop ? `קניות · ${n} פריטים` : t.title, date:null, time:null, who:t.assignee }; });
+        return { kind:"task", ty:shop?"sh":"tk", ref:t, title: shop ? `${t.title || "קניות"} · ${n} פריטים` : t.title, date:null, time:null, who:t.assignee }; });
     out.push(...undated.slice(0, UPCOMING_COUNT - out.length));
   }
   return out;
@@ -4284,7 +4284,18 @@ function taskSheet(t){
 }
 
 /* ================= Shopping ================= */
-function myShopTask(){ return DB.tasks.find(t => t.kind==="shop" && !t.done && t.assignee===me); }
+/* my open shopping task for a list — one task per list ("קניות בסופר", "קניות בסופר פארם"…).
+   No list given → any open shopping task of mine. An old task from before lists had tasks matches any list. */
+function myShopTask(k){ const all = DB.tasks.filter(t => t.kind==="shop" && !t.done && t.assignee===me);
+  if (k === undefined) return all[0];
+  return all.find(t => t.list && shopKey(t.list) === shopKey(k)) || all.find(t => !t.list); }
+const shopTaskTitle = k => { const n = shopOf(k)[1]; return n.startsWith("ל") ? `קניות ${n}` : `קניות ב${n}`; };
+/* take one item into my task for its list (making the task if needed) */
+function takeInto(i){
+  let task = myShopTask(i.list);
+  if (!task){ task = { id:uid(), kind:"shop", list:shopKey(i.list), title:shopTaskTitle(i.list), assignee:me, date:null, time:null, repeat:"none", done:false, created:Date.now() }; DB.tasks.push(task); }
+  i.takenBy = me; i.taskId = task.id; return task;
+}
 /* the shopping lists, shown together in קניות (each its own card, picture and colour).
    The family's lists live in DB.shoplists (one document per list). Until a manager changes something,
    the family gets the three built-in lists below — the same ones the app always had. */
@@ -4429,19 +4440,19 @@ const ShopUI = {
 function shopToCard(){ const c = $("#screen .sh-card:not(.closed)"); if (!c) return; const top = c.getBoundingClientRect().top;
   if (top < 70 || top > innerHeight * .45) window.scrollTo({ top: Math.max(0, scrollY + top - 140), behavior: "smooth" }); }
 function confirmTake(){
-  let task = myShopTask();
-  if (!task && S.takeSel.size){
-    task = { id:uid(), kind:"shop", title:"קניות", assignee:me, date:null, time:null, repeat:"none", done:false, created:Date.now() };
-    DB.tasks.push(task);
-  }
-  const existed = task && DB.shop.some(i=>i.taskId===task.id);
+  const before = new Set(DB.tasks.filter(t => t.kind==="shop" && !t.done && t.assignee===me).map(t => t.id));
   for (const i of DB.shop){
-    if (S.takeSel.has(i.id)){ i.takenBy=me; i.taskId=task.id; }
+    if (S.takeSel.has(i.id)){ if (i.takenBy !== me) takeInto(i); }     // already mine → stays in its task
     else if (i.takenBy===me){ i.takenBy=null; i.taskId=null; }
   }
-  if (task && !DB.shop.some(i=>i.taskId===task.id)) DB.tasks = DB.tasks.filter(t=>t.id!==task.id);
+  // a shopping task left with no items goes away
+  DB.tasks = DB.tasks.filter(t => !(t.kind==="shop" && !t.done && t.assignee===me && !DB.shop.some(i => i.taskId===t.id)));
+  const made = DB.tasks.filter(t => t.kind==="shop" && !t.done && t.assignee===me && !before.has(t.id));
   save(); S.take=false; renderShop();
-  toast(S.takeSel.size ? (existed ? "משימת הקניות שלך עודכנה" : "נוצרה משימת קניות 🛒") : "הפריטים חזרו לרשימה");
+  toast(!S.takeSel.size ? "הפריטים חזרו לרשימה"
+    : made.length === 1 ? `נוצרה משימה: ${made[0].title} 🛒`
+    : made.length > 1 ? `נוצרו ${made.length} משימות קניות 🛒`
+    : "משימות הקניות שלך עודכנו");
   S.takeSel = new Set();
 }
 function releaseItem(i){
@@ -4473,7 +4484,9 @@ function itemSheet(i){
   f.onsubmit = e => { e.preventDefault(); if(!f.name.value.trim()) return;
     const lk = f.link.value.trim(), url = lk ? normUrl(lk) : "";
     if (lk && !url){ toast("זה לא נראה כמו קישור"); return; }
+    const was = shopKey(i.list);
     Object.assign(i,{ name:f.name.value.trim(), qty:f.qty.value.trim(), note:f.note.value.trim(), list:shopKey(f.list.value) });
+    if (i.takenBy === me && was !== i.list){ releaseItem(i); takeInto(i); }
     if (url) i.link = url; else delete i.link;
     if (img) i.image = img; else delete i.image;
     const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st && st.buy) st.buy = i.list;
@@ -4517,6 +4530,7 @@ function moveSheet(i){
     <div class="mchoice">${shops().filter(([k]) => k !== here).map(([k, n]) => `<button type="button" class="mc-go" data-to="${k}"><span class="mc-t"><b>ל${esc(n.replace(/^ל/, ""))}</b></span>${flu(k)}</button>`).join("")}</div>`);
   sh.querySelectorAll("[data-to]").forEach(b => b.onclick = () => {
     i.list = b.dataset.to;
+    if (i.takenBy === me){ releaseItem(i); takeInto(i); }
     const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st && st.buy) st.buy = i.list;
     save(); closeSheet(); renderShop(); toast(`עבר ל${shopOf(i.list)[1].replace(/^ל/, "")}`);
   });
@@ -4843,7 +4857,7 @@ function dayItems(ds){
   const ev = DB.events.filter(e => e.date === ds || (e.end && e.date < ds && e.end >= ds))
     .map(e => ({ k:"ev", id:e.id, title:e.title, time: e.date === ds ? e.time : "", who: e.who || null, place:e.place, cont: e.date !== ds, idea: !!e.ideaId }));
   const tk = DB.tasks.filter(t => t.date === ds)
-    .map(t => ({ k:"tk", id:t.id, title: t.kind === "shop" ? "קניות" : t.title, time:t.time || "", who:t.assignee || null, done:t.done }));
+    .map(t => ({ k:"tk", id:t.id, title: t.kind === "shop" ? (t.title || "קניות") : t.title, time:t.time || "", who:t.assignee || null, done:t.done }));
   return [...ev, ...tk].sort((a, b) => (a.time || "99") < (b.time || "99") ? -1 : (a.time || "99") > (b.time || "99") ? 1 : 0);
 }
 const holLine = h => h.k === "candles" ? `כניסת שבת ${h.t}` : h.k === "havdalah" ? `צאת שבת ${h.t}` : h.n;

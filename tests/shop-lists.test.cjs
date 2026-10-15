@@ -36,7 +36,9 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await R(() => { document.querySelector('[data-sl="super"] .box').click(); }); await p.waitForTimeout(200);
   await R(() => { document.querySelector('[data-sl="home"] .box:not(.on)').click(); }); await p.waitForTimeout(200);
   await R(() => document.getElementById("takeOk").click()); await p.waitForTimeout(300);
-  ok(await R(() => { const t = myShopTask(); return t && DB.shop.filter(i => i.taskId === t.id).map(i => i.list).sort().join() === "home,super"; }), "✓ items from two cards → one shopping task with both");
+  ok(await R(() => { const ts = DB.tasks.filter(t => t.kind === "shop" && !t.done && t.assignee === me); const of = k => ts.find(t => t.list === k);
+    return ts.length === 2 && of("super").title === "קניות בסופר" && of("home").title === "קניות לבית"
+      && DB.shop.filter(i => i.taskId === of("super").id).every(i => i.list === "super") && DB.shop.filter(i => i.taskId === of("home").id).every(i => i.list === "home"); }), "✓ items from two cards → a shopping task per list (קניות בסופר, קניות לבית)");
   // askList: three lists
   let lists = null;
   await R(() => { window.__al = askList("לקנות מוצץ"); }); await p.waitForTimeout(300);

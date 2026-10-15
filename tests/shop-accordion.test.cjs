@@ -46,11 +46,24 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await R(() => S.take && S.takeSel.size === 1), "the pick from the first list survives switching lists");
   await R(() => document.querySelector('[data-sl="ph"] .box').click()); await p.waitForTimeout(200);
   await R(() => document.getElementById("takeOk").click()); await p.waitForTimeout(300);
-  ok(await R(() => { const t = myShopTask(); return t && DB.shop.filter(i => i.taskId === t.id).map(i => shopKey(i.list)).sort().join() === "ph,super"; }), "✓ from two lists → one shopping task with both");
-  ok(await R(() => DB.shop.filter(i => i.takenBy === me).length === 2), "taken items stay on the lists until the task is done");
+  ok(await R(() => { const ts = DB.tasks.filter(t => t.kind === "shop" && !t.done && t.assignee === me).map(t => t.title).sort().join();
+    return ts === "קניות בסופר,קניות בסופר פארם"; }), "✓ from two lists → two tasks: קניות בסופר + קניות בסופר פארם");
+  // taking one more from סופר joins the same סופר task
+  await p.click('.sh-chip[data-chip="super"]', { force: true }); await p.waitForTimeout(300);
+  await R(() => document.querySelector('[data-sl="super"] .box:not(.on)').click()); await p.waitForTimeout(200);
+  await R(() => document.getElementById("takeOk").click()); await p.waitForTimeout(300);
+  ok(await R(() => { const t = myShopTask("super"); return DB.tasks.filter(x => x.kind === "shop" && !x.done).length === 2 && DB.shop.filter(i => i.taskId === t.id).length === 2; }), "one more from סופר joins the existing סופר task");
+  // moving a taken item to another list moves it to that list's task
+  await R(() => { const i = DB.shop.find(x => x.takenBy === me && x.list === "super"); itemSheet(i); }); await p.waitForTimeout(300);
+  await R(() => { document.querySelector('#if input[name=list][value="ph"]').click(); document.querySelector("#if [type=submit]").click(); }); await p.waitForTimeout(300);
+  ok(await R(() => DB.shop.filter(i => i.taskId === myShopTask("ph").id).length === 2 && DB.shop.filter(i => i.taskId === myShopTask("super").id).length === 1), "a taken item moved to סופר פארם moves to that task");
+  // finishing one list's task leaves the other
+  await R(() => completeTask(myShopTask("ph"))); await p.waitForTimeout(300);
+  ok(await R(() => !!myShopTask("super") && DB.shop.filter(i => i.list === "ph").length === 0 && DB.shop.filter(i => i.takenBy === me).length === 1), "done with סופר פארם → its items leave; the סופר task stays");
+  ok(await R(() => DB.shop.filter(i => i.takenBy === me).length === 1), "items of the open task stay on the list until it is done");
 
   // close all, then a deleted list falls back
-  await p.click('.sh-card[data-sl="ph"] .sh-hd'); await p.waitForTimeout(300);
+  await p.click('.sh-card[data-sl="ph"] .sh-hd'); await p.waitForTimeout(300); await p.click('.sh-card[data-sl="ph"] .sh-hd'); await p.waitForTimeout(300);
   ok((await openCards()).length === 0 && await R(() => !document.querySelector(".sh-chip.on")), "the open list can be closed (nothing open)");
   await R(() => { localStorage.setItem("nido.shopOpen", "gone"); renderShop(); }); await p.waitForTimeout(200);
   ok((await openCards()).join() === "super", "a remembered list that no longer exists → the first list opens");
