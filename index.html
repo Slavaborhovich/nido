@@ -703,6 +703,12 @@ nav.tabs button[aria-current="page"]{--nv1:#FFF0DC;--nv2:#4A2A10;--nv3:#fff}
 .sh-new{width:100%;height:54px;border:1.5px dashed rgba(255,214,170,.28);border-radius:20px;background:rgba(30,20,12,.45);color:var(--muted);font:inherit;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px;cursor:pointer}.sh-new svg{width:18px;height:18px}
 .sh-list li.miss{display:flex;align-items:center;gap:6px}.sh-list li.miss .item{flex:1;min-width:0}
 .sh-list li.miss .name{opacity:.8}
+.sh-list li.has-link{display:flex;align-items:center;gap:6px}.sh-list li.has-link .item{flex:1;min-width:0}
+.ithumb{flex:none;width:40px;height:40px;border-radius:10px;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
+.ilink{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--muted);background:rgba(255,226,190,.07);border:1px solid var(--line)}.ilink svg{width:16px;height:16px}
+.ilink-row{display:flex;gap:8px}.ilink-row .input{flex:1;min-width:0}.ilink-row a{flex:none;width:48px;justify-content:center;padding:0}.ilink-row a svg{width:16px;height:16px}
+.iprev{border:0;padding:0;background:none;border-radius:12px;cursor:zoom-in}
+.pick-wrap svg{width:16px;height:16px}
 .miss-h{padding:10px 8px 4px;font-size:12.5px;font-weight:600;color:#F2B66B;border-top:1px dashed var(--line)}
 .mtag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:rgba(242,182,107,.16);color:#F6C68A;font-size:11.5px;font-weight:600;margin-top:4px}
 .mcount{color:#F6C68A}
@@ -4328,11 +4334,12 @@ function renderShop(){
     const mine = i.takenBy===me, other = i.takenBy && !mine;
     const sub = [i.qty, i.note].filter(Boolean).map(esc).join(" · ");
     const was = mine, now = S.take ? S.takeSel.has(i.id) : mine;
-    return `<li class="${i.missing ? "miss" : ""}"><button class="item ${S.take && was !== now ? "pending" : ""}" data-id="${i.id}">
+    return `<li class="${i.missing ? "miss" : ""}${i.link ? " has-link" : ""}"><button class="item ${S.take && was !== now ? "pending" : ""}" data-id="${i.id}">
       <span class="box ${other ? "other" : now ? "on" : ""}" ${other ? "" : 'role="checkbox"'} aria-checked="${now}" aria-label="${now ? "ביטול" : "אני לוקח"}">${icon("tick")}</span>
       <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}${i.missing ? `<span class="mtag">לא היה ב${esc(shopOf(i.missing.where)[1])} · ${missDays(i.missing)}</span>` : ""}</span>
       ${i.takenBy && USERS[i.takenBy] ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i style="${avaStyle(USERS[i.takenBy])}">${initial(USERS[i.takenBy])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
-    </button>${i.missing && canEdit() ? `<button type="button" class="mmove" data-move="${i.id}">העברה</button>` : ""}</li>`; };
+      ${i.image ? `<img class="ithumb" src="${esc(i.image)}" alt="">` : ""}
+    </button>${i.link ? `<a class="ilink" href="${esc(i.link)}" target="_blank" rel="noopener" aria-label="קישור: ${esc(hostOf(i.link))}">${icon("link")}</a>` : ""}${i.missing && canEdit() ? `<button type="button" class="mmove" data-move="${i.id}">העברה</button>` : ""}</li>`; };
   $("#screen").innerHTML = `
     <header class="top"><h1>קניות</h1></header>
     ${listsSeg()}
@@ -4423,6 +4430,10 @@ function itemSheet(i){
       <input class="input" name="name" value="${esc(i.name)}" aria-label="שם הפריט" required>
       <input class="input" name="qty" value="${esc(i.qty)}" placeholder="כמות" aria-label="כמות">
       <input class="input" name="note" value="${esc(i.note)}" placeholder="הערה" aria-label="הערה">
+      <div class="ilink-row"><input class="input" name="link" value="${esc(i.link || "")}" placeholder="קישור למוצר (לא חובה)" inputmode="url" style="direction:ltr;text-align:right" aria-label="קישור למוצר">${i.link ? `<a class="secondary" href="${esc(i.link)}" target="_blank" rel="noopener" aria-label="פתיחת הקישור">${icon("link")}</a>` : ""}</div>
+      <div class="imgpick"><span id="prev">${i.image ? `<button type="button" class="iprev" id="iview" aria-label="הגדלת התמונה"><img src="${esc(i.image)}" alt=""></button>` : ""}</span>
+        <span class="secondary pick-wrap">${icon("image")}${i.image ? "החלפת תמונה" : "תמונה של המוצר"}<input type="file" accept="image/*" id="ifile" aria-label="בחירת תמונה"></span>
+        ${i.image ? `<button type="button" class="danger" id="noimg">הסר</button>` : ""}</div>
       <div><span class="lbl">ברשימה</span>${radios("list", shops().map(([k, n]) => [k, n]), shopKey(i.list))}</div>
       ${i.takenBy===me ? `<button type="button" class="secondary" id="rel" style="width:100%;justify-content:center">אני כבר לא לוקח את זה</button>` : ""}
       ${!canEdit() ? "" : i.missing ? `<button type="button" class="secondary miss-btn" id="unmiss">${icon("tick")}נמצא — להוריד את הסימון "חסר"</button>`
@@ -4430,8 +4441,17 @@ function itemSheet(i){
       <div class="actions"><button type="button" class="danger" id="del">${icon("trash")}הסרה מהרשימה</button><button class="primary" type="submit">שמירה</button></div>
     </form>`);
   const f = sh.querySelector("#if");
+  let img = i.image || "";
+  const view = () => { const v = sh.querySelector("#iview"); if (v) v.onclick = () => FileView.open([{ img, mime:"image/jpeg", name:i.name }], 0); };
+  view();
+  sh.querySelector("#ifile").onchange = e => pickImage(e.target, d => { img = d; sh.querySelector("#prev").innerHTML = `<button type="button" class="iprev" id="iview" aria-label="הגדלת התמונה"><img src="${d}" alt=""></button>`; view(); });
+  const ni = sh.querySelector("#noimg"); if (ni) ni.onclick = () => { img = ""; sh.querySelector("#prev").innerHTML = ""; ni.remove(); };
   f.onsubmit = e => { e.preventDefault(); if(!f.name.value.trim()) return;
+    const lk = f.link.value.trim(), url = lk ? normUrl(lk) : "";
+    if (lk && !url){ toast("זה לא נראה כמו קישור"); return; }
     Object.assign(i,{ name:f.name.value.trim(), qty:f.qty.value.trim(), note:f.note.value.trim(), list:shopKey(f.list.value) });
+    if (url) i.link = url; else delete i.link;
+    if (img) i.image = img; else delete i.image;
     const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st && st.buy) st.buy = i.list;
     save(); closeSheet(); renderShop(); };
   const rel = sh.querySelector("#rel"); if (rel) rel.onclick = () => { releaseItem(i); save(); closeSheet(); renderShop(); };
