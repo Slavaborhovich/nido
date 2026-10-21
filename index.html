@@ -660,12 +660,13 @@ nav.tabs button[aria-current="page"]{--nv1:#FFF0DC;--nv2:#4A2A10;--nv3:#fff}
 .cfm .row{display:flex;gap:10px;margin-top:18px}
 .cfm .row button{flex:1;height:46px;border-radius:14px;font-size:15px;font-weight:600;border:1px solid var(--line);background:rgba(255,226,190,.08);color:var(--text)}
 .cfm .row .del{border:0;background:#E5735F;color:#1E0F0A}
-.cfm.upd{max-width:350px}
+.cfm.upd{max-width:350px;max-height:calc(100dvh - 48px);overflow-y:auto;overscroll-behavior:contain}
 .cfm .ic.upd-ic{background:rgba(242,182,107,.16);color:#F2C48A}
 .cfm .ic.upd-ic{font-size:22px}
 .cfm.upd .row .go:only-child{flex:1}
 .cfm .upd-p{margin:8px 0 0;font-size:14.5px;line-height:1.55;color:#E9DCCB}
 .cfm.upd h3{font-size:19px}
+.cfm.upd :is(.upd-p,.upd-lbl){text-align:start}
 .upd-notes{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,226,190,.06);border:1px solid rgba(255,214,170,.1);list-style:none;display:flex;flex-direction:column;gap:6px}
 .cfm.mu .pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#93806C;margin:-2px 0 6px}
 .cfm.mu .dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
@@ -2678,6 +2679,7 @@ const Updates = {
       if (/^[•\-\*]/.test(x)){ ul.push(x.replace(/^[•\-\*]\s*/, "")); return; }
       flush();
       if (x.startsWith(">")) html += `<p class="upd-sig">${esc(x.replace(/^>\s*/, ""))}</p>`;
+      else if (x.startsWith("##")) html += `<p class="upd-lbl">${esc(x.replace(/^#+\s*/, ""))}</p>`;
       else if (/:$/.test(x)) html += `<p class="upd-lbl">${esc(x)}</p>`;
       else html += `<p class="upd-p">${esc(x)}</p>`;
     });

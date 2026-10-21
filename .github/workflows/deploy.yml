@@ -81,6 +81,8 @@ jobs:
           HEAD=$(printf '%s\n' "$TEXT" | grep -m1 '^#' | sed -E 's/^#+[[:space:]]*//')
           TITLE="🆕 ${HEAD:-Nido עודכנה}"
           BODY=$(printf '%s\n' "$TEXT" | grep -E '^[[:space:]]*(•|\*|-)' | sed -E 's/^[[:space:]]*(•|\*|-)[[:space:]]*//' | paste -sd'|' | sed 's/|/ · /g')
+          # no bullets? use the "## " sub-headings of the note instead
+          [ -n "$BODY" ] || BODY=$(printf '%s\n' "$TEXT" | grep -E '^##' | sed -E 's/^#+[[:space:]]*//' | paste -sd'|' | sed 's/|/ · /g')
           jq -n --arg e "$ENVN" --arg t "$TITLE" --arg b "$BODY" '{env:$e, title:$t, body:$b, tag:"update"}' > announce.json
           curl -sS --max-time 20 -X POST "https://nido-push.slava6195.workers.dev/announce" \
             -H "content-type: application/json" -H "x-nido-key: $KEY" --data @announce.json
