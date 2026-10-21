@@ -1242,6 +1242,16 @@ body.admin-open .note-fab{display:none}
 .mn-pace{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;font-size:12.5px;padding:4px 10px;border-radius:10px;background:rgba(159,217,179,.12);color:#A9D8B6}
 .mn-pace.bad{background:rgba(240,160,140,.12);color:#F0A08C}
 .mn-pace i{width:6px;height:6px;border-radius:50%;background:#FFF4E4;flex:none}
+/* daily budget: what is left for today, so the month ends on budget */
+.mn-daily{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:22px;margin:8px 0 4px}
+.mn-daily .k{flex:1;min-width:0}.mn-daily .k span{display:block;font-size:12.5px;color:var(--muted)}
+.mn-daily .k b{display:block;font-size:30px;font-weight:300;line-height:1.15;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.mn-daily .k b.bad{color:#F0A08C}.mn-daily .k small{font-size:11.5px;color:var(--faint)}
+.mn-daily .td{width:44%;flex:none;font-size:12.5px;color:var(--muted)}
+.mn-daily .td .r{display:flex;justify-content:space-between;gap:6px}.mn-daily .td .r b{color:var(--text);font-weight:500;direction:ltr}
+.mn-daily .bar{height:5px;border-radius:5px;background:rgba(255,226,190,.1);margin:7px 0 5px;overflow:hidden}
+.mn-daily .bar i{display:block;height:100%;border-radius:5px;background:#A9D8B6;transition:width .5s ease}.mn-daily .bar i.mid{background:#E8C46A}.mn-daily .bar i.hi{background:#E8705A}
+.mn-daily .td small{font-size:11.5px;color:var(--faint)}
 .mn-sec{display:flex;justify-content:space-between;align-items:center;margin:16px 4px 8px;font-size:15px;font-weight:600}.mn-sec small{font-size:12.5px;color:var(--muted);font-weight:400}
 .mn-sec.in{margin:0 2px 8px}
 .mn-e{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;background:rgba(255,226,190,.07);flex:none}
@@ -1337,6 +1347,8 @@ html[data-skin="light"] .mn-ring .pc{fill:#fff;stroke:#5A3A1C}
 html[data-skin="light"] .mn-hk em{color:#3F7E3A}html[data-skin="light"] .mn-hk em.bad{color:#B5452F}
 html[data-skin="light"] .mn-pace{background:rgba(63,126,58,.1);color:#3F7E3A}html[data-skin="light"] .mn-pace.bad{background:rgba(181,69,47,.1);color:#B5452F}
 html[data-skin="light"] .mn-pace i{background:#5A3A1C}
+html[data-skin="light"] .mn-daily .bar{background:rgba(110,78,40,.1)}html[data-skin="light"] .mn-daily .bar i{background:#5E9A58}html[data-skin="light"] .mn-daily .bar i.mid{background:#D0A23E}html[data-skin="light"] .mn-daily .bar i.hi{background:#C0614A}
+html[data-skin="light"] .mn-daily .k b.bad{color:#B5452F}
 html[data-skin="light"] .mn-trend{background:rgba(110,78,40,.05)}html[data-skin="light"] .mn-trend .bars i{background:rgba(201,150,79,.35)}html[data-skin="light"] .mn-trend .bars i.now{background:#C9964F}
 html[data-skin="light"] .mn-trend .tx b.mn-up,html[data-skin="light"] .mn-cat .r2 .hi{color:#B5452F}html[data-skin="light"] .mn-trend .tx b.mn-dn{color:#3F7E3A}
 html[data-skin="light"] .mn-it + .mn-it{border-top-color:rgba(110,78,40,.1)}
@@ -3882,6 +3894,17 @@ function renderMoney(){
       ${B.total ? `<em class="${left < 0 ? "bad" : ""}">${left < 0 ? "חריגה של " + ilsR(-left) : "נשארו " + ilsR(left) + (isNow ? ` ל-${daysLeft} ימים` : "")}</em>
         ${paceHtml}${upSum ? `<small>כולל ${ilsR(upSum)} שעוד צפויים החודש</small>` : ""}`
       : `${upSum ? `<small>+ ${ilsR(upSum)} צפויים עד סוף החודש</small>` : ""}<em>קביעת תקציב חודשי ›</em>`}</div></button>`;
+  /* daily budget (this month, with a budget): what was left this morning ÷ the days left including today — fixed for the day,
+     so "אפשר להוציא היום" goes down with each expense of today. Expected expenses are set aside first. */
+  let dailyHtml = "";
+  if (B.total && isNow){
+    const tday = list.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0), per = (B.total - (total - tday) - upSum) / daysLeft, can = per - tday;
+    dailyHtml = per <= 0
+      ? `<div class="panel mn-daily"><div class="k"><span>תקציב יומי</span><b class="bad">אין יתרה</b><small>התקציב של החודש כבר נוצל${upSum ? ", כולל הצפויות" : ""}</small></div>
+          <div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div></div></div>`
+      : `<div class="panel mn-daily"><div class="k"><span>${can >= 0 ? "אפשר להוציא היום" : "חרגנו היום ב"}</span><b class="tabular ${can < 0 ? "bad" : ""}">${ilsR(Math.abs(can))}</b><small>מתוך ${ilsR(per)} ליום, עד סוף החודש</small></div>
+          <div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div><div class="bar"><i class="${tday > per ? "hi" : tday >= per * .85 ? "mid" : ""}" style="width:${Math.min(100, tday * 100 / per).toFixed(1)}%"></i></div><small>מתעדכן כל יום לפי מה שנשאר</small></div></div>`;
+  }
   const soonHtml = soon.length ? `<div class="mn-sec">צפוי החודש <small class="tabular">${ilsR(upSum)}</small></div>${soon.map(e => { const c = Money.cat(e.cat), d = Math.round((new Date(e.date) - new Date(today)) / 864e5);
       return `<button type="button" class="mn-ex mn-soon" data-ex="${esc(e.id)}"><span class="mn-e">${catIc(c)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(planTag(e.plan) || c.name)} · ${esc(payerName(e.payer))}</small></span><span class="mn-due ${d <= 3 ? "near" : ""}">${esc(dueIn(e.date, today))}</span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}` : "";
   const act = isNow ? Money.plans.map(p => ({ p, ...planLeft(p, today) })).filter(x => x.up.length) : [];
@@ -3932,7 +3955,7 @@ function renderMoney(){
     <header class="top mn-top"><h1>הוצאות</h1><div class="mn-mon"><button type="button" data-mon="-1" aria-label="החודש הקודם">${icon("next")}</button><b>${esc(monthLabel(m))}</b><button type="button" data-mon="1" aria-label="החודש הבא" ${isNow ? "disabled" : ""}>${icon("prev")}</button></div></header>
     <div class="seg" role="group" aria-label="תצוגה"><button data-mv="over" aria-pressed="${view === "over"}">סקירה</button><button data-mv="hist" aria-pressed="${view === "hist"}">היסטוריה והשוואה <span class="n">${Money.list.length}</span></button></div>
     ${!Money.ready ? `<p class="hint">טוען…</p>` : Money.err ? `<p class="hint">${esc(Money.err)}</p>` : view === "over" ? `
-      ${hero}
+      ${hero}${dailyHtml}
       ${catRows ? `<div class="mn-sec">לפי קטגוריה</div><div class="mn-cards">${catRows}</div>` : `<div class="panel t-empty mn-empty">עוד אין הוצאות ב${esc(monthLabel(m).split(" ")[0])}. לחצו ＋ כדי להוסיף.</div>`}
       ${soonHtml}${plansHtml}
       ${payerHtml}` : `${cmp}${hist || `<div class="panel t-empty mn-empty">אין הוצאות בחודש הזה.</div>`}`}
