@@ -1227,25 +1227,30 @@ body.admin-open .note-fab{display:none}
 .mn-mon{display:flex;align-items:center;gap:8px;font-size:14px}.mn-mon b{font-weight:500;min-width:96px;text-align:center}
 .mn-mon button{width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,226,190,.1);color:var(--text);display:grid;place-items:center;padding:0}
 .mn-mon button svg{width:16px;height:16px}.mn-mon button[disabled]{opacity:.3}
-.mn-hero{display:flex;align-items:center;gap:20px;width:100%;padding:18px;border-radius:26px;text-align:start;color:var(--text);font:inherit;cursor:pointer;margin-bottom:4px}
-.mn-ring{position:relative;width:116px;height:116px;flex:none}
-.mn-ring svg{display:block;width:116px;height:116px;transform:rotate(-90deg)}
+.mn-hero{display:block;padding:16px 18px;border-radius:26px;margin-bottom:8px}
+.mn-st{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mn-st > i{width:10px;height:10px;border-radius:50%;background:#A9D8B6;box-shadow:0 0 0 4px rgba(169,216,182,.15);flex:none}
+.mn-st.warn > i{background:#E8C46A;box-shadow:0 0 0 4px rgba(232,196,106,.15)}.mn-st.bad > i{background:#F0A08C;box-shadow:0 0 0 4px rgba(240,160,140,.15)}
+.mn-st > div{flex:1;min-width:0}.mn-st b{display:block;font-size:15px;font-weight:500}.mn-st small{display:block;font-size:12.5px;color:var(--muted)}
+.mn-bud{flex:none;height:30px;padding:0 11px;border-radius:15px;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}
+.mn-main{display:flex;align-items:center;gap:18px}
+.mn-ring{position:relative;width:112px;height:112px;flex:none;border:0;background:none;padding:0;color:var(--text);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mn-ring[disabled]{cursor:default}
+.mn-ring svg{display:block;width:112px;height:112px;transform:rotate(-90deg)}
 .mn-ring .tr{stroke:rgba(255,226,190,.1)}.mn-ring .ar{stroke:#F2B66B;transition:stroke-dasharray .6s ease}
 .mn-ring.near .ar{stroke:#E8C46A}.mn-ring.over .ar{stroke:#E8705A}
 .mn-ring .pc{fill:#FFF4E4;stroke:#1F1711}
 .mn-ring > div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.mn-ring b{font-size:26px;font-weight:300;font-variant-numeric:tabular-nums}.mn-ring small{font-size:11px;color:var(--muted)}
-.mn-hk{display:flex;flex-direction:column;gap:2px;min-width:0}.mn-hk span{font-size:13px;color:var(--muted)}
+.mn-ring b{font-size:25px;font-weight:300;font-variant-numeric:tabular-nums;direction:ltr}.mn-ring b.sm{font-size:18px}.mn-ring small{font-size:11px;color:var(--muted)}
+.mn-hk{display:flex;flex-direction:column;gap:2px;min-width:0}.mn-hk > span{font-size:13px;color:var(--muted)}
 .mn-big{font-size:34px;font-weight:300;line-height:1.1;direction:ltr;text-align:right}
-.mn-hk .of{font-size:13px;color:var(--faint)}
-.mn-hk em{font-style:normal;font-size:13px;margin-top:6px;color:#9FD9B3}.mn-hk em.bad{color:#F3A493}.mn-hk small{font-size:12px;color:var(--faint);margin-top:4px}
-.mn-pace{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;font-size:12.5px;padding:4px 10px;border-radius:10px;background:rgba(159,217,179,.12);color:#A9D8B6}
-.mn-pace.bad{background:rgba(240,160,140,.12);color:#F0A08C}
-.mn-pace i{width:6px;height:6px;border-radius:50%;background:#FFF4E4;flex:none}
+.mn-hk .of{font-size:12.5px;color:var(--faint)}
+.mn-setb{align-self:flex-start;margin-top:6px;padding:0;border:0;background:none;color:#9FD9B3;font:inherit;font-size:13px;cursor:pointer}
+.mn-pace{color:#A9D8B6}.mn-pace.bad{color:#F0A08C}
 /* daily budget: what is left for today, so the month ends on budget */
-.mn-daily{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:22px;margin:8px 0 4px}
+.mn-daily{display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .mn-daily .k{flex:1;min-width:0}.mn-daily .k span{display:block;font-size:12.5px;color:var(--muted)}
-.mn-daily .k b{display:block;font-size:30px;font-weight:300;line-height:1.15;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.mn-daily .k b{display:block;font-size:26px;font-weight:300;line-height:1.15;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
 .mn-daily .k b.bad{color:#F0A08C}.mn-daily .k small{font-size:11.5px;color:var(--faint)}
 .mn-daily .td{width:44%;flex:none;font-size:12.5px;color:var(--muted)}
 .mn-daily .td .r{display:flex;justify-content:space-between;gap:6px}.mn-daily .td .r b{color:var(--text);font-weight:500;direction:ltr}
@@ -1257,7 +1262,103 @@ body.admin-open .note-fab{display:none}
 .mn-e{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;background:rgba(255,226,190,.07);flex:none}
 .mn-pb{height:6px;border-radius:6px;background:rgba(255,226,190,.1);margin-top:6px;overflow:hidden}.mn-pb i{display:block;height:100%;border-radius:6px;background:#F2B66B}
 .mn-pb i.mid{background:#E8C46A}.mn-pb i.hi{background:#E8705A}.mn-pb i.free{background:rgba(242,182,107,.55)}
+/* dashboard */
+.mn-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mn-kpi{display:block;padding:11px 12px;border-radius:18px;text-align:start;color:var(--text);font:inherit;cursor:pointer;transition:border-color .2s;min-width:0}
+.mn-kpi[aria-expanded=true]{border-color:rgba(242,182,107,.55)}
+.mn-kpi > span{display:block;font-size:11.5px;color:var(--muted)}
+.mn-kpi > b{display:block;font-size:18px;font-weight:400;line-height:1.35;text-align:right;margin:2px 0;direction:ltr;white-space:nowrap}
+.mn-kpi > b.up{color:#F0A08C}.mn-kpi > b.ok{color:#A9D8B6}
+.mn-kpi small{display:block;font-size:10.5px;color:var(--faint);line-height:1.3}.mn-kpi small em{font-style:normal}.mn-kpi em.ok{color:#A9D8B6}.mn-kpi em.up{color:#F0A08C}
+.mn-why{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}.mn-why.open{grid-template-rows:1fr}.mn-why > div{overflow:hidden;min-height:0}
+.mn-why .in{margin-top:8px;padding:12px 14px;font-size:13px;border-radius:18px}
+.mn-why .ln{display:flex;justify-content:space-between;gap:10px;padding:4px 0;color:var(--muted)}.mn-why .ln b{color:var(--text);font-weight:500;direction:ltr;white-space:nowrap}
+.mn-why .ln.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:8px;color:var(--text)}
+.mn-why p{margin:6px 0 0;font-size:12px;color:var(--faint)}
+.mn-sh{width:100%;border:0;background:none;color:inherit;font:inherit;font-size:15px;font-weight:600;text-align:start;cursor:pointer;margin:20px 4px 8px;padding:0;gap:8px;justify-content:flex-start}
+.mn-sh > span{flex:1}.mn-shc{width:16px;height:16px;flex:none;opacity:.7;transition:transform .3s}
+.mn-sx.closed .mn-shc{transform:rotate(90deg)}
+.mn-sxb{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s ease}.mn-sx.closed .mn-sxb{grid-template-rows:0fr}.mn-sxb > div{overflow:hidden;min-height:0}
+.mn-att{padding:2px 6px;border-radius:20px}
+.mn-att button{display:flex;align-items:center;gap:11px;width:100%;padding:10px 8px;border:0;background:none;color:var(--text);font:inherit;font-size:13.5px;text-align:start;cursor:pointer}
+.mn-att button + button{border-top:1px solid var(--line)}
+.mn-att .t{flex:1;min-width:0}.mn-att small{display:block;font-size:12px;color:var(--faint)}
+.mn-att .mn-ab{width:4px;align-self:stretch;border-radius:3px;flex:none;background:var(--faint)}.mn-att .mn-ab.bad{background:#F0A08C}.mn-att .mn-ab.warn{background:#E8C46A}
+.mn-att .go{font-size:13px;color:var(--faint)}
+.mn-prog{padding:12px 12px 10px;border-radius:22px}
+.mn-prog .ctl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 2px 8px}
+.mn-tgl{display:flex;gap:3px;padding:3px;border-radius:12px;background:rgba(255,226,190,.06)}
+.mn-tgl button{height:28px;padding:0 10px;border-radius:9px;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.mn-tgl button[aria-pressed=true]{background:rgba(255,226,190,.14);color:var(--text)}
+.mn-prog .hint{font-size:11.5px;color:var(--faint)}
+.mn-tm{padding:2px 2px 0}
+.mn-tm .row{margin-top:10px}.mn-tm .row:first-child{margin-top:2px}
+.mn-tm .l{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-bottom:5px}.mn-tm .l b{color:var(--text);font-weight:500}
+.mn-tm .tr{position:relative;height:14px;border-radius:7px;background:rgba(255,226,190,.09)}
+.mn-tm .tr i{position:absolute;inset-block:0;right:0;border-radius:7px;background:#F2B66B}
+.mn-tm .tr i.time{background:rgba(255,244,228,.55)}.mn-tm .tr i.soon{background:rgba(242,182,107,.45)}.mn-tm .tr i.over{background:#F0A08C}
+.mn-tm .tk{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:#FFF4E4;opacity:.85;transform:translateX(50%)}
+.mn-tm .wk{display:flex;gap:4px;margin-top:6px}.mn-tm .wk span{flex:1;height:4px;border-radius:2px;background:rgba(255,226,190,.12)}.mn-tm .wk span.on{background:rgba(255,244,228,.6)}
+.mn-tm .verdict{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border-radius:14px;background:rgba(169,216,182,.1);font-size:13.5px}
+.mn-tm .verdict.bad{background:rgba(240,160,140,.12)}
+.mn-tm .verdict i{width:8px;height:8px;border-radius:50%;background:#A9D8B6;flex:none}.mn-tm .verdict.bad i{background:#F0A08C}
+.mn-chart{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;cursor:crosshair}
+.mn-chart .g0{stroke:rgba(255,226,190,.18)}.mn-chart .bud{stroke:rgba(255,226,190,.5);stroke-width:1.4;stroke-dasharray:4 4}.mn-chart .bud.g{stroke:#A9D8B6}
+.mn-chart .last{fill:none;stroke:rgba(160,190,230,.6);stroke-width:1.4}
+.mn-chart .area{fill:rgba(242,182,107,.14)}.mn-chart .cur{fill:none;stroke:#F2B66B;stroke-width:2.2;stroke-linejoin:round}
+.mn-chart .fc{fill:none;stroke:#F2B66B;stroke-width:1.8;stroke-dasharray:2 4;stroke-linecap:round}.mn-chart .fc.over{stroke:#F0A08C}
+.mn-chart .fce{fill:#1F1711;stroke:#F2B66B;stroke-width:1.6}.mn-chart .fce.over{stroke:#F0A08C}
+.mn-chart .now{stroke:rgba(255,244,228,.25)}.mn-chart .dot{fill:#F2B66B;stroke:#1F1711;stroke-width:2}
+.mn-chart .b{fill:#F2B66B}.mn-chart .b.fx{fill:rgba(242,182,107,.5)}.mn-chart .b.up{fill:rgba(242,182,107,.22)}.mn-chart .b.sel{fill:#FFF4E4}
+.mn-chart .ax{fill:#97826C;font-size:10px;text-anchor:middle}
+.mn-chart .sl{stroke:#FFF4E4;stroke-opacity:.55}.mn-chart .sc{fill:#FFF4E4}.mn-chart .sb{fill:rgba(20,13,8,.92);stroke:rgba(255,214,170,.25)}
+.mn-chart .st1{fill:#F7EEE4;font-size:11px;font-weight:500;text-anchor:middle}.mn-chart .st2{fill:#CDB8A2;font-size:10px;text-anchor:middle}
+.mn-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--muted);margin:6px 2px 0}
+.mn-leg span{display:inline-flex;align-items:center;gap:6px}
+.mn-leg i{width:16px;height:0;border-top:2px solid #F2B66B}.mn-leg i.bud{border-top:1.5px dashed rgba(255,226,190,.55)}.mn-leg i.bud.g{border-top-color:#A9D8B6}
+.mn-leg i.last{border-top:1.5px solid rgba(160,190,230,.65)}.mn-leg i.fc{border-top:2px dotted #F2B66B}
+.mn-leg i.box{width:10px;height:10px;border:0;border-radius:3px;background:#F2B66B}.mn-leg i.box.fx{opacity:.5}.mn-leg i.box.up{opacity:.22}
+.mn-dayl{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}.mn-dayl.open{grid-template-rows:1fr}.mn-dayl > div{overflow:hidden;min-height:0}
+.mn-dayl .in{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.mn-dayl .h{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:2px}.mn-dayl .h b{color:var(--text);font-weight:500}
+.mn-e.sm{width:28px;height:28px;border-radius:9px}.mn-e.sm .mn-fl{width:20px;height:20px}
+.mn-sim{padding:14px 16px;border-radius:22px}
+.mn-sim .q{font-size:13.5px;color:var(--muted)}
+.mn-sim .val{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:2px 0 6px}.mn-sim .val b{font-size:26px;font-weight:300}.mn-sim .val small{font-size:12px;color:var(--faint)}
+.mn-sim input[type=range]{width:100%;height:28px;margin:0;accent-color:#F2B66B;direction:rtl}
+.mn-sim .qs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.mn-sim .qs button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border-radius:14px;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;line-height:1.2;cursor:pointer}
+.mn-sim .qs small{font-size:11px}.mn-sim .qs b{font-size:14px;font-weight:500;color:var(--text);direction:ltr}
+.mn-sim .qs button[aria-pressed=true]{background:rgba(255,226,190,.13);border-color:rgba(242,182,107,.55)}
+.mn-sim .res{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(169,216,182,.1);font-size:13.5px}
+.mn-sim .res.bad{background:rgba(240,160,140,.12)}
+.mn-sim .res i{width:8px;height:8px;border-radius:50%;background:#A9D8B6;flex:none}.mn-sim .res.bad i{background:#F0A08C}.mn-sim .res b{font-weight:500}
+.mn-fl{display:flex;gap:6px;margin:0 0 8px;overflow-x:auto;scrollbar-width:none}.mn-fl::-webkit-scrollbar{display:none}
+.mn-fl button{flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.mn-fl button[aria-pressed=true]{background:#F7EEE4;border-color:#F7EEE4;color:#22170E;font-weight:500}
+.mn-cats{padding:2px 14px;border-radius:22px}
+.mn-cats .mn-cg + .mn-cg{border-top:1px solid var(--line)}
+.mn-cg[hidden]{display:none}
+.mn-cg.flash{animation:mnFlash 1.3s ease}
+@keyframes mnFlash{0%,40%{background:rgba(242,182,107,.16)}100%{background:transparent}}
+.mn-track{position:relative;height:6px;border-radius:6px;background:rgba(255,226,190,.1);margin-top:7px}
+.mn-track i{position:absolute;inset-block:0;right:0;border-radius:6px;background:#F2B66B}
+.mn-track i.warn{background:#E8C46A}.mn-track i.bad{background:#F0A08C}.mn-track i.free{background:rgba(242,182,107,.45)}
+.mn-track b{position:absolute;top:-4px;width:2px;height:14px;border-radius:1px;background:#FFF4E4;opacity:.85;transform:translateX(50%)}
+.mn-cat .r b small{font-size:12px;color:var(--muted);font-weight:400}.mn-cat .r b.hi{color:#F0A08C}
+.mn-addc{display:flex;align-items:center;justify-content:center;width:100%;height:36px;margin:8px 0 2px;border-radius:12px;border:1px dashed rgba(242,182,107,.45);background:none;color:#F2B66B;font:inherit;font-size:13px;cursor:pointer}
+.mn-tl{padding:4px 14px;border-radius:22px}
+.mn-tl .e{display:flex;align-items:center;gap:11px;width:100%;padding:9px 0;border:0;background:none;color:var(--text);font:inherit;font-size:14px;text-align:start;cursor:pointer}
+.mn-tl .e + .e{border-top:1px solid var(--line)}
+.mn-tl .d{width:42px;flex:none;text-align:center;border-radius:12px;background:rgba(255,226,190,.07);padding:4px 0;line-height:1.15}
+.mn-tl .d b{display:block;font-size:16px;font-weight:500}.mn-tl .d small{font-size:10.5px;color:var(--muted)}
+.mn-tl .t{flex:1;min-width:0}.mn-tl .t small{display:block;font-size:12px;color:var(--faint)}.mn-tl .a{font-weight:500;direction:ltr}
+.mn-mini{position:fixed;top:0;left:50%;z-index:30;width:min(472px,100%);transform:translate(-50%,-120%);transition:transform .3s ease;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 0;pointer-events:none}
+.mn-mini.show{transform:translate(-50%,0)}
+.mn-mini > div{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-radius:16px;font-size:13px;background:rgba(30,20,13,.88);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.mn-mini b{font-weight:500;font-variant-numeric:tabular-nums}.mn-mini small{color:var(--muted)}
 .mn-cards{display:flex;flex-direction:column;gap:8px}
+.mn-cats .mn-cat{padding:11px 0}.mn-cats .mn-items{padding:0 0 10px}.mn-cats .mn-cat .mn-e{width:36px;height:36px}
 .mn-cg{border-radius:20px;padding:0;overflow:hidden}
 .mn-cat{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;background:none;color:var(--text);font:inherit;text-align:start;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mn-cat .mn-e{width:40px;height:40px;border-radius:13px}
@@ -1300,7 +1401,10 @@ body.admin-open .note-fab{display:none}
 .mn-qk button.on{background:rgba(242,182,107,.13)}
 .mn-form input.fl{animation:mnFl .6s ease}
 @keyframes mnFl{0%{background:rgba(242,182,107,.25)}}
-.mn-who{padding:12px}.mn-who .row{display:flex;flex-direction:column;gap:7px}.mn-who .row > div{display:flex;align-items:center;gap:8px;font-size:14px}.mn-who .row span{flex:1}.mn-who .row small{width:40px;text-align:left;color:var(--muted);font-size:12px}
+.mn-who{padding:12px;border-radius:22px}.mn-who .row{display:flex;gap:8px}
+.mn-who .row button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.mn-who .row button span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12.5px;color:var(--muted)}.mn-who .row button b{font-size:15px;font-weight:500;direction:ltr}.mn-who .row button[aria-pressed=true]{border-color:rgba(242,182,107,.55);background:rgba(242,182,107,.1)}
+.mn-who .lst{margin-top:8px}
 .mn-dot{width:10px;height:10px;border-radius:50%;flex:none}
 .mn-who .row b{font-weight:500}.mn-tog{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#B8A48C;color:#1E140C;font-size:13px}
 .mn-av{gap:0}.mn-av i{margin:0}
@@ -1353,6 +1457,27 @@ html[data-skin="light"] .mn-trend{background:rgba(110,78,40,.05)}html[data-skin=
 html[data-skin="light"] .mn-trend .tx b.mn-up,html[data-skin="light"] .mn-cat .r2 .hi{color:#B5452F}html[data-skin="light"] .mn-trend .tx b.mn-dn{color:#3F7E3A}
 html[data-skin="light"] .mn-it + .mn-it{border-top-color:rgba(110,78,40,.1)}
 html[data-skin="light"] .mn-qk button.on{background:rgba(201,150,79,.14)}
+html[data-skin="light"] .mn-st small .mn-pace{color:#3F7E3A}html[data-skin="light"] .mn-st small .mn-pace.bad{color:#B5452F}
+html[data-skin="light"] :is(.mn-tm .tr,.mn-track,.mn-tgl){background:rgba(110,78,40,.09)}
+html[data-skin="light"] .mn-tm .tr i.time{background:rgba(90,58,28,.35)}html[data-skin="light"] .mn-tm .tr i{background:#C9964F}html[data-skin="light"] .mn-tm .tr i.soon{background:rgba(201,150,79,.4)}html[data-skin="light"] .mn-tm .tr i.over{background:#C0614A}
+html[data-skin="light"] :is(.mn-tm .tk,.mn-track b){background:#4A2E14}
+html[data-skin="light"] .mn-tm .wk span{background:rgba(110,78,40,.12)}html[data-skin="light"] .mn-tm .wk span.on{background:rgba(90,58,28,.45)}
+html[data-skin="light"] :is(.mn-tm .verdict,.mn-sim .res){background:rgba(63,126,58,.1)}html[data-skin="light"] :is(.mn-tm .verdict.bad,.mn-sim .res.bad){background:rgba(181,69,47,.1)}
+html[data-skin="light"] :is(.mn-tm .verdict i,.mn-sim .res i){background:#3F7E3A}html[data-skin="light"] :is(.mn-tm .verdict.bad i,.mn-sim .res.bad i){background:#B5452F}
+html[data-skin="light"] .mn-tgl button[aria-pressed=true]{background:#fff;box-shadow:0 1px 4px rgba(90,58,28,.15)}
+html[data-skin="light"] .mn-track i{background:#C9964F}html[data-skin="light"] .mn-track i.warn{background:#D0A23E}html[data-skin="light"] .mn-track i.bad{background:#C0614A}html[data-skin="light"] .mn-track i.free{background:rgba(201,150,79,.45)}
+html[data-skin="light"] :is(.mn-kpi em.ok,.mn-kpi > b.ok,.mn-setb){color:#3F7E3A}html[data-skin="light"] :is(.mn-kpi em.up,.mn-kpi > b.up,.mn-cat .r b.hi){color:#B5452F}
+html[data-skin="light"] .mn-chart .g0{stroke:rgba(110,78,40,.18)}html[data-skin="light"] .mn-chart .bud{stroke:rgba(90,58,28,.45)}html[data-skin="light"] .mn-chart .bud.g{stroke:#3F7E3A}
+html[data-skin="light"] .mn-chart .cur,html[data-skin="light"] .mn-chart .fc{stroke:#C98A3E}html[data-skin="light"] .mn-chart .area{fill:rgba(201,150,79,.16)}html[data-skin="light"] .mn-chart .last{stroke:rgba(70,110,170,.55)}
+html[data-skin="light"] .mn-chart .now{stroke:rgba(90,58,28,.25)}html[data-skin="light"] .mn-chart .dot{fill:#C98A3E;stroke:#fff}html[data-skin="light"] .mn-chart .fce{fill:#fff;stroke:#C98A3E}
+html[data-skin="light"] .mn-chart .b{fill:#C9964F}html[data-skin="light"] .mn-chart .b.fx{fill:rgba(201,150,79,.5)}html[data-skin="light"] .mn-chart .b.up{fill:rgba(201,150,79,.22)}html[data-skin="light"] .mn-chart .b.sel{fill:#5A3A1C}
+html[data-skin="light"] .mn-chart .sl{stroke:#5A3A1C}html[data-skin="light"] .mn-chart .sc{fill:#5A3A1C}
+html[data-skin="light"] .mn-leg i.bud{border-top-color:rgba(90,58,28,.45)}html[data-skin="light"] .mn-leg i.bud.g{border-top-color:#3F7E3A}html[data-skin="light"] :is(.mn-leg i,.mn-leg i.box){border-top-color:#C98A3E}html[data-skin="light"] .mn-leg i.box{background:#C98A3E}
+html[data-skin="light"] .mn-tl .d{background:rgba(110,78,40,.07)}
+html[data-skin="light"] .mn-fl button{background:rgba(255,253,250,.88);border-color:rgba(110,78,40,.14);color:#5A4128}html[data-skin="light"] .mn-fl button[aria-pressed=true]{background:#C9964F;border-color:#C9964F;color:#fff}
+html[data-skin="light"] .mn-addc{color:#8A5A1E;border-color:rgba(201,150,79,.55)}
+html[data-skin="light"] .mn-sim input[type=range]{accent-color:#C98A3E}
+html[data-skin="light"] .mn-mini > div{background:rgba(255,253,250,.95);border-color:rgba(110,78,40,.14);color:#2A1D12}html[data-skin="light"] .mn-mini small{color:#76604B}
 html[data-skin="light"] :is(.mn-pb,.mn-mon button){background:rgba(110,78,40,.1)}
 html[data-skin="light"] .mn-pb i{background:#C9964F}html[data-skin="light"] .mn-pb i.mid{background:#D0A23E}html[data-skin="light"] .mn-pb i.hi{background:#C0614A}html[data-skin="light"] .mn-pb i.free{background:rgba(201,150,79,.55)}
 html[data-skin="light"] .mn-e{background:rgba(110,78,40,.07)}
@@ -3775,12 +3900,19 @@ const Money = {
   /* quick add: what this family enters again and again (same description + category, at least twice) in the open month and
      the one before it. The month before is read once per session (one query) and only when the add window opens. */
   prev:{},
+  _prevP:{},
+  loadPrev(pm){
+    if (this.prev[pm]) return Promise.resolve(this.prev[pm]);
+    if (!CLOUD || !Cloud.fb){ this.prev[pm] = this.L().ex.filter(e => e.month === pm); return Promise.resolve(this.prev[pm]); }
+    if (this._prevP[pm]) return this._prevP[pm];
+    const F = Cloud.fb;
+    return this._prevP[pm] = F.getDocs(F.query(this.col("expenses"), F.where("month", "==", pm)))
+      .then(qs => qs.docs.map(d => d.data()), e => { console.warn("[money] last month", e); return []; })
+      .then(list => { this.prev[pm] = list; delete this._prevP[pm]; return list; });
+  },
   async recent(){
     const pm = addMonth(this.m || iso(new Date()).slice(0, 7), -1);
-    if (!this.prev[pm]){
-      if (!CLOUD) this.prev[pm] = this.L().ex.filter(e => e.month === pm);
-      else try { const F = Cloud.fb; this.prev[pm] = (await F.getDocs(F.query(this.col("expenses"), F.where("month", "==", pm)))).docs.map(d => d.data()); } catch(e){ console.warn("[money] recent", e); this.prev[pm] = []; }
-    }
+    await this.loadPrev(pm);
     const g = {};
     [...this.prev[pm], ...this.list].filter(e => !e.plan && (e.desc || "").trim()).forEach(e => { const k = e.desc.trim() + "|" + e.cat, x = g[k] || (g[k] = { desc:e.desc.trim(), cat:e.cat, n:0, last:"", payer:e.payer });
       x.n++; if (e.date >= x.last){ x.last = e.date; x.payer = e.payer; } });
@@ -3872,6 +4004,267 @@ function askChoice(title, text, opts){
   });
 }
 
+/* ================= הוצאות → סקירה: the dashboard =================
+   status + ring + today, three numbers (tap for the math), what needs attention, how the month moves (time vs money /
+   cumulative / by day), "what if", categories by risk, expected, plans, who paid. Sections fold (remembered on this device).
+   Everything is computed from the open month, the month totals already loaded for the comparison, and — for the "last
+   month" line only — last month's expenses, read once per session (the same read the quick-add list uses). */
+const MN_K = 1000;   // ₪10 in agorot: the "what if" step
+let mnIO = null;
+const mnClosed = () => { try { return JSON.parse(localStorage.getItem("nido.mnClosed") || "{}"); } catch(e){ return {}; } };
+function mnSec(id, title, sub, body){
+  const closed = !!mnClosed()[id];
+  return `<section class="mn-sx ${closed ? "closed" : ""}" data-sx="${id}"><button type="button" class="mn-sec mn-sh" aria-expanded="${!closed}"><span>${title}</span>${sub ? `<small>${sub}</small>` : ""}
+    <svg class="mn-shc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="mn-sxb"><div>${body}</div></div></section>`;
+}
+function mnDash(c){
+  const { m, B, today, isNow, list, soon, total, upSum, byCat, byPayer, daysIn, daysLeft, dayF, catIds, payColor, byDate, chev } = c;
+  const dayNo = isNow ? +today.slice(8, 10) : daysIn, rest = isNow ? daysIn - dayNo : 0, left = B.total - total - upSum;
+  const fixedSpent = list.filter(e => e.plan).reduce((a, e) => a + e.amount, 0);
+  const rate = Math.max(0, Math.round((total - fixedSpent) / Math.max(1, dayNo) / MN_K) * MN_K);
+  if (S.mnSimM !== m){ S.mnSimM = m; S.mnSim = rate; }
+  const sim = S.mnSim, fore = total + sim * rest + upSum;
+  const safe = rest && B.total ? Math.max(0, Math.floor((B.total - total - upSum) / rest / MN_K) * MN_K) : 0;
+  const prev3 = [1, 2, 3].map(k => Money.months[addMonth(m, -k)]).filter(x => x && +x.total > 0), avg = prev3.length ? prev3.reduce((a, x) => a + +x.total, 0) / prev3.length : 0;
+  const tday = isNow ? list.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0) : 0;
+  const per = isNow && B.total ? (B.total - (total - tday) - upSum) / daysLeft : 0, can = per - tday;
+  const pct = B.total ? Math.round(total * 100 / B.total) : 0;
+  const catAvg = id => prev3.length ? prev3.reduce((a, x) => a + (+((x.cats || {})[id]) || 0), 0) / prev3.length : 0;
+  const lvl = id => { const sp = byCat[id] || 0, bud = +B.cats[id] || 0; return !bud ? "free" : sp > bud ? "bad" : isNow && sp / bud > dayF + .08 ? "warn" : ""; };
+  const risk = id => { const bud = +B.cats[id] || 0; return bud ? (byCat[id] || 0) / bud - dayF : -9 + (byCat[id] || 0) / 1e9; };
+  const cats = [...catIds].sort((a, b) => risk(b) - risk(a));
+  const hot = cats.filter(id => lvl(id) === "bad" || lvl(id) === "warn");
+  const paceD = B.total && isNow ? Math.round((total / B.total - dayF) * 100) : null;
+  Object.assign(c, { rest, rate, safe });
+
+  /* ---- status + ring + today ---- */
+  let st = null;
+  if (B.total){
+    const t = isNow ? (total > B.total ? ["bad", "חרגנו מהתקציב"] : (fore > B.total || paceD > 8 || hot.some(id => lvl(id) === "bad")) ? ["warn", "צריך לשים לב"] : ["", "החודש במסלול"])
+      : (total > B.total ? ["bad", `חרגנו ב-${ilsR(total - B.total)}`] : ["", "סיימנו בתוך התקציב"]);
+    const sub = [paceD === null ? "" : `<span class="mn-pace ${paceD > 3 ? "bad" : ""}">${paceD > 3 ? paceD + "% מעל הקצב" : paceD < -3 ? -paceD + "% מתחת לקצב" : "בדיוק בקצב"}</span>`,
+      hot.length ? `${hot.length === 1 ? "קטגוריה אחת דורשת" : hot.length + " קטגוריות דורשות"} תשומת לב` : ""].filter(Boolean).join(" · ");
+    st = `<div class="mn-st ${t[0]}"><i></i><div><b>${t[1]}</b>${sub ? `<small>${sub}</small>` : ""}</div><button type="button" class="mn-bud" data-budget>תקציב ›</button></div>`;
+  }
+  const RR = 50, RL = 2 * Math.PI * RR, pa = dayF * 2 * Math.PI;
+  const ringIn = !B.total ? `<b>—</b><small>אין תקציב</small>` : S.mnRing ? `<b class="sm">${ilsR(Math.max(0, left))}</b><small>${left < 0 ? "חריגה" : "נשאר"}</small>` : `<b>${pct}%</b><small>מהתקציב</small>`;
+  const ring = `<button type="button" class="mn-ring ${pct > 100 ? "over" : pct >= 85 ? "near" : ""}" data-ring ${B.total ? "" : "disabled"} aria-label="החלפת תצוגה"><svg viewBox="0 0 112 112" aria-hidden="true"><circle class="tr" cx="56" cy="56" r="${RR}" fill="none" stroke-width="5"/>
+      ${B.total && total ? `<circle class="ar" cx="56" cy="56" r="${RR}" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(RL * Math.min(100, pct) / 100).toFixed(1)} ${RL.toFixed(1)}"/>` : ""}
+      ${B.total && isNow ? `<circle class="pc" cx="${(56 + RR * Math.cos(pa)).toFixed(1)}" cy="${(56 + RR * Math.sin(pa)).toFixed(1)}" r="5" stroke-width="2"/>` : ""}</svg><div>${ringIn}</div></button>`;
+  const daily = !(isNow && B.total) ? "" : per <= 0
+    ? `<div class="mn-daily"><div class="k"><span>תקציב יומי</span><b class="bad">אין יתרה</b><small>התקציב של החודש כבר נוצל${upSum ? ", כולל הצפויות" : ""}</small></div><div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div></div></div>`
+    : `<div class="mn-daily"><div class="k"><span>${can >= 0 ? "אפשר להוציא היום" : "חרגנו היום ב"}</span><b class="tabular ${can < 0 ? "bad" : ""}">${ilsR(Math.abs(can))}</b><small>מתוך ${ilsR(per)} ליום, עד סוף החודש</small></div>
+        <div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div><div class="bar"><i class="${tday > per ? "hi" : tday >= per * .85 ? "mid" : ""}" style="width:${Math.min(100, tday * 100 / per).toFixed(1)}%"></i></div></div></div>`;
+  const hero = `<section class="panel mn-hero" id="mnHero">${st || ""}
+    <div class="mn-main">${ring}<div class="mn-hk"><span>${isNow ? "הוצאנו החודש" : "הוצאנו ב" + monthLabel(m).split(" ")[0]}</span><b class="mn-big tabular">${ilsR(total)}</b>
+      ${B.total ? `<span class="of">מתוך ${ilsR(B.total)}${isNow ? ` · נשארו ${daysLeft} ימים` : ""}</span>` : `<button type="button" class="mn-setb" data-budget>קביעת תקציב חודשי ›</button>`}</div></div>${daily}</section>`;
+
+  /* ---- three numbers ---- */
+  const k = S.mnKpi, diff = B.total - (isNow ? fore : total), base = isNow ? fore : total, vs = avg ? Math.round((base / avg - 1) * 100) : null;
+  const tiles = [
+    ["left", B.total ? "נשאר בתקציב" : "תקציב", B.total ? `<b class="tabular ${left < 0 ? "up" : ""}">${left < 0 ? "−" : ""}${ilsR(Math.abs(left))}</b>` : `<b>—</b>`, B.total ? (upSum ? `כולל ${ilsR(upSum)} צפויים` : "אחרי כל ההוצאות") : "הקישו להגדרה"],
+    ["fc", isNow ? "צפי לסוף החודש" : "סך הכול בחודש", `<b class="tabular">${ilsR(base)}</b>`, B.total ? `<em class="${diff >= 0 ? "ok" : "up"}">${ilsR(Math.abs(diff))} ${diff >= 0 ? "מתחת" : "מעל"}</em>` : isNow ? "בקצב שלנו" : ""],
+    ["avg", "מול חודש ממוצע", vs === null ? `<b>—</b>` : `<b class="${vs > 0 ? "up" : "ok"}"><span class="tabular" dir="ltr">${vs > 0 ? "+" : ""}${vs}%</span></b>`, avg ? `ממוצע ${ilsR(avg)}` : "עוד אין היסטוריה"]];
+  const why = {
+    left: B.total ? `<div class="ln"><span>תקציב החודש</span><b>${ilsR(B.total)}</b></div><div class="ln"><span>הוצאנו ${isNow ? "עד היום" : "בחודש"}</span><b>−${ilsR(total)}</b></div>
+      ${upSum ? `<div class="ln"><span>צפוי עד סוף החודש</span><b>−${ilsR(upSum)}</b></div>` : ""}<div class="ln tot"><span>${left < 0 ? "חריגה" : "נשאר"}</span><b>${ilsR(Math.abs(left))}</b></div>
+      ${rest && left > 0 ? `<p>זה ${ilsR(safe)} ליום ל-${rest} הימים שאחרי היום.</p>` : ""}` : "",
+    fc: isNow ? `<div class="ln"><span>הוצאנו עד היום</span><b>${ilsR(total)}</b></div><div class="ln"><span>${rest} ימים × ${ilsR(sim)} ליום</span><b>+${ilsR(sim * rest)}</b></div>
+      ${upSum ? `<div class="ln"><span>צפוי (${esc(soon.slice(0, 2).map(e => e.desc || Money.cat(e.cat).name).join(", "))}${soon.length > 2 ? "…" : ""})</span><b>+${ilsR(upSum)}</b></div>` : ""}
+      <div class="ln tot"><span>צפי לסוף החודש</span><b>${ilsR(fore)}</b></div><p>הקצב היומי מחושב מההוצאות של החודש עד היום, בלי תשלומים והוצאות קבועות. אפשר לשנות אותו ב"מה אם?".</p>`
+      : `<div class="ln tot"><span>סך הכול ב${esc(monthLabel(m).split(" ")[0])}</span><b>${ilsR(total)}</b></div>`,
+    avg: avg ? [3, 2, 1].map(i => { const k2 = addMonth(m, -i), x = Money.months[k2]; return x && +x.total > 0 ? `<div class="ln"><span>${esc(monthLabel(k2).split(" ")[0])}</span><b>${ilsR(+x.total)}</b></div>` : ""; }).join("")
+      + `<div class="ln tot"><span>ממוצע ${prev3.length} חודשים</span><b>${ilsR(avg)}</b></div>` : "" };
+  if (k && !why[k]) S.mnKpi = null;
+  const kpis = `<div class="mn-kpis">${tiles.map(([id, l, v, s]) => `<button type="button" class="panel mn-kpi" data-k="${id}" aria-expanded="${S.mnKpi === id}"><span>${l}</span>${v}<small>${s}</small></button>`).join("")}</div>
+    <div class="mn-why ${S.mnKpi ? "open" : ""}"><div><div class="panel in">${S.mnKpi ? why[S.mnKpi] : ""}</div></div></div>`;
+
+  /* ---- needs attention ---- */
+  const att = [];
+  hot.forEach(id => { const cc = Money.cat(id), sp = byCat[id] || 0, bud = +B.cats[id];
+    att.push(lvl(id) === "bad" ? ["bad", cc, `${cc.name}: חרגנו ב-${ilsR(sp - bud)}`, isNow ? `התקציב ${ilsR(bud)}, והחודש עוד לא נגמר` : `התקציב היה ${ilsR(bud)}`, "cat:" + id]
+      : ["warn", cc, `${cc.name}: ${Math.round(sp * 100 / bud)}% מהתקציב`, `ועברו ${Math.round(dayF * 100)}% מהחודש. נשארו ${ilsR(bud - sp)}`, "cat:" + id]); });
+  const nx = soon.find(e => (new Date(e.date) - new Date(today)) / 864e5 <= 7);
+  if (nx){ const cc = Money.cat(nx.cat); att.push(["", cc, `${esc(dueIn(nx.date, today))} יורד ${esc(nx.desc || cc.name)} ${ilsR(nx.amount)}`, esc(planTag(nx.plan) || payerName(nx.payer)), "ex:" + nx.id]); }
+  const attHtml = att.length ? `<div class="panel mn-att">${att.map(([kk, cc, t, s, go]) => `<button type="button" data-go="${esc(go)}"><i class="mn-ab ${kk}"></i><span class="mn-e">${catIc(cc)}</span><span class="t">${t}<small>${s}</small></span><span class="go">‹</span></button>`).join("")}</div>` : "";
+
+  /* ---- how the month moves ---- */
+  const modes = B.total ? [["tm", "זמן מול כסף"], ["cum", "מצטבר"], ["day", "לפי יום"]] : [["cum", "מצטבר"], ["day", "לפי יום"]];
+  if (!modes.some(x => x[0] === S.mnChart)) S.mnChart = modes[0][0];
+  const mode = S.mnChart, pm = addMonth(m, -1), last = S.mnLast !== false && mode === "cum" ? Money.prev[pm] : null;
+  if (mode === "cum" && S.mnLast !== false && !Money.prev[pm]) Money.loadPrev(pm).then(() => Money.redraw());
+  let prog;
+  if (mode === "tm"){
+    const tp = dayF * 100, mp = total * 100 / B.total, wp = (total + upSum) * 100 / B.total, gap = Math.round(mp - tp);
+    const msg = !isNow ? (total > B.total ? `החודש נגמר ${ilsR(total - B.total)} מעל התקציב.` : `החודש נגמר ${ilsR(B.total - total)} מתחת לתקציב.`)
+      : gap > 3 ? `הכסף מקדים את הזמן ב-${gap}%. כדאי להאט קצת.` : gap < -3 ? "הכסף מתקדם לאט יותר מהזמן. אנחנו בקצב טוב." : "הכסף והזמן מתקדמים יחד. אנחנו בקצב.";
+    prog = `<div class="mn-tm"><div class="row"><div class="l"><span>עבר מהחודש</span><b>${dayNo} מתוך ${daysIn} ימים · ${Math.round(tp)}%</b></div><div class="tr"><i class="time" style="width:${tp.toFixed(1)}%"></i></div>
+        <div class="wk">${Array.from({ length:Math.ceil(daysIn / 7) }, (_, i) => `<span class="${i * 7 < dayNo ? "on" : ""}"></span>`).join("")}</div></div>
+      <div class="row"><div class="l"><span>הוצא מהתקציב</span><b>${ilsR(total)} מתוך ${ilsR(B.total)} · ${Math.round(mp)}%</b></div><div class="tr"><i class="${mp > 100 ? "over" : ""}" style="width:${Math.min(100, mp).toFixed(1)}%"></i><b class="tk" style="right:${tp.toFixed(1)}%"></b></div></div>
+      ${upSum ? `<div class="row"><div class="l"><span>כולל מה שצפוי עד סוף החודש</span><b>${Math.round(wp)}%</b></div><div class="tr"><i class="soon" style="width:${Math.min(100, wp).toFixed(1)}%"></i><i class="${mp > 100 ? "over" : ""}" style="width:${Math.min(100, mp).toFixed(1)}%"></i><b class="tk" style="right:${tp.toFixed(1)}%"></b></div></div>` : ""}
+      <div class="verdict ${(isNow ? gap > 3 : total > B.total) ? "bad" : ""}"><i></i>${msg}</div></div>`;
+  } else prog = mnChartSvg({ m, B, today, isNow, daysIn, dayNo, mode, sim, safe, last }) + `<div class="mn-leg">${mode === "cum"
+      ? `<span><i></i>${isNow ? "החודש" : esc(monthLabel(m).split(" ")[0])}</span>${B.total ? `<span><i class="bud"></i>הקצב של התקציב</span>` : ""}${last ? `<span><i class="last"></i>${esc(monthLabel(pm).split(" ")[0])}</span>` : ""}${isNow ? `<span><i class="fc"></i>תחזית</span>` : ""}`
+      : `<span><i class="box"></i>הוצאות</span><span><i class="box fx"></i>תשלומים וקבועות</span>${isNow ? `<span><i class="box up"></i>צפוי</span>` : ""}${B.total ? `<span><i class="bud"></i>${ilsR(B.total / daysIn)} ממוצע תקציב ליום</span>` : ""}${isNow && B.total ? `<span><i class="bud g"></i>${ilsR(safe)} ליום מכאן ונשארים בתקציב</span>` : ""}`}</div>
+      <div class="mn-dayl ${S.mnSel ? "open" : ""}" id="mnDayl"><div>${mnDayList(S.mnSel, c)}</div></div>`;
+  const progHtml = `<div class="panel mn-prog"><div class="ctl"><div class="mn-tgl">${modes.map(([kk, l]) => `<button type="button" data-cm="${kk}" aria-pressed="${mode === kk}">${l}</button>`).join("")}</div>
+      ${mode === "cum" ? `<div class="mn-tgl"><button type="button" data-last aria-pressed="${S.mnLast !== false}">${esc(monthLabel(pm).split(" ")[0])}</button></div>` : mode === "day" ? `<span class="hint">הקישו על יום</span>` : ""}</div>${prog}</div>`;
+
+  /* ---- what if ---- */
+  const max = Math.max(50000, Math.ceil(Math.max(rate, safe) * 2 / 10000) * 10000), save = Math.floor(safe * .8 / MN_K) * MN_K;
+  const simHtml = isNow && B.total && rest ? `<div class="panel mn-sim"><div class="q">כמה נוציא ליום עד סוף החודש?</div>
+      <div class="val"><b id="mnSimV">${ilsR(sim)} ליום</b><small id="mnSimS">${sim === rate ? "הקצב שלנו עד היום" : sim <= safe ? "בתוך התקציב" : "מעל מה שנשאר"}</small></div>
+      <input type="range" id="mnSimR" min="0" max="${max}" step="${MN_K}" value="${Math.min(sim, max)}" aria-label="הוצאה יומית עד סוף החודש">
+      <div class="qs">${[[rate, "הקצב שלנו"], [safe, "לסיים בתקציב"], [save, "לחסוך קצת"]].map(([v, l], i) => `<button type="button" data-sim="${v}" class="${i === 1 ? "g" : ""}" aria-pressed="${sim === v}"><small>${l}</small><b>${ilsR(v)}</b></button>`).join("")}</div>
+      <div class="res ${fore > B.total ? "bad" : ""}" id="mnSimRes">${mnSimRes(fore, B.total)}</div></div>` : "";
+
+  /* ---- categories ---- */
+  const F = S.mnFilter || "all", show = id => F === "all" || (F === "risk" && (lvl(id) === "bad" || lvl(id) === "warn")) || (F === "free" && lvl(id) === "free");
+  const prevM = [3, 2, 1].map(i => Money.months[addMonth(m, -i)] || null);
+  const catRows = cats.map(id => { const cc = Money.cat(id), sp = byCat[id] || 0, bud = +B.cats[id] || 0, lv = lvl(id), p = bud ? sp / bud : total ? sp / total : 0;
+    const its = Money.list.filter(e => e.cat === id && (!S.mnPayer || e.payer === S.mnPayer)).sort(byDate), open = S.mnOpen === id, all = S.mnAll === id, ca = catAvg(id);
+    let trend = "";
+    if (ca > 0){ const sh = sp / ca, up = sh > dayF + .1, dn = sh < dayF - .1, vals = prevM.map(x => x ? +((x.cats || {})[id]) || 0 : 0), mx = Math.max(...vals, sp, 1);
+      trend = `<div class="mn-trend"><div class="bars" aria-hidden="true">${vals.map(v => `<i style="height:${Math.max(3, v / mx * 34).toFixed(0)}px"></i>`).join("")}<i class="now" style="height:${Math.max(3, sp / mx * 34).toFixed(0)}px"></i></div>
+        <div class="tx"><b class="${up ? "mn-up" : dn ? "mn-dn" : ""}">${isNow ? (up ? "מהר מהרגיל" : dn ? "לאט מהרגיל" : "בקצב הרגיל") : (up ? "יותר מהרגיל" : dn ? "פחות מהרגיל" : "כרגיל")}</b>ממוצע ${ilsR(ca)} לחודש</div></div>`; }
+    const rows = its.map((e, i) => `<button type="button" class="mn-it ${e.date > today ? "soon" : ""}" data-ex="${esc(e.id)}" ${i >= 5 && !all ? "hidden" : ""}><i class="mn-dot" style="background:${payColor(e.payer)}"></i>
+        <span class="t"><b>${esc(e.desc || cc.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : e.plan ? `<em class="mn-tag">${esc(planTag(e.plan))}</em> ` : ""}${e.date.slice(8, 10)}.${e.date.slice(5, 7)}, ${esc(payerName(e.payer))}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`).join("");
+    const cnt = Money.list.filter(e => e.cat === id).length;
+    return `<div class="mn-cg ${open ? "open" : ""}" data-cg="${esc(id)}" ${show(id) ? "" : "hidden"}><button type="button" class="mn-cat" aria-expanded="${open}"><span class="mn-e">${catIc(cc)}</span>
+      <div class="t"><div class="r"><span>${esc(cc.name)}</span><b class="tabular ${lv === "bad" ? "hi" : ""}">${ilsR(sp)}${bud ? `<small> / ${Math.round(bud / 100).toLocaleString("he-IL")}</small>` : ""}</b></div>
+        <div class="mn-track"><i class="${lv}" style="width:${Math.min(100, p * 100).toFixed(1)}%"></i>${bud && isNow ? `<b style="right:${(dayF * 100).toFixed(1)}%"></b>` : ""}</div>
+        <div class="r2"><span>${cnt ? cnt + " הוצאות" : "עוד אין הוצאות"}</span><span>${bud ? (sp <= bud ? `נשארו ${ilsR(bud - sp)}` : `<span class="hi">חריגה של ${ilsR(sp - bud)}</span>`) : "ללא תקציב"}</span></div></div>${chev}</button>
+      <div class="mn-drop"><div><div class="mn-items">${trend}${rows || `<div class="mn-nocat">${S.mnPayer ? `אין כאן הוצאות של ${esc(payerName(S.mnPayer))}` : "אין הוצאות בקטגוריה הזו החודש"}</div>`}
+        ${its.length > 5 && !all ? `<button type="button" class="mn-more" data-more="${esc(id)}">עוד ${its.length - 5} הוצאות</button>` : ""}
+        <button type="button" class="mn-addc" data-addc="${esc(id)}">＋ הוצאה ב${esc(cc.name)}</button></div></div></div></div>`; }).join("");
+  const catHtml = cats.length ? `<div class="mn-fl">${[["all", "הכול"], ["risk", "קרובות לגבול"], ["free", "בלי תקציב"]].map(([kk, l]) => `<button type="button" data-f="${kk}" aria-pressed="${F === kk}">${l}</button>`).join("")}</div>
+    <div class="panel mn-cats">${catRows}</div>` : "";
+
+  /* ---- expected, plans, who paid ---- */
+  const soonHtml = soon.length ? `<div class="panel mn-tl">${soon.map(e => { const cc = Money.cat(e.cat), d = parse(e.date);
+      return `<button type="button" class="e mn-soon" data-ex="${esc(e.id)}"><span class="d"><b>${d.getDate()}</b><small>${DAYS[d.getDay()][0]}׳</small></span><span class="mn-e">${catIc(cc)}</span><span class="t">${esc(e.desc || cc.name)}<small>${esc(planTag(e.plan) || payerName(e.payer))} · ${esc(dueIn(e.date, today))}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}</div>` : "";
+  const act = isNow ? Money.plans.map(p => ({ p, ...planLeft(p, today) })).filter(x => x.up.length) : [];
+  const plansHtml = act.length ? `<div class="panel mn-plans">${act.map(({ p, it, paid, left: lf }) => { const cc = Money.cat(p.cat), lst = it[it.length - 1];
+      return `<button type="button" class="mn-plan" data-plan="${esc(p.id)}"><span class="mn-e">${p.kind === "inst" ? "💳" : "🔁"}</span><span class="t"><b>${esc(p.desc || cc.name)}</b>
+        <small>${p.kind === "inst" ? `תשלום ${paid} מתוך ${it.length} · נשארו ${ilsR(lf)}` : `${ilsR(p.amount)} לחודש · עד ${esc(monthLabel(lst.month))}`}</small>
+        ${p.kind === "inst" ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</span><span class="a tabular">${p.kind === "inst" ? `${it.length - paid} נותרו` : `${it.length - paid} חודשים`}</span></button>`; }).join("")}</div>` : "";
+  const payers = Object.keys(byPayer).sort((a, b) => byPayer[b] - byPayer[a]);
+  if (S.mnPayer && !payers.includes(S.mnPayer)) S.mnPayer = null;
+  const whoHtml = payers.length ? `<div class="panel mn-who"><div class="row">${payers.map(kk => `<button type="button" data-payer="${esc(kk)}" aria-pressed="${S.mnPayer === kk}"><span><i class="mn-dot" style="background:${payColor(kk)}"></i>${esc(payerName(kk))}</span><b class="tabular">${ilsR(byPayer[kk])}</b></button>`).join("")}</div>
+      <div class="mn-split">${payers.map(kk => `<i style="width:${(byPayer[kk] * 100 / total).toFixed(1)}%;background:${payColor(kk)}"></i>`).join("")}</div>
+      ${S.mnPayer ? `<div class="lst">${list.filter(e => e.payer === S.mnPayer).sort(byDate).map(e => { const cc = Money.cat(e.cat); return `<button type="button" class="mn-it" data-ex="${esc(e.id)}"><span class="mn-e sm">${catIc(cc)}</span><span class="t"><b>${esc(e.desc || cc.name)}</b><small>${e.date.slice(8, 10)}.${e.date.slice(5, 7)}, ${esc(cc.name)}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}</div>` : ""}</div>` : "";
+
+  const mini = isNow ? `<div class="mn-mini" id="mnMini" aria-hidden="true"><div><span><small>נשאר </small><b>${B.total ? ilsR(Math.max(0, left)) : "—"}</b></span>${B.total ? `<span><small>היום </small><b>${ilsR(Math.max(0, can))}</b></span>` : ""}<span><small>צפי </small><b id="mnMiniF">${ilsR(fore)}</b></span></div></div>` : "";
+  return `${mini}${hero}${kpis}
+    ${attHtml ? mnSec("att", "דורש תשומת לב", "", attHtml) : ""}
+    ${mnSec("prog", isNow ? "איך החודש מתקדם" : "איך החודש עבר", "", progHtml)}
+    ${simHtml ? mnSec("sim", "מה אם?", "", simHtml) : ""}
+    ${catHtml ? mnSec("cats", "לפי קטגוריה", B.total && isNow ? "הקו הלבן = איפה צריך להיות היום" : "", catHtml) : `<div class="panel t-empty mn-empty">עוד אין הוצאות ב${esc(monthLabel(m).split(" ")[0])}. לחצו ＋ כדי להוסיף.</div>`}
+    ${soonHtml ? mnSec("soon", "צפוי החודש", `<span class="tabular">${ilsR(upSum)}</span>`, soonHtml) : ""}
+    ${plansHtml ? mnSec("plans", "תשלומים והוצאות קבועות", "", plansHtml) : ""}
+    ${whoHtml ? mnSec("who", "מי שילם", "הקישו על שם לפירוט", whoHtml) : ""}`;
+}
+const mnSimRes = (f, bud) => `<i></i><span>נסיים את החודש ב-<b>${ilsR(f)}</b>, ${f <= bud ? `${ilsR(bud - f)} מתחת לתקציב` : `<b>${ilsR(f - bud)} מעל התקציב</b>`}</span>`;
+function mnDayList(d, c){
+  if (!d) return "";
+  const ds = c.m + "-" + String(d).padStart(2, "0"), its = Money.list.filter(e => e.date === ds).sort((a, b) => (b.at || 0) - (a.at || 0)), sum = its.reduce((a, e) => a + e.amount, 0);
+  return `<div class="in"><div class="h"><span>${esc(dayLabel(ds))}</span><b class="tabular">${ilsR(sum)}</b></div>${its.length ? its.map(e => { const cc = Money.cat(e.cat);
+    return `<button type="button" class="mn-it" data-ex="${esc(e.id)}"><span class="mn-e sm">${catIc(cc)}</span><span class="t"><b>${esc(e.desc || cc.name)}</b><small>${esc(cc.name)}, ${esc(payerName(e.payer))}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("") : `<div class="mn-nocat">לא היו הוצאות ביום הזה</div>`}</div>`;
+}
+/* cumulative / by-day chart; time runs right → left like the rest of the app */
+const MNC = { w:380, h:200, t:20, b:22, l:6, r:6 };
+function mnChartSvg(o){
+  const { m, B, today, isNow, daysIn, dayNo, mode, sim, safe, last } = o, W = MNC.w - MNC.l - MNC.r, H = MNC.h - MNC.t - MNC.b;
+  const X = d => MNC.l + W - d / daysIn * W, ds = d => m + "-" + String(d).padStart(2, "0");
+  const daily = Array.from({ length:daysIn }, (_, i) => Money.list.filter(e => e.date === ds(i + 1)).reduce((a, e) => a + e.amount, 0));
+  const fixedD = Array.from({ length:daysIn }, (_, i) => Money.list.some(e => e.date === ds(i + 1) && e.plan));
+  const P = [];
+  if (mode === "cum"){
+    const cum = []; daily.slice(0, dayNo).reduce((a, v) => (cum.push(a + v), a + v), 0);
+    let lastCum = null;
+    if (last){ const ld = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 0).getDate(), pm = addMonth(m, -1), lc = []; let a = 0;
+      for (let d = 1; d <= ld; d++){ a += last.filter(e => e.date === pm + "-" + String(d).padStart(2, "0")).reduce((s, e) => s + e.amount, 0); lc.push(a); } lastCum = lc; }
+    let fc = null;
+    if (isNow){ let v = cum[dayNo - 1] || 0; fc = [[dayNo, v]]; for (let d = dayNo + 1; d <= daysIn; d++){ v += sim + daily[d - 1]; fc.push([d, v]); } }
+    const max = Math.max(B.total || 0, ...cum, ...(lastCum || [0]), fc ? fc[fc.length - 1][1] : 0, 1) * 1.06, Y = v => MNC.t + H - v / max * H;
+    const path = arr => arr.map((v, i) => `${i ? "L" : "M"}${X(i + 1).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
+    if (B.total) P.push(`<line x1="${X(0)}" x2="${X(daysIn)}" y1="${Y(B.total)}" y2="${Y(B.total)}" class="g0"/>`, `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(daysIn)}" y2="${Y(B.total)}" class="bud"/>`);
+    if (lastCum) P.push(`<path d="${path(lastCum.slice(0, daysIn))}" class="last"/>`);
+    if (cum.length) P.push(`<path d="M${X(1)} ${Y(0)} ${cum.map((v, i) => `L${X(i + 1).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ")} L${X(dayNo)} ${Y(0)}Z" class="area"/>`, `<path d="${path(cum)}" class="cur"/>`);
+    if (fc){ const over = B.total && fc[fc.length - 1][1] > B.total; P.push(`<polyline points="${fc.map(([d, v]) => `${X(d).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" class="fc ${over ? "over" : ""}"/>`,
+      `<circle cx="${X(daysIn)}" cy="${Y(fc[fc.length - 1][1])}" r="3.5" class="fce ${over ? "over" : ""}"/>`, `<line x1="${X(dayNo)}" x2="${X(dayNo)}" y1="${MNC.t}" y2="${Y(0)}" class="now"/>`,
+      `<circle cx="${X(dayNo)}" cy="${Y(cum[dayNo - 1] || 0)}" r="4.5" class="dot"/>`); }
+    o.Y = Y; o.cum = cum; o.lastCum = lastCum;
+  } else {
+    const fut = d => d > dayNo ? daily[d - 1] + (isNow ? sim : 0) : daily[d - 1];
+    const mx = Math.max(...Array.from({ length:daysIn }, (_, i) => fut(i + 1)), B.total ? B.total / daysIn * 1.5 : 1, 1) * 1.08, Y = v => MNC.t + H - v / mx * H, bw = W / daysIn * .62;
+    for (let d = 1; d <= daysIn; d++){ const v = fut(d); if (v <= 0) continue;
+      P.push(`<rect x="${(X(d) - bw / 2).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(Y(0) - Y(v)).toFixed(1)}" rx="2" class="b ${d > dayNo ? "up" : fixedD[d - 1] ? "fx" : ""} ${d === S.mnSel ? "sel" : ""}"/>`); }
+    if (B.total) P.push(`<line x1="${X(0)}" x2="${X(dayNo)}" y1="${Y(B.total / daysIn)}" y2="${Y(B.total / daysIn)}" class="bud"/>`);
+    if (isNow && B.total) P.push(`<line x1="${X(dayNo)}" x2="${X(daysIn)}" y1="${Y(safe)}" y2="${Y(safe)}" class="bud g"/>`);
+    o.Y = Y; o.daily = daily;
+  }
+  const ticks = [1, 10, 20, daysIn];
+  ticks.forEach(d => P.push(`<text x="${X(d)}" y="${MNC.h - 4}" class="ax">${d}.${+m.slice(5, 7)}</text>`));
+  P.push(`<g class="scr" style="display:none"><line class="sl" y1="${MNC.t}" y2="${MNC.t + H}"/><circle class="sc" r="4"/><rect class="sb" rx="8" height="36"/><text class="st1"></text><text class="st2"></text></g>`);
+  mnChartSvg.o = o; o.X = X; o.W = W; o.H = H;
+  return `<svg class="mn-chart" id="mnChart" data-noswipe viewBox="0 0 ${MNC.w} ${MNC.h}" role="img" aria-label="${mode === "cum" ? "ההוצאה המצטברת לאורך החודש" : "ההוצאות לפי יום"}">${P.join("")}</svg>`;
+}
+function mnScrub(svg, clientX){
+  const o = mnChartSvg.o; if (!o) return null;
+  const r = svg.getBoundingClientRect(), x = (clientX - r.left) / r.width * MNC.w;
+  let d = Math.round((MNC.l + o.W - x) / o.W * o.daysIn); d = Math.max(1, Math.min(o.dayNo, d));
+  const g = svg.querySelector(".scr"), cx = o.X(d), cum = o.mode === "cum";
+  const v = cum ? (o.cum[d - 1] || 0) : (o.daily[d - 1] || 0), cy = o.Y(v);
+  g.style.display = ""; const sl = g.querySelector(".sl"); sl.setAttribute("x1", cx); sl.setAttribute("x2", cx);
+  const sc = g.querySelector(".sc"); sc.setAttribute("cx", cx); sc.setAttribute("cy", cy);
+  const t1 = cum ? `עד ${d}.${+o.m.slice(5, 7)}: ${ilsR(v)}` : `${d}.${+o.m.slice(5, 7)}: ${ilsR(v)}`;
+  const t2 = cum ? [o.B.total ? `קצב התקציב ${ilsR(o.B.total * d / o.daysIn)}` : "", o.lastCum && o.lastCum[d - 1] != null ? `חודש שעבר ${ilsR(o.lastCum[d - 1])}` : ""].filter(Boolean).join(" · ")
+    : `${Money.list.filter(e => e.date === o.m + "-" + String(d).padStart(2, "0")).length || "אין"} הוצאות`;
+  const w = Math.max(t1.length, t2.length) * 5.7 + 20, bx = Math.max(2, Math.min(MNC.w - w - 2, cx - w / 2));
+  const sb = g.querySelector(".sb"); sb.setAttribute("x", bx); sb.setAttribute("y", 0); sb.setAttribute("width", w);
+  const a = g.querySelector(".st1"), b = g.querySelector(".st2"); a.textContent = t1; b.textContent = t2;
+  a.setAttribute("x", bx + w / 2); a.setAttribute("y", 15); b.setAttribute("x", bx + w / 2); b.setAttribute("y", 29);
+  return d;
+}
+function mnBind(sc, c){
+  const save = (id, v) => { const o = mnClosed(); if (v) o[id] = 1; else delete o[id]; try { localStorage.setItem("nido.mnClosed", JSON.stringify(o)); } catch(e){} };
+  sc.querySelectorAll(".mn-sh").forEach(b => b.onclick = () => { const s = b.parentElement, cl = !s.classList.contains("closed"); s.classList.toggle("closed", cl); b.setAttribute("aria-expanded", !cl); save(s.dataset.sx, cl); });
+  sc.querySelector("[data-ring]")?.addEventListener("click", () => { S.mnRing = !S.mnRing; renderMoney(); });
+  sc.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { if (b.dataset.k === "left" && !c.B.total) return budgetSheet(); S.mnKpi = S.mnKpi === b.dataset.k ? null : b.dataset.k; renderMoney(); });
+  sc.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { const g = b.dataset.go;
+    if (g.startsWith("ex:")) return expenseSheet(Money.list.find(x => x.id === g.slice(3)));
+    const id = g.slice(4); S.mnOpen = id; S.mnFilter = "all"; save("cats", false); renderMoney();
+    const el = $("#screen").querySelector(`.mn-cg[data-cg="${CSS.escape(id)}"]`); if (el){ el.scrollIntoView({ behavior:"smooth", block:"center" }); el.classList.add("flash"); } });
+  sc.querySelectorAll("[data-cm]").forEach(b => b.onclick = () => { S.mnChart = b.dataset.cm; S.mnSel = null; renderMoney(); });
+  sc.querySelector("[data-last]")?.addEventListener("click", () => { S.mnLast = S.mnLast === false; renderMoney(); });
+  const svg = sc.querySelector("#mnChart");
+  if (svg){ let drag = false;
+    svg.onpointerdown = e => { drag = true; try { svg.setPointerCapture(e.pointerId); } catch(x){} mnScrub(svg, e.clientX); };
+    svg.onpointermove = e => { if (drag || e.pointerType === "mouse") mnScrub(svg, e.clientX); };
+    svg.onpointerup = e => { drag = false; const d = mnScrub(svg, e.clientX); if (!d) return; S.mnSel = d;
+      const box = sc.querySelector("#mnDayl"); box.firstElementChild.innerHTML = mnDayList(d, c); box.classList.add("open");
+      box.querySelectorAll("[data-ex]").forEach(x => x.onclick = () => expenseSheet(Money.list.find(y => y.id === x.dataset.ex)));
+      if (S.mnChart === "day") svg.querySelectorAll("rect.b").forEach(r => r.classList.remove("sel")); };
+    svg.onpointerleave = () => { if (!drag) svg.querySelector(".scr").style.display = "none"; }; }
+  const r = sc.querySelector("#mnSimR");
+  if (r){ const upd = () => { S.mnSim = +r.value; const f = c.total + S.mnSim * c.rest + c.upSum;
+      sc.querySelector("#mnSimV").textContent = ilsR(S.mnSim) + " ליום";
+      sc.querySelector("#mnSimS").textContent = S.mnSim === c.rate ? "הקצב שלנו עד היום" : S.mnSim <= c.safe ? "בתוך התקציב" : "מעל מה שנשאר";
+      const res = sc.querySelector("#mnSimRes"); res.innerHTML = mnSimRes(f, c.B.total); res.classList.toggle("bad", f > c.B.total);
+      const mf = sc.querySelector("#mnMiniF"); if (mf) mf.textContent = ilsR(f);
+      sc.querySelectorAll("[data-sim]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.sim === S.mnSim)); };
+    r.oninput = upd; r.onchange = () => { upd(); renderMoney(); }; }
+  sc.querySelectorAll("[data-sim]").forEach(b => b.onclick = () => { S.mnSim = +b.dataset.sim; renderMoney(); });
+  sc.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.mnFilter = b.dataset.f; renderMoney(); });
+  sc.querySelectorAll("[data-addc]").forEach(b => b.onclick = () => expenseSheet(null, { cat:b.dataset.addc }));
+  sc.querySelectorAll("[data-payer]").forEach(b => b.onclick = () => { S.mnPayer = S.mnPayer === b.dataset.payer ? null : b.dataset.payer; renderMoney(); });
+  // the small summary bar shows once the ring has scrolled away
+  if (mnIO) mnIO.disconnect();
+  const hero = sc.querySelector("#mnHero"), mini = sc.querySelector("#mnMini");
+  if (hero && mini && "IntersectionObserver" in window){ mnIO = new IntersectionObserver(([en]) => mini.classList.toggle("show", !en.isIntersecting && en.boundingClientRect.top < 0)); mnIO.observe(hero); }
+}
+
 function renderMoney(){
   if (!moneyOn()){ S.tab = "today"; return render(); }
   Money.open(Money.month);
@@ -3880,63 +4273,12 @@ function renderMoney(){
   const total = list.reduce((a, e) => a + e.amount, 0), upSum = soon.reduce((a, e) => a + e.amount, 0), byCat = {}, byPayer = {};
   list.forEach(e => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; byPayer[e.payer] = (byPayer[e.payer] || 0) + e.amount; });
   const daysIn = new Date(+m.slice(0, 4), +m.slice(5, 7), 0).getDate(), daysLeft = isNow ? daysIn - +today.slice(8, 10) + 1 : 0;
-  const pct = B.total ? Math.round(total * 100 / B.total) : 0, left = B.total - total - upSum;
-  /* thin ring = spent of the budget; the light dot = where we "should" be by today (this month only) */
-  const dayF = isNow ? +today.slice(8, 10) / daysIn : 1, RR = 52, RL = 2 * Math.PI * RR, pa = dayF * 2 * Math.PI;
-  const ring = `<div class="mn-ring ${pct > 100 ? "over" : pct >= 85 ? "near" : ""}"><svg viewBox="0 0 116 116" aria-hidden="true"><circle class="tr" cx="58" cy="58" r="${RR}" fill="none" stroke-width="5"/>
-      ${B.total && total ? `<circle class="ar" cx="58" cy="58" r="${RR}" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(RL * Math.min(100, pct) / 100).toFixed(1)} ${RL.toFixed(1)}"/>` : ""}
-      ${B.total && isNow ? `<circle class="pc" cx="${(58 + RR * Math.cos(pa)).toFixed(1)}" cy="${(58 + RR * Math.sin(pa)).toFixed(1)}" r="5" stroke-width="2"/>` : ""}</svg>
-    <div><b>${B.total ? pct + "%" : "—"}</b><small>${B.total ? "מהתקציב" : "אין תקציב"}</small></div></div>`;
-  const paceD = B.total && isNow ? Math.round((total / B.total - dayF) * 100) : null;
-  const paceHtml = paceD === null ? "" : `<span class="mn-pace ${paceD > 3 ? "bad" : ""}"><i></i>${paceD > 3 ? paceD + "% מעל הקצב" : paceD < -3 ? -paceD + "% מתחת לקצב" : "בדיוק בקצב"}</span>`;
-  const hero = `<button type="button" class="panel mn-hero" data-budget>${ring}
-    <div class="mn-hk"><span>${isNow ? "הוצאנו החודש" : "הוצאנו ב" + monthLabel(m).split(" ")[0]}</span><b class="mn-big tabular">${ilsR(total)}</b>
-      ${B.total ? `<em class="${left < 0 ? "bad" : ""}">${left < 0 ? "חריגה של " + ilsR(-left) : "נשארו " + ilsR(left) + (isNow ? ` ל-${daysLeft} ימים` : "")}</em>
-        ${paceHtml}${upSum ? `<small>כולל ${ilsR(upSum)} שעוד צפויים החודש</small>` : ""}`
-      : `${upSum ? `<small>+ ${ilsR(upSum)} צפויים עד סוף החודש</small>` : ""}<em>קביעת תקציב חודשי ›</em>`}</div></button>`;
-  /* daily budget (this month, with a budget): what was left this morning ÷ the days left including today — fixed for the day,
-     so "אפשר להוציא היום" goes down with each expense of today. Expected expenses are set aside first. */
-  let dailyHtml = "";
-  if (B.total && isNow){
-    const tday = list.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0), per = (B.total - (total - tday) - upSum) / daysLeft, can = per - tday;
-    dailyHtml = per <= 0
-      ? `<div class="panel mn-daily"><div class="k"><span>תקציב יומי</span><b class="bad">אין יתרה</b><small>התקציב של החודש כבר נוצל${upSum ? ", כולל הצפויות" : ""}</small></div>
-          <div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div></div></div>`
-      : `<div class="panel mn-daily"><div class="k"><span>${can >= 0 ? "אפשר להוציא היום" : "חרגנו היום ב"}</span><b class="tabular ${can < 0 ? "bad" : ""}">${ilsR(Math.abs(can))}</b><small>מתוך ${ilsR(per)} ליום, עד סוף החודש</small></div>
-          <div class="td"><div class="r"><span>הוצאנו היום</span><b class="tabular">${ilsR(tday)}</b></div><div class="bar"><i class="${tday > per ? "hi" : tday >= per * .85 ? "mid" : ""}" style="width:${Math.min(100, tday * 100 / per).toFixed(1)}%"></i></div><small>מתעדכן כל יום לפי מה שנשאר</small></div></div>`;
-  }
-  const soonHtml = soon.length ? `<div class="mn-sec">צפוי החודש <small class="tabular">${ilsR(upSum)}</small></div>${soon.map(e => { const c = Money.cat(e.cat), d = Math.round((new Date(e.date) - new Date(today)) / 864e5);
-      return `<button type="button" class="mn-ex mn-soon" data-ex="${esc(e.id)}"><span class="mn-e">${catIc(c)}</span><span class="t"><b>${esc(e.desc || c.name)}</b><small>${esc(planTag(e.plan) || c.name)} · ${esc(payerName(e.payer))}</small></span><span class="mn-due ${d <= 3 ? "near" : ""}">${esc(dueIn(e.date, today))}</span><span class="a tabular">${nis(e.amount)}</span></button>`; }).join("")}` : "";
-  const act = isNow ? Money.plans.map(p => ({ p, ...planLeft(p, today) })).filter(x => x.up.length) : [];
-  const plansHtml = act.length ? `<div class="mn-sec">תשלומים והוצאות קבועות</div><div class="panel mn-plans">${act.map(({ p, it, paid, left }) => { const c = Money.cat(p.cat), last = it[it.length - 1];
-      return `<button type="button" class="mn-plan" data-plan="${esc(p.id)}"><span class="mn-e">${p.kind === "inst" ? "💳" : "🔁"}</span><span class="t"><b>${esc(p.desc || c.name)}</b>
-        <small>${p.kind === "inst" ? `תשלום ${paid} מתוך ${it.length} · נשארו ${ilsR(left)}` : `${ilsR(p.amount)} לחודש · עד ${esc(monthLabel(last.month))}`}</small>
-        ${p.kind === "inst" ? `<span class="mn-pb"><i style="width:${(paid * 100 / it.length).toFixed(1)}%"></i></span>` : ""}</span><span class="a tabular">${p.kind === "inst" ? `${it.length - paid} נותרו` : `${it.length - paid} חודשים`}</span></button>`; }).join("")}</div>` : "";
+  const dayF = isNow ? +today.slice(8, 10) / daysIn : 1;
   const catIds = [...new Set([...Object.keys(byCat), ...Object.keys(B.cats).filter(k => +B.cats[k] > 0)])].sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
   const payColor = k => k === TOGETHER ? "#B8A48C" : (USERS[k] || ALLUSERS[k] || {}).color || "#F2B66B";
   const byDate = (a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0), SHOW = 5;
   const chev = `<svg class="mn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
-  /* each category is a card that opens (one at a time) to its month: a small trend against the 3 months before, then its expenses */
-  const prevM = [3, 2, 1].map(k => Money.months[addMonth(m, -k)] || null);
-  const catRows = catIds.map(id => { const c = Money.cat(id), sp = byCat[id] || 0, bud = +B.cats[id] || 0;
-    const its = Money.list.filter(e => e.cat === id).sort(byDate), open = S.mnOpen === id, all = S.mnAll === id;
-    const hist = prevM.filter(x => x && +x.total > 0).map(x => +((x.cats || {})[id]) || 0), avg = hist.length ? hist.reduce((a, v) => a + v, 0) / hist.length : 0;
-    let trend = "";
-    if (avg > 0){ const sh = sp / avg, up = sh > dayF + .1, dn = sh < dayF - .1, vals = prevM.map(x => x ? +((x.cats || {})[id]) || 0 : 0), mx = Math.max(...vals, sp, 1);
-      const word = isNow ? (up ? "מהר מהרגיל" : dn ? "לאט מהרגיל" : "בקצב הרגיל") : (up ? "יותר מהרגיל" : dn ? "פחות מהרגיל" : "כרגיל");
-      trend = `<div class="mn-trend"><div class="bars" aria-hidden="true">${vals.map(v => `<i style="height:${Math.max(3, v / mx * 34).toFixed(0)}px"></i>`).join("")}<i class="now" style="height:${Math.max(3, sp / mx * 34).toFixed(0)}px"></i></div>
-        <div class="tx"><b class="${up ? "mn-up" : dn ? "mn-dn" : ""}">${word}</b>ממוצע ${ilsR(avg)} לחודש</div></div>`; }
-    const rows = its.map((e, i) => `<button type="button" class="mn-it ${e.date > today ? "soon" : ""}" data-ex="${esc(e.id)}" ${i >= SHOW && !all ? "hidden" : ""}><i class="mn-dot" style="background:${payColor(e.payer)}"></i>
-        <span class="t"><b>${esc(e.desc || c.name)}</b><small>${e.date > today ? `<em class="mn-tag">צפוי</em> ` : e.plan ? `<em class="mn-tag">${esc(planTag(e.plan))}</em> ` : ""}${e.date.slice(8, 10)}.${e.date.slice(5, 7)}, ${esc(payerName(e.payer))}</small></span><span class="a tabular">${nis(e.amount)}</span></button>`).join("");
-    const more = its.length > SHOW && !all ? `<button type="button" class="mn-more" data-more="${esc(id)}">עוד ${its.length - SHOW} הוצאות</button>` : "";
-    const st = bud ? (sp <= bud ? `נשארו ${ilsR(bud - sp)}` : `<span class="hi">חריגה של ${ilsR(sp - bud)}</span>`) : "ללא תקציב";
-    return `<div class="panel mn-cg ${open ? "open" : ""}" data-cg="${esc(id)}"><button type="button" class="mn-cat" aria-expanded="${open}"><span class="mn-e">${catIc(c)}</span>
-      <div class="t"><div class="r"><span>${esc(c.name)}</span><b class="tabular">${ilsR(sp)}</b></div><div class="r2"><span>${its.length ? its.length + " הוצאות" : "עוד אין הוצאות"}</span><span>${st}</span></div></div>${chev}</button>
-      <div class="mn-drop"><div><div class="mn-items">${trend}${rows || `<div class="mn-nocat">אין הוצאות בקטגוריה הזו החודש</div>`}${more}</div></div></div></div>`; }).join("");
-  const payers = Object.keys(byPayer).sort((a, b) => byPayer[b] - byPayer[a]);
-  const payerHtml = payers.length ? `<div class="mn-sec">מי שילם</div><div class="panel mn-who">
-      <div class="row">${payers.map(k => `<div><i class="mn-dot" style="background:${k === TOGETHER ? "#B8A48C" : (USERS[k] || ALLUSERS[k] || {}).color || "#F2B66B"}"></i><span>${esc(payerName(k))}</span><b class="tabular">${ilsR(byPayer[k])}</b><small class="tabular">${Math.round(byPayer[k] * 100 / total)}%</small></div>`).join("")}</div>
-      <div class="mn-split">${payers.map(k => `<i style="width:${(byPayer[k] * 100 / total).toFixed(1)}%;background:${k === TOGETHER ? "#B8A48C" : (USERS[k] || {}).color || "#F2B66B"}"></i>`).join("")}</div></div>` : "";
+  const dc = { m, B, today, isNow, list, soon, total, upSum, byCat, byPayer, daysIn, daysLeft, dayF, catIds, payColor, byDate, chev };
   // history: by day, newest first
   const sorted = [...Money.list].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.at || 0) - (a.at || 0));
   let hist = "", lastD = "";
@@ -3955,15 +4297,12 @@ function renderMoney(){
     <header class="top mn-top"><h1>הוצאות</h1><div class="mn-mon"><button type="button" data-mon="-1" aria-label="החודש הקודם">${icon("next")}</button><b>${esc(monthLabel(m))}</b><button type="button" data-mon="1" aria-label="החודש הבא" ${isNow ? "disabled" : ""}>${icon("prev")}</button></div></header>
     <div class="seg" role="group" aria-label="תצוגה"><button data-mv="over" aria-pressed="${view === "over"}">סקירה</button><button data-mv="hist" aria-pressed="${view === "hist"}">היסטוריה והשוואה <span class="n">${Money.list.length}</span></button></div>
     ${!Money.ready ? `<p class="hint">טוען…</p>` : Money.err ? `<p class="hint">${esc(Money.err)}</p>` : view === "over" ? `
-      ${hero}${dailyHtml}
-      ${catRows ? `<div class="mn-sec">לפי קטגוריה</div><div class="mn-cards">${catRows}</div>` : `<div class="panel t-empty mn-empty">עוד אין הוצאות ב${esc(monthLabel(m).split(" ")[0])}. לחצו ＋ כדי להוסיף.</div>`}
-      ${soonHtml}${plansHtml}
-      ${payerHtml}` : `${cmp}${hist || `<div class="panel t-empty mn-empty">אין הוצאות בחודש הזה.</div>`}`}
+      ${mnDash(dc)}` : `${cmp}${hist || `<div class="panel t-empty mn-empty">אין הוצאות בחודש הזה.</div>`}`}
     <button class="fab" id="fab" aria-label="הוצאה חדשה">${icon("plus")}</button>`;
   const sc = $("#screen");
   sc.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => { S.moneyView = b.dataset.mv; renderMoney(); });
   sc.querySelectorAll("[data-mon]").forEach(b => b.onclick = () => { if (b.disabled) return; Money.month = addMonth(m, +b.dataset.mon); renderMoney(); });
-  sc.querySelector("[data-budget]")?.addEventListener("click", () => budgetSheet());
+  sc.querySelectorAll("[data-budget]").forEach(b => b.onclick = () => budgetSheet());
   sc.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => expenseSheet(Money.list.find(x => x.id === b.dataset.ex)));
   sc.querySelectorAll(".mn-cat").forEach(b => b.onclick = () => { const g = b.parentElement, was = g.classList.contains("open");
     sc.querySelectorAll(".mn-cg.open").forEach(x => { x.classList.remove("open"); x.firstElementChild.setAttribute("aria-expanded", "false"); });
@@ -3972,12 +4311,13 @@ function renderMoney(){
   sc.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { S.mnAll = b.dataset.more; b.parentElement.querySelectorAll(".mn-it[hidden]").forEach(x => x.hidden = false); b.remove(); });
   sc.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => planSheet(Money.plans.find(x => x.id === b.dataset.plan)));
   $("#fab").onclick = () => expenseSheet();
+  if (view === "over" && Money.ready && !Money.err) mnBind(sc, dc);
 }
 
-function expenseSheet(e){
+function expenseSheet(e, preset){
   const edit = !!e, m = Money.m || iso(new Date()).slice(0, 7), isNow = iso(new Date()).slice(0, 7) === m;
   const d0 = edit ? e.date : isNow ? iso(new Date()) : m + "-01";
-  e = e || { id:uid(), amount:0, desc:"", cat:"food", payer:me, date:d0, note:"" };
+  e = e || { id:uid(), amount:0, desc:"", cat:(preset && preset.cat) || "food", payer:me, date:d0, note:"" };
   const cats = Money.cats(), payers = [...people(), TOGETHER], pl = e.plan;
   const sh = openSheet(`${head(edit ? "עריכת הוצאה" : "הוצאה חדשה")}
     <form id="xf" class="mn-form">

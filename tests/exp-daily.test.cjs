@@ -33,7 +33,7 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   let x = await setup(1000000, 400000, 10000); await p.waitForTimeout(300);
   let c = await card(), exp = await R(([a, b]) => [ilsR(a), ilsR(b)], [x.can, x.per]);
   ok(c && c.label === "אפשר להוציא היום" && c.big === exp[0] && c.small.includes(exp[1]) && c.today === "₪100", `under the daily budget: "${c && c.big}" of ${exp[1]} a day, today ₪100`);
-  ok(await R(() => { const h = document.querySelector(".mn-hero"); return h && h.nextElementSibling && h.nextElementSibling.classList.contains("mn-daily"); }), "the card sits right under the ring");
+  ok(await R(() => !!document.querySelector(".mn-hero .mn-daily")), "today's budget sits in the ring card");
 
   x = await setup(1000000, 400000, Math.round(x.per) + 30000); await p.waitForTimeout(300);
   c = await card(); exp = await R(a => ilsR(Math.abs(a)), x.can);
