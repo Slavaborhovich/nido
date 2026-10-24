@@ -2185,6 +2185,28 @@ const Cloud = {
     await b.commit();
     pushRoster(u.family);
   },
+  /* system admin: set a new password for someone who forgot theirs.
+     On the free plan an app can't change another person's password, so: a new sign-in account is made with the
+     new password, the person's profile moves to it, and the login name points to it. The old account is left
+     without a profile (blocked). Tasks, shopping etc. are kept by login name — nothing is lost. */
+  async resetPassword(username, password){
+    if (!this.isSuper) throw { code:"permission-denied" };
+    const u = ALLUSERS[username] || USERS[username]; if (!u || !u.uid) throw { code:"missing" };
+    if (u.uid === BOOT_ADMIN_UID || u.uid === this.user.uid) throw { code:"permission-denied" };
+    const F = this.fb, old = await F.getDoc(F.doc(this.db, "users", u.uid));
+    if (!old.exists()) throw { code:"missing" };
+    const sec = this.secApp || (this.secApp = this.A.initializeApp(FIREBASE_CONFIG, "creator"));
+    const sa = F.getAuth(sec); await F.setPersistence(sa, F.inMemoryPersistence);
+    const email = `${username}.${Date.now().toString(36)}@${EMAIL_DOMAIN}`;
+    const cred = await F.createUserWithEmailAndPassword(sa, email, password);
+    const uid = cred.user.uid; await F.signOut(sa);
+    const b = F.writeBatch(this.db);
+    b.set(F.doc(this.db, "users", uid), { ...old.data(), pwResetAt: Date.now() });
+    b.set(F.doc(this.db, "logins", username), { email, uid });
+    b.delete(F.doc(this.db, "users", u.uid));
+    await b.commit();
+    pushRoster(u.family);
+  },
   async changePassword(current, next){
     const F = this.fb, user = this.auth.currentUser;
     await F.reauthenticateWithCredential(user, F.EmailAuthProvider.credential(user.email, current));
@@ -6655,6 +6677,10 @@ const UsersAPI = {
     if (CLOUD) return Cloud.deleteUser(username);
     delete USERS[username]; storeUsers(); afterUsersChange();
   },
+  async reset(username, next){
+    if (CLOUD) return Cloud.resetPassword(username, next);
+    USERS[username].password = next; storeUsers();
+  },
   async password(cur, next){
     if (CLOUD) return Cloud.changePassword(cur, next);
     if (USERS[me].password !== cur) throw { code:"auth/wrong-password" };
@@ -6909,6 +6935,7 @@ function openUserEdit(key, forFamily){
       ${amSuper() ? `<div class="adm-limit"><span>📝 פתקים על המקרר ביום</span><select class="input" name="noteLimit">${[1,2,3,4,5,10].map(n => `<option value="${n}" ${n === (+u.noteLimit || 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>` : ""}
       ${!isNew && !self ? `<label class="toggle-row"><span>משתמש פעיל<br><small class="note" style="margin:0">כבוי = לא יכול להיכנס לאפליקציה</small></span><input type="checkbox" name="active" ${u.active!==false?"checked":""}></label>` : ""}
       <p class="error" id="ueErr" role="alert"></p>
+      ${!isNew && !self && amSuper() && pool[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="secondary" id="uePw" style="width:100%;justify-content:center;margin:4px 0 6px">${icon("edit")}איפוס סיסמה</button>` : ""}
       ${!isNew && !self && pool[key]?.uid !== BOOT_ADMIN_UID ? `<button type="button" class="danger" id="ueDel" style="padding:0 0 14px">${icon("trash")}מחיקת המשתמש</button>` : ""}
       <div class="actions"><button type="button" class="secondary" id="ueBack">חזרה</button><button class="primary" type="submit" id="ueSave">${isNew ? "יצירת משתמש" : "שמירה"}</button></div>
     </form>`);
@@ -6919,6 +6946,7 @@ function openUserEdit(key, forFamily){
     try { await UsersAPI.remove(key); toast(`${u.name} נמחק/ה`); openAdmin(); }
     catch(x){ sh.querySelector("#ueErr").textContent = errText(x); }
   });
+  sh.querySelector("#uePw")?.addEventListener("click", () => openPwReset(key, u.name));
   sh.querySelectorAll('input[name=role]').forEach(r => r.addEventListener("change", () => { sh.querySelector("#roleDesc").textContent = ROLES[r.value].desc; }));
   sh.querySelector("#ue").addEventListener("submit", async e => {
     e.preventDefault();
@@ -6942,6 +6970,28 @@ function openUserEdit(key, forFamily){
       }
       openAdmin();
     } catch(x){ err.textContent = x.msg || errText(x); busyBtn(b, false, isNew ? "יצירת משתמש" : "שמירה"); }
+  });
+}
+
+/* system admin only: give a new password to someone who forgot theirs */
+function openPwReset(key, name){
+  const sh = openSheet(`${head("איפוס סיסמה")}
+    <form id="pwr" class="pf-form" autocomplete="off">
+      <p class="note">סיסמה חדשה ל<b>${esc(name)}</b> (<b dir="ltr">@${esc(key)}</b>). הסיסמה הישנה תפסיק לעבוד, והיא/הוא ינותק/ו מכל המכשירים.</p>
+      <span class="lbl">סיסמה חדשה</span><input class="input" name="pw" type="text" dir="ltr" autocomplete="new-password" placeholder="לפחות 6 תווים">
+      <p class="note">אחרי הכניסה אפשר להחליף אותה מהפרופיל. אם היו התראות — אולי יהיה צריך להפעיל אותן מחדש.</p>
+      <p class="error" id="pwrErr" role="alert"></p>
+      <div class="actions"><button type="button" class="secondary" id="pwrBack">חזרה</button><button class="primary" type="submit" id="pwrSave">איפוס</button></div>
+    </form>`);
+  sh.querySelector("#pwrBack").onclick = () => openUserEdit(key);
+  sh.querySelector("#pwr").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pw = e.target.pw.value, err = sh.querySelector("#pwrErr"), b = sh.querySelector("#pwrSave");
+    if (pw.length < 6){ err.textContent = "הסיסמה קצרה מדי — לפחות 6 תווים."; return; }
+    if (!await askConfirm(`לאפס את הסיסמה של ${name}?`, "הסיסמה הישנה תפסיק לעבוד מיד.", "איפוס")) return;
+    err.textContent = ""; busyBtn(b, true, "מאפס…");
+    try { await UsersAPI.reset(key, pw); toast(`הסיסמה של ${name} אופסה ✓`); openAdmin(); }
+    catch(x){ err.textContent = x.msg || errText(x); busyBtn(b, false, "איפוס"); }
   });
 }
 
