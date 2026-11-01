@@ -21,6 +21,7 @@ const big = { name: "big.zip", mimeType: "application/zip", buffer: Buffer.alloc
 
   await p.evaluate(() => eventSheet(null, { date: iso(new Date()) })); await p.waitForTimeout(400);
   ok(await p.evaluate(() => !!document.querySelector("#ef .ev-att #tkUrl") && !!document.querySelector("#ef #tkFile")), "the event window has a links-and-files section");
+  await p.click('#ef [data-pane="files"]'); await p.waitForTimeout(150);
   await p.fill("#ef input[name=title]", "חתונה של דנה");
   await p.fill("#tkUrl", "dana-wedding.co.il/rsvp"); await p.click("#tkUrlAdd");
   await p.fill("#tkUrl", "לא קישור"); await p.click("#tkUrlAdd");
@@ -44,6 +45,7 @@ const big = { name: "big.zip", mimeType: "application/zip", buffer: Buffer.alloc
 
   await p.evaluate(() => closeSheet()); await p.waitForTimeout(400);
   await p.evaluate(id => eventSheet(DB.events.find(x => x.id === id)), ev.id); await p.waitForTimeout(700);
+  await p.click('#ef [data-pane="files"]'); await p.waitForTimeout(150);
   ok(await p.evaluate(() => document.querySelectorAll("#tkFiles .tk-it").length === 2 && document.querySelectorAll("#tkLinks .tk-it").length === 2), "editing shows the stored links and files");
   await p.click('#tkFiles [data-xf="0"]'); await p.click('#tkLinks [data-xl="1"]'); await p.click("#ef [type=submit]"); await p.waitForTimeout(900);
   const e2 = await p.evaluate(id => DB.events.find(x => x.id === id), ev.id);

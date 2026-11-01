@@ -1036,6 +1036,91 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .cv-now{position:absolute;right:40px;left:0;height:2px;background:#FF8A6B;box-shadow:0 0 10px rgba(255,138,107,.6);pointer-events:none;z-index:2}
 .cv-now::before{content:"";position:absolute;right:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#FF8A6B}
 .cv-now span{position:absolute;right:-42px;top:-8px;font-size:10.5px;font-weight:600;color:#FF8A6B;background:rgba(23,15,9,.85);padding:0 3px;border-radius:4px}
+/* ---------- event sheet: warm glass (full screen, photo on top) ---------- */
+#sheetRoot .sheet.evx{top:0;max-height:none;border:0;border-radius:0;box-shadow:none;color:#F7EEE4;padding:calc(14px + env(safe-area-inset-top,0px)) 18px calc(24px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,rgba(28,19,12,.12) 0,rgba(28,19,12,.35) 140px,rgba(28,19,12,.86) 320px,#1C130C 430px) local,url(bg/cal.jpg) center top/100% auto no-repeat local,#1C130C}
+.sheet.evx .grab{display:none}
+.evx .i{width:20px;height:20px;flex:none}
+.evx-top{display:flex;justify-content:space-between;align-items:center}
+.evx-top > span{font-size:14px;color:#F3E6D6;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.evx-x{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,230,200,.22);background:rgba(40,28,18,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#F7EEE4;display:grid;place-items:center;padding:0}
+.evx-f{display:flex;flex-direction:column;gap:12px}
+.evx-title{margin:44px 2px 6px}
+.evx-title input{width:100%;border:0;background:none;outline:none;padding:0;color:#FFF6EC;font:inherit;font-size:30px;font-weight:800;letter-spacing:-.01em;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.evx-title input::placeholder{color:rgba(255,240,225,.55)}
+.evx-title svg{display:block;width:130px;height:18px;margin-top:2px;color:#E9A95E}
+.evx-card{border-radius:22px;background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.06);color:#F7EEE4}
+.evx-when{padding:14px 14px 12px;border-radius:24px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,rgba(78,56,38,.66),rgba(44,31,21,.66));border-color:rgba(255,214,170,.16);box-shadow:inset 0 1px 0 rgba(255,240,220,.08),0 14px 34px rgba(0,0,0,.35);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.evx-wh{display:flex;align-items:center;justify-content:space-between}
+.evx-wh > span{display:inline-flex;align-items:center;gap:8px;font-size:15px}
+.evx-sw{display:inline-flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;position:relative}
+.evx-sw input{position:absolute;opacity:0;pointer-events:none}
+.evx-sw i{width:50px;height:30px;border-radius:99px;background:rgba(255,214,170,.18);position:relative;transition:background .2s}
+.evx-sw i::after{content:"";position:absolute;top:3px;left:23px;width:24px;height:24px;border-radius:50%;background:#FFF8EF;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:left .2s}
+.evx-sw input:checked + i{background:linear-gradient(180deg,#F3C07E,#D99550);box-shadow:inset 0 1px 0 rgba(255,250,240,.45)}
+.evx-sw input:checked + i::after{left:3px}
+.evx-sw input:focus-visible + i{outline:2px solid #F3C07E;outline-offset:2px}
+.evx-tiles{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);align-items:center}
+.evx-arr{width:30px;height:16px;color:#E3D2BE}
+.evx-tw{position:relative}
+.evx-tile{position:relative;display:flex;flex-direction:column;align-items:center;padding:10px 0 12px;border-radius:20px;border:1px solid rgba(255,214,170,.13);background:linear-gradient(180deg,rgba(255,230,200,.09),rgba(255,230,200,.03));box-shadow:inset 0 1px 0 rgba(255,240,220,.07);cursor:pointer;overflow:hidden}
+.evx-tile small{font-size:13px;color:#E3D2BE}
+.evx-tile b{font-size:38px;font-weight:700;line-height:1.1}
+.evx-tile input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.evx-tile.empty{border-style:dashed;background:none;box-shadow:none}
+.evx-tile.empty b{font-weight:400;color:#E9A95E}
+.evx-tile.empty small{color:#B8A28B}
+.evx-clr{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,9,5,.5);color:#EADBC8;display:grid;place-items:center;padding:0;z-index:1}
+.evx-clr .i{width:14px;height:14px}
+.evx-time{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px 0 12px;height:48px;border-radius:16px;background:rgba(15,9,5,.35);cursor:pointer}
+.evx-time[hidden]{display:none}
+.evx-time span{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:#EADBC8}
+.evx-time input{border:0;background:none;color:#FFF3E4;font:inherit;font-size:18px;font-weight:600;padding:8px;direction:ltr;color-scheme:dark}
+.evx-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.evx-foot > span{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:#EADBC8}
+.evx-foot b{font-weight:400}
+.evx-foot .i{width:17px;height:17px}
+.evx-rem{height:34px;padding:0 12px;border-radius:99px;background:rgba(15,9,5,.45);font-size:13.5px !important}
+.evx-who{display:grid;gap:4px;padding:5px;border-radius:22px;background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.06)}
+.evx-who label{position:relative;cursor:pointer;min-width:0}
+.evx-who input{position:absolute;opacity:0;pointer-events:none}
+.evx-who span{height:46px;border-radius:17px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;color:#D9C6B1;transition:background .2s,color .2s;white-space:nowrap;overflow:hidden;padding:0 6px}
+.evx-who i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;color:#1E140C;flex:none}
+.evx-who i .i{width:14px;height:14px}
+.evx-who input:checked + span{background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));color:#FFF3E4;box-shadow:inset 0 0 0 1.5px rgba(233,169,94,.75)}
+.evx-who input:focus-visible + span{outline:2px solid #F3C07E;outline-offset:1px}
+.evx-row{display:flex;align-items:center;gap:12px;height:54px;padding:0 16px;cursor:text}
+.evx-row input{flex:1;min-width:0;border:0;background:none;outline:none;color:#F7EEE4;font:inherit;font-size:15.5px;padding:0}
+.evx input::placeholder,.evx textarea::placeholder{color:#A8927C}
+.evx-tasks{padding:12px 16px 6px}
+.evx-tasks header{display:flex;align-items:center;gap:12px;margin-bottom:2px}
+.evx-tasks header span{flex:1;font-size:15.5px}
+.evx-tasks header small{font-size:12px;color:#A8927C}
+#sheetRoot .evx .st-row{padding:4px 0;border-color:rgba(255,214,170,.08)}
+#sheetRoot .evx .st-row input,#sheetRoot .evx .st-add input{color:#F7EEE4}
+#sheetRoot .evx .st-row .dot{width:22px;height:22px;border:1.5px solid rgba(255,214,170,.38)}
+#sheetRoot .evx :is(.st-cart,.st-who){background:rgba(15,9,5,.35);border-color:rgba(255,214,170,.14)}
+#sheetRoot .evx .st-add{border-top:1px solid rgba(255,214,170,.08);margin-top:2px}
+#sheetRoot .evx .st-add svg{color:#EBA864}
+#sheetRoot .evx .st-add input::placeholder{color:#EBA864}
+.evx-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.evx-mini{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:12px 14px;text-align:start;font:inherit;cursor:pointer;min-width:0}
+.evx-mini[aria-expanded="true"]{border-color:rgba(233,169,94,.6)}
+.evx-mh{display:flex;width:100%;align-items:center;justify-content:space-between}
+.evx-mh > i{width:28px;height:28px;border-radius:50%;background:rgba(233,169,94,.18);color:#EBA864;display:grid;place-items:center}
+.evx-mh > i .i{width:14px;height:14px}
+.evx-mini b{font-size:15px;font-weight:400}
+.evx-mini small{font-size:12.5px;color:#B8A28B;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evx-pane{padding:14px}
+.evx-pane[hidden]{display:none}
+#sheetRoot .evx .evx-pane :is(.input,.secondary,.tk-it){background:rgba(15,9,5,.35);border-color:rgba(255,214,170,.14);color:#F7EEE4}
+#sheetRoot .evx .evx-pane .lbl{color:#C9B39C}
+.evx-note{width:100%;min-height:96px;resize:vertical;border:0;background:none;outline:none;color:#F7EEE4;font:inherit;font-size:15.5px;padding:0}
+.evx-save{margin-top:6px;height:56px;border:0;border-radius:99px;background:linear-gradient(180deg,#F3C07E,#D99550);box-shadow:inset 0 1px 0 rgba(255,250,240,.55),0 12px 28px rgba(217,149,80,.3);color:#2E1A0A;font:inherit;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.evx-save .i{width:22px;height:22px}
+.evx-f .error:empty{display:none}
+.evx-del{align-self:center;border:0;background:none;color:#FF9A8A;font:inherit;font-size:14.5px;display:inline-flex;align-items:center;gap:6px;padding:10px}
+.evx-del .i{width:17px;height:17px}
 /* ---------- פתק על המקרר ---------- */
 .note-fab{position:fixed;z-index:16;right:max(16px,calc(50% - 214px));bottom:calc(var(--navgap) + env(safe-area-inset-bottom,0px) + 4px);
   width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,226,190,.22);padding:0;display:grid;place-items:center;cursor:pointer;
@@ -5504,38 +5589,84 @@ function eventSheet(ev, preset={}){
       <button type="button" class="st-cart ${r.buy?"on":""}" aria-pressed="${!!r.buy}" aria-label="${r.buy ? "ב" + shopTo(r.buy) : "להוסיף לרשימת קניות"}" ${r.done?"disabled":""}>${r.buy ? shopIcon(r.buy) : icon("cart")}</button>
       <button type="button" class="st-whob" style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(r.assignee)}</button>
       <button type="button" class="st-x" aria-label="הסרה">${icon("close")}</button></div>`).join("");
-  const sh = openSheet(`${head(edit?"עריכת אירוע":"אירוע חדש")}
-    <form id="ef" class="stack">
-      <input class="input" name="title" placeholder="שם האירוע" value="${esc(e.title)}" aria-label="שם האירוע" required>
-      <div><span class="lbl">של מי</span>${radios("who", whoOpts, e.who || "")}</div>
-      <div class="cv-dates">
-        <div><span class="lbl">תאריך</span><input class="input" type="date" name="date" value="${e.date||""}" required></div>
-        <div><span class="lbl">שעה</span><input class="input" type="time" name="time" value="${e.time||""}"></div>
+  const allDay0 = !e.time;
+  const togetherDot = `<i style="background:${together()};color:#3A220E">${icon("user")}</i>`;
+  const whoSeg = whoOpts.map(([v, l]) => { const u = v && USERS[v];
+      return `<label><input type="radio" name="who" value="${v}" ${String(e.who || "") === v ? "checked" : ""}><span>${u ? `<i style="background:${u.color};${avaStyle(u)}">${initial(u)}</i>` : togetherDot}${esc(u ? shortName(v) : l)}</span></label>`; }).join("");
+  const sh = openSheet(`<div class="evx-top"><span>${edit ? "עריכת אירוע" : "אירוע חדש"}</span><button type="button" class="evx-x" data-close aria-label="סגירה">${icon("close")}</button></div>
+    <form id="ef" class="evx-f">
+      <div class="evx-title">
+        <input name="title" placeholder="שם האירוע" value="${esc(e.title)}" aria-label="שם האירוע" autocomplete="off" required>
+        <svg viewBox="0 0 130 18" fill="none" aria-hidden="true"><path d="M2 9C30 3 78 1 128 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M24 15C52 9 88 8 126 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".75"/></svg>
       </div>
-      <div><span class="lbl">עד תאריך <small style="color:var(--faint)">(לאירוע של כמה ימים)</small></span><input class="input" type="date" name="end" value="${e.end||""}"></div>
-      <input class="input" name="place" placeholder="מקום" value="${esc(e.place)}" aria-label="מקום">
-      <textarea class="textarea" name="note" placeholder="הערה" aria-label="הערה">${esc(e.note)}</textarea>
-      <section class="if-sec ev-att">
-        <header><h4>${icon("link")}קישורים וקבצים</h4><small>הזמנה, כרטיסים, מפה…</small></header>
+      <section class="evx-card evx-when">
+        <div class="evx-wh"><span>${icon("cal")}מתי</span>
+          <label class="evx-sw"><span>כל היום</span><input type="checkbox" id="evAll" ${allDay0 ? "checked" : ""}><i aria-hidden="true"></i></label></div>
+        <div class="evx-tiles">
+          <label class="evx-tile" id="evT1"><small></small><b></b><small></small><input type="date" name="date" value="${e.date || ""}" required aria-label="תאריך"></label>
+          <svg class="evx-arr" viewBox="0 0 28 16" fill="none" aria-hidden="true"><path d="M23 8H5M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <div class="evx-tw"><label class="evx-tile" id="evT2"><small></small><b></b><small></small><input type="date" name="end" value="${e.end || ""}" aria-label="עד תאריך"></label>
+            <button type="button" class="evx-clr" id="evEndX" aria-label="בלי תאריך סיום">${icon("close")}</button></div>
+        </div>
+        <label class="evx-time" id="evTime"><span>${icon("clock")}שעה</span><input type="time" name="time" value="${e.time || ""}" aria-label="שעה"></label>
+        <div class="evx-foot"><span>${icon("clock")}<b id="evSpan"></b></span><span class="evx-rem">${icon("bell")}<b id="evRem"></b></span></div>
+      </section>
+      <div class="evx-who" role="radiogroup" aria-label="של מי" style="grid-template-columns:repeat(${whoOpts.length},minmax(0,1fr))">${whoSeg}</div>
+      <label class="evx-card evx-row">${icon("pin")}<input name="place" placeholder="איפה?" value="${esc(e.place)}" aria-label="מקום" autocomplete="off"></label>
+      <section class="evx-card evx-tasks">
+        <header>${icon("chk")}<span>משימות לאירוע</span><small>יופיעו במסך המשימות</small></header>
+        <div id="evRows">${rowsHTML()}</div>
+        <div class="st-add">${icon("plus")}<input id="evNewRow" placeholder="הוספת משימה" aria-label="משימה חדשה" autocomplete="off"></div>
+      </section>
+      <div class="evx-pair">
+        <button type="button" class="evx-card evx-mini" data-pane="files" aria-expanded="false"><span class="evx-mh">${icon("link")}<i>${icon("plus")}</i></span><b>קבצים וקישורים</b><small id="evFilesSum"></small></button>
+        <button type="button" class="evx-card evx-mini" data-pane="note" aria-expanded="false"><span class="evx-mh"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg><i>${icon("plus")}</i></span><b>הערה</b><small id="evNoteSum"></small></button>
+      </div>
+      <section class="evx-card evx-pane ev-att" data-p="files" hidden>
         ${kit.linksHTML}
         <span class="lbl ev-fl">${kit.filesLbl}</span>
         ${kit.filesHTML}
       </section>
-      <section class="if-sec">
-        <header><h4>${icon("chk")}משימות לאירוע</h4><small>יופיעו במסך המשימות</small></header>
-        <div id="evRows">${rowsHTML()}</div>
-        <div class="st-add">${icon("plus")}<input id="evNewRow" placeholder="משימה חדשה — למשל: לקנות מתנה" aria-label="משימה חדשה" autocomplete="off"></div>
-        <div class="ev-due">תאריך יעד למשימות חדשות: <b>📅 עד יום האירוע</b></div>
-      </section>
+      <section class="evx-card evx-pane" data-p="note" hidden><textarea class="evx-note" name="note" placeholder="הערה" aria-label="הערה">${esc(e.note)}</textarea></section>
       <p class="error" id="eerr"></p>
-      <div class="actions">
-        ${edit?`<button type="button" class="danger" id="del">${icon("trash")}מחיקה</button>`:""}
-        <button class="primary" type="submit">שמירה</button>
-      </div>
+      <button class="evx-save" type="submit">${icon("tick")}שמירה</button>
+      ${edit ? `<button type="button" class="evx-del" id="del">${icon("trash")}מחיקת האירוע</button>` : ""}
     </form>`);
+  sh.classList.add("evx");
   const f = sh.querySelector("#ef");
   if (!edit) setTimeout(()=> (e.title ? f.date : f.title).focus(), 260);
   kit.wire(sh);
+  // the "when" card: date tiles, all-day switch, how long + which reminder
+  const all = sh.querySelector("#evAll"); let lastTime = e.time || "09:00";
+  const tile = (el, ds, empty) => { const [a, b, c] = el.querySelectorAll("small,b");
+    if (!ds){ a.textContent = "עד תאריך"; b.textContent = "+"; c.textContent = "לא חובה"; el.classList.add("empty"); return; }
+    const d = parse(ds); el.classList.remove("empty"); a.textContent = d.getDay() === 6 ? "שבת" : `יום ${DAYS[d.getDay()]}`; b.textContent = d.getDate(); c.textContent = MONTHS[d.getMonth()]; };
+  const drawWhen = () => {
+    const ds = f.date.value, en = f.end.value && f.end.value > ds ? f.end.value : "";
+    tile(sh.querySelector("#evT1"), ds); tile(sh.querySelector("#evT2"), en);
+    sh.querySelector("#evEndX").hidden = !en;
+    sh.querySelector("#evTime").hidden = all.checked;
+    const n = en ? Math.round((parse(en) - parse(ds)) / 864e5) + 1 : 1;
+    sh.querySelector("#evSpan").textContent = n === 1 ? (all.checked || !f.time.value ? "יום אחד" : `יום אחד · ${f.time.value}`) : n === 2 ? "יומיים" : `${n} ימים`;
+    sh.querySelector("#evRem").textContent = all.checked || !f.time.value ? "תזכורת: יום לפני, 09:00" : "תזכורת: 24 שעות לפני";
+  };
+  all.onchange = () => { if (all.checked){ if (f.time.value) lastTime = f.time.value; f.time.value = ""; } else f.time.value = lastTime; drawWhen(); };
+  ["date", "end", "time"].forEach(n => f[n].addEventListener("change", drawWhen));
+  sh.querySelectorAll(".evx-tile input").forEach(inp => inp.addEventListener("click", () => { try { inp.showPicker(); } catch(_){} }));
+  sh.querySelector("#evEndX").onclick = () => { f.end.value = ""; drawWhen(); };
+  drawWhen();
+  // files + note: small cards that open their full panel
+  const sums = () => { const nl = kit.links(true).length, nf = sh.querySelectorAll("#tkFiles .tk-file").length || (ev && ev.fileCount) || 0;
+    sh.querySelector("#evFilesSum").textContent = nl || nf ? [nf ? (nf === 1 ? "קובץ אחד" : nf + " קבצים") : "", nl ? (nl === 1 ? "קישור אחד" : nl + " קישורים") : ""].filter(Boolean).join(" · ") : "הזמנה, כרטיסים, מפה…";
+    const nt = f.note.value.trim(); sh.querySelector("#evNoteSum").textContent = nt ? nt.slice(0, 40) : "הוספת הערה…"; };
+  sh.querySelectorAll("[data-pane]").forEach(b => b.onclick = () => {
+    const p = sh.querySelector(`.evx-pane[data-p="${b.dataset.pane}"]`), open = p.hidden;
+    sh.querySelectorAll(".evx-pane").forEach(x => x.hidden = true); sh.querySelectorAll("[data-pane]").forEach(x => x.setAttribute("aria-expanded", "false"));
+    if (open){ p.hidden = false; b.setAttribute("aria-expanded", "true"); if (b.dataset.pane === "note") f.note.focus(); }
+    sums();
+  });
+  sh.addEventListener("input", sums); sh.addEventListener("click", () => setTimeout(sums, 0)); sh.addEventListener("change", () => setTimeout(sums, 0));
+  sums();
   // tasks: same behaviour as in an idea — tap the person to change, 🛒 for the shopping list
   const $r = sh.querySelector("#evRows"), redraw = () => { $r.innerHTML = rowsHTML(); };
   const addRow = () => {
@@ -5561,7 +5692,7 @@ function eventSheet(ev, preset={}){
     x.preventDefault(); addRow();
     if (!f.title.value.trim() || !f.date.value){ sh.querySelector("#eerr").textContent="שם ותאריך הם שדות חובה."; return; }
     const end = f.end.value && f.end.value > f.date.value ? f.end.value : "";
-    const data = { title:f.title.value.trim(), date:f.date.value, time:f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim(), links:kit.links(true) };
+    const data = { title:f.title.value.trim(), date:f.date.value, time: sh.querySelector("#evAll").checked ? "" : f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim(), links:kit.links(true) };
     try { Object.assign(data, await kit.saveFiles(true, f.querySelector("[type=submit]"), "שמירה") || {}); }
     catch(y){ sh.querySelector("#eerr").textContent = y && y.code === "limit" ? `אפשר עד ${Photos.max()} קבצים לאירוע` : errText(y); return; }
     const oldDate = edit ? ev.date : null;
