@@ -23,9 +23,10 @@ let f = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m
   }, [sel, x0, x1, y0, y1, ms]);
   const tab = () => p.evaluate(() => S.tab);
   await p.evaluate(() => go("today"));
-  ok(await swipe(null, 100, 300) === "tasks", "swipe right on היום → משימות (next screen)");
-  ok(await swipe(null, 100, 300) === "shop", "swipe right again → קניות");
-  ok(await swipe(null, 300, 100) === "tasks", "swipe left → back to משימות");
+  const ord = await p.evaluate(() => tabsNow().map(t => t[0]));
+  ok(await swipe(null, 100, 300) === ord[1], "swipe right on היום → the next screen in the bar");
+  ok(await swipe(null, 100, 300) === ord[2], "swipe right again → the one after it");
+  ok(await swipe(null, 300, 100) === ord[1], "swipe left → back one screen");
   await p.evaluate(() => go("today"));
   ok(await swipe(null, 300, 100) === "today", "swipe left on the first screen → stays");
   await p.evaluate(() => go("ideas"));
@@ -66,7 +67,7 @@ let f = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL ") + m
   await p.evaluate(() => document.getElementById("app").dispatchEvent(new TouchEvent("touchcancel", { bubbles: true, touches: [], changedTouches: [new Touch({ identifier: 1, target: document.body, clientX: 200, clientY: 400 })] })));
   await p.clock.runFor(500);
   d = await drag(80, [100, 160, 240, 330]);
-  ok(d.tab === "tasks", "a long drag released → moves to the next screen");
+  ok(d.tab === await p.evaluate(() => tabsNow()[1][0]), "a long drag released → moves to the next screen");
   await p.clock.runFor(600);
   ok(await p.evaluate(() => !document.querySelector(".sw-ghost") && !document.getElementById("screen").style.transform && document.getElementById("screen").style.opacity === ""), "…and ends cleanly in place");
   ok(errs.length === 0, `no errors (${errs.join("; ") || "none"})`);

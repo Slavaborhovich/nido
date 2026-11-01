@@ -17,7 +17,7 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
 
   ok(await p.evaluate(() => parseAmount("186.40") === 18640 && parseAmount("1,200") === 120000 && parseAmount("₪ 12") === 1200 && parseAmount("0") === null && parseAmount("1.234") === null && parseAmount("abc") === null),
      "amounts become whole agorot (186.40 → 18640); 0, 3 decimals and text are refused");
-  ok(await p.evaluate(() => tabsNow().map(t => t[0]).join() === "today,tasks,shop,money,cal,ideas"), "the הוצאות tab sits between קניות and יומן");
+  ok(await p.evaluate(() => tabsNow().map(t => t[0]).join() === "today,money,cal,tasks,shop,ideas"), "tab order: היום · הוצאות · יומן · משימות · קניות · רעיונות");
   ok(await p.evaluate(() => { Money.settings = { cats: [{ id: "food", name: "סופר ומזון", emoji: "🛒" }, { id: "car", name: "רכב ודלק", emoji: "⛽" }, { id: "pets", name: "חיות מחמד", emoji: "🐶" }] };
     const cs = Money.cats(), ids = cs.map(c => c.id); Money.settings = null;
     return ["pets", "rent", "eatout", "fuel", "insurance"].every(x => ids.includes(x)) && ids.filter(x => x === "food").length === 1 && cs.find(c => c.id === "car").name === "רכב"; }),
