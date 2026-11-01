@@ -975,6 +975,15 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .cv-strip svg{width:15px;height:15px}
 .cv-strip.major{background:linear-gradient(100deg,rgba(242,182,107,.26),rgba(242,182,107,.08));border-color:rgba(242,182,107,.45);color:#F7D29E;font-weight:500}
 .cv-hint{text-align:center;margin:14px 0 0}
+.cv-wide{display:flex;align-items:center;gap:8px;min-width:0;min-height:40px;padding:6px 10px;border:0;border-radius:12px;text-align:start;color:var(--text);font:inherit;font-size:13px;cursor:pointer;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--c) 34%,rgba(30,20,12,.85)),color-mix(in srgb,var(--c) 14%,rgba(30,20,12,.85)));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 50%,transparent)}
+.cv-wide .cv-who{position:static;flex:none;width:20px;height:20px;font-size:10px}
+.cv-wide .cv-who.all{background:var(--c)}
+.cv-wide span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.cv-wide small{flex:none;font-size:11px;color:color-mix(in srgb,var(--c) 55%,white);opacity:.9}
+html[data-skin="light"] .cv-wide{background:linear-gradient(100deg,color-mix(in srgb,var(--c) 30%,#FFFDF9),color-mix(in srgb,var(--c) 12%,#FFFDF9));color:#2A1D12}
+html[data-skin="light"] .cv-wide small{color:color-mix(in srgb,var(--c) 60%,#2A1D12)}
+
 .cv-month{border-radius:20px;background:rgba(36,25,17,.62);border:1px solid rgba(255,214,170,.12);padding:8px 3px 4px;backdrop-filter:blur(16px)}
 .cv-dow{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#93806C;text-align:center;padding-bottom:6px}
 .cv-dow span:last-child{color:#E8C46A}
@@ -1887,6 +1896,21 @@ html[data-skin="light"] #sheetRoot{--bg:#17110C;--bg-2:#1F1711;--surface:rgba(40
 #sheetRoot .sheet.gx .actions .primary{flex:none;width:100%}
 #sheetRoot .sheet.gx .sheet-head h2{text-align:start}
 #sheetRoot .sheet :is(.input,.textarea){color-scheme:dark}
+
+/* tidy, aligned option groups inside windows: equal columns instead of ragged wrapping */
+#sheetRoot .sheet :is(.chips,.if-cats){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#sheetRoot .sheet :is(.chips .chip,.if-cats button){width:100%;min-width:0;justify-content:center;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sheetRoot .sheet .if-cats button{height:40px;border-radius:99px}
+#sheetRoot .sheet .mn-kind{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#sheetRoot .sheet .mn-kind button{height:40px;border-radius:99px;border-color:rgba(255,214,170,.14);background:rgba(40,28,19,.55);color:#E3D2BE}
+#sheetRoot .sheet .mn-kind button[aria-pressed=true]{background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));border-color:rgba(233,169,94,.75);color:#FFF3E4;font-weight:600}
+#sheetRoot .sheet .if-cost{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#sheetRoot .sheet .evx-rems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#sheetRoot .sheet .evx-rems button{width:100%;padding:0 8px;height:42px;white-space:nowrap}
+#sheetRoot .sheet .evx-foot{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+#sheetRoot .sheet .evx-foot > span:first-child{padding:0 4px}
+#sheetRoot .sheet .evx-rem{width:100%;height:46px;border-radius:16px;justify-content:flex-start;padding:0 14px;font-size:14.5px;white-space:nowrap}
+#sheetRoot .sheet .evx-rem b{flex:1;text-align:start;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -5491,8 +5515,13 @@ function renderWeek(){
   const range = ws.getMonth() === we.getMonth() ? `${ws.getDate()}–${we.getDate()} ב${MONTHS[ws.getMonth()]}` : `${ws.getDate()} ב${MONTHS[ws.getMonth()]} – ${we.getDate()} ב${MONTHS[we.getMonth()]}`;
   let nEv = 0, nTk = 0; const shabbat = days.flatMap(d => Hol.of(d)).find(h => h.k === "candles");
   const rows = days.map(ds => {
-    const d = parse(ds), items = dayItems(ds), hol = Hol.of(ds);
-    items.forEach(x => x.k === "ev" ? (!x.cont && nEv++) : (!x.done && nTk++));
+    const d = parse(ds), all = dayItems(ds), hol = Hol.of(ds);
+    all.forEach(x => x.k === "ev" ? (!x.cont && nEv++) : (!x.done && nTk++));
+    // an all-day event (or a day inside a multi-day one) takes the whole day, not one slot
+    const wide = all.filter(x => x.k === "ev" && !x.time), items = all.filter(x => !wide.includes(x));
+    const evDays = x => { const e = DB.events.find(y => y.id === x.id); if (!e || !e.end || e.end <= e.date) return ""; const tot = Math.round((parse(e.end) - parse(e.date)) / 864e5) + 1, k = Math.round((d - parse(e.date)) / 864e5) + 1; return `${k}/${tot}`; };
+    const wideHTML = wide.map(x => { const u = x.who && USERS[x.who], days = evDays(x);
+      return `<button class="cv-wide" style="grid-column:2 / -1;--c:${colOf(x.who)}" data-k="ev" data-id="${x.id}">${u ? `<i class="cv-who" style="background:${u.color};${avaStyle(u)}" title="${esc(u.name)}">${initial(u)}</i>` : `<i class="cv-who all"></i>`}<span>${esc(x.title)}</span><small>${days || (x.cont ? "המשך" : "כל היום")}</small></button>`; }).join("");
     const n = Math.max(SLOTS, Math.ceil(items.length / SLOTS) * SLOTS);
     const cells = [...Array(n)].map((_, i) => { const x = items[i];
       if (!x) return `<div class="cv-cell" data-d="${ds}"></div>`;
@@ -5503,11 +5532,11 @@ function renderWeek(){
     }).join("");
     const strips = hol.filter(h => h.k !== "rc").map(h => `<div class="cv-strip ${h.k}" style="grid-column:2 / -1">${h.k === "candles" ? icon("candle") : ""}<span>${esc(holLine(h))}</span></div>`).join("");
     const rc = hol.find(h => h.k === "rc");
-    const quiet = !items.length && strips;
-    const span = (quiet ? 0 : n / SLOTS) + hol.filter(h => h.k !== "rc").length;
+    const quiet = !items.length && (strips || wideHTML);
+    const span = (quiet ? 0 : n / SLOTS) + hol.filter(h => h.k !== "rc").length + wide.length;
     return `<div class="cv-row ${ds === today ? "today" : ""} ${d.getDay() === 6 ? "sat" : ""}" style="grid-template-columns:52px repeat(${SLOTS},1fr)">
       <button class="cv-dl" data-day="${ds}" style="grid-row:span ${Math.max(span, 1)}"><small>${"אבגדהוש"[d.getDay()]}׳</small><b>${d.getDate()}</b>${rc ? `<i>ר״ח</i>` : ""}</button>
-      ${quiet ? "" : cells}${strips}</div>`;
+      ${wideHTML}${quiet ? "" : cells}${strips}</div>`;
   }).join("");
   $("#screen").innerHTML = `${calTop(range, "שבוע קודם", "שבוע הבא", !days.includes(today))}
     <div class="cv-sum">
@@ -5521,7 +5550,7 @@ function renderWeek(){
   const step = n => { S.calWeek = iso(addDays(parse(S.calWeek), n)); renderWeek(); };
   bindCalCommon(() => step(-7), () => step(7), () => { S.calWeek = iso(startOfWeek(new Date())); S.calSel = today; renderWeek(); });
   $("#screen").querySelector(".cv-board").onclick = e => {
-    const x = e.target.closest(".cv-x"); if (x) return openItem(x.dataset.k, x.dataset.id);
+    const x = e.target.closest(".cv-x,.cv-wide"); if (x) return openItem(x.dataset.k, x.dataset.id);
     const dl = e.target.closest("[data-day]"); if (dl){ S.calSel = dl.dataset.day; S.calView = "day"; renderCal(); window.scrollTo(0, 0); return; }
     const c = e.target.closest(".cv-cell[data-d]"); if (c && canEdit()) eventSheet(null, { date:c.dataset.d });
   };

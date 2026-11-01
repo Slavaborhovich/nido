@@ -45,6 +45,13 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await p.evaluate(id => DB.tasks.some(t => t.eventId === id && t.title === "חטיפים לדרך" && t.date === "2026-11-12"), ev.id), "the event's task went to the Tasks screen (due on the event day)");
 
   // switch off → time; switch back on → time cleared
+  // week view: an all-day / multi-day event is one bar across the whole day, not a slot
+  await p.evaluate(() => { closeSheet(); S.calView = "week"; S.calWeek = iso(startOfWeek(parse("2026-11-12"))); go("cal"); }); await p.waitForTimeout(500);
+  const wk = await p.evaluate(id => ({ bars: [...document.querySelectorAll(`.cv-wide[data-id="${id}"]`)].map(b => b.querySelector("small").textContent), inSlot: !!document.querySelector(`.cv-x[data-id="${id}"]`), col: document.querySelector(`.cv-wide[data-id="${id}"]`)?.style.gridColumn }), ev.id);
+  ok(wk.bars.join() === "1/3,2/3,3/3" && !wk.inSlot && /2 \/ -1/.test(wk.col), `week: a full-width bar on each of the 3 days (${wk.bars})`);
+  await p.click(`.cv-wide[data-id="${ev.id}"]`); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => !!document.querySelector(".evv")), "tapping the bar opens the event");
+  await p.evaluate(() => closeSheet()); await p.waitForTimeout(300);
   await p.evaluate(id => eventSheet(DB.events.find(x => x.id === id)), ev.id); await p.waitForTimeout(500);
   ok(await p.evaluate(() => document.querySelector("#evAll").checked && document.querySelector(".evx-who input:checked").value !== ""), "editing: switch on, the saved person is selected");
   await p.click(".evx-sw"); await p.waitForTimeout(100);
