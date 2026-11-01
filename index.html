@@ -1067,20 +1067,34 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .evx-tile small{font-size:13px;color:#E3D2BE}
 .evx-tile b{font-size:38px;font-weight:700;line-height:1.1}
 .evx-tile input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
-.evx-tile.empty{border-style:dashed;background:none;box-shadow:none}
-.evx-tile.empty b{font-weight:400;color:#E9A95E}
-.evx-tile.empty small{color:#B8A28B}
 .evx-clr{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,9,5,.5);color:#EADBC8;display:grid;place-items:center;padding:0;z-index:1}
 .evx-clr .i{width:14px;height:14px}
-.evx-time{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px 0 12px;height:48px;border-radius:16px;background:rgba(15,9,5,.35);cursor:pointer}
-.evx-time[hidden]{display:none}
-.evx-time span{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:#EADBC8}
-.evx-time input{border:0;background:none;color:#FFF3E4;font:inherit;font-size:18px;font-weight:600;padding:8px;direction:ltr;color-scheme:dark}
 .evx-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .evx-foot > span{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:#EADBC8}
 .evx-foot b{font-weight:400}
 .evx-foot .i{width:17px;height:17px}
-.evx-rem{height:34px;padding:0 12px;border-radius:99px;background:rgba(15,9,5,.45);font-size:13.5px !important}
+.evx-rem{height:36px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,214,170,.12);background:rgba(15,9,5,.45);color:#EADBC8;font:inherit;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.evx-rem::after{content:"";width:7px;height:7px;border-inline-start:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg) translateY(-2px);opacity:.7;margin-inline-start:2px}
+.evx-rem[aria-expanded="true"]{border-color:rgba(233,169,94,.6)}
+.evx-rem .i{width:17px;height:17px}
+.evx-rems{display:flex;flex-wrap:wrap;gap:8px}
+.evx-rems[hidden]{display:none}
+.evx-rems button{height:38px;padding:0 14px;border-radius:99px;border:1px solid rgba(255,214,170,.14);background:rgba(15,9,5,.35);color:#EADBC8;font:inherit;font-size:14px;cursor:pointer}
+.evx-rems button[aria-checked="true"]{background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));color:#FFF3E4;border-color:rgba(233,169,94,.75)}
+.evx-tiles.one{grid-template-columns:minmax(0,1fr)}
+.evx-tiles.one .evx-arr,.evx-tiles.one .evx-tw{display:none}
+.evx-tiles.one .evx-tile{flex-direction:row;justify-content:center;gap:14px;padding:12px 0}
+.evx-tiles.one .evx-tile small{font-size:15px}
+.evx-opts{display:flex;gap:8px}
+.evx-opts[hidden]{display:none}
+.evx-pill{position:relative;flex:1;min-width:0;height:50px;box-sizing:border-box;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:linear-gradient(180deg,rgba(255,230,200,.09),rgba(255,230,200,.03));border:1px solid rgba(255,214,170,.13);box-shadow:inset 0 1px 0 rgba(255,240,220,.07);cursor:pointer;overflow:hidden}
+.evx-pill[hidden]{display:none}
+.evx-pill .k{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:#EADBC8}
+.evx-pill .k .i{width:18px;height:18px}
+.evx-pill b{font-size:19px;font-weight:700;direction:ltr;color:#FFF3E4}
+.evx-pill input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;cursor:pointer}
+.evx-add{justify-content:center;border-style:dashed;background:none;box-shadow:none;color:#EBA864;font-size:15px}
+.evx-add .i{width:18px;height:18px}
 .evx-who{display:grid;gap:4px;padding:5px;border-radius:22px;background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.06)}
 .evx-who label{position:relative;cursor:pointer;min-width:0}
 .evx-who input{position:absolute;opacity:0;pointer-events:none}
@@ -1119,6 +1133,22 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 .evx-save{margin-top:6px;height:56px;border:0;border-radius:99px;background:linear-gradient(180deg,#F3C07E,#D99550);box-shadow:inset 0 1px 0 rgba(255,250,240,.55),0 12px 28px rgba(217,149,80,.3);color:#2E1A0A;font:inherit;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
 .evx-save .i{width:22px;height:22px}
 .evx-f .error:empty{display:none}
+.evx-title h2{margin:0;color:#FFF6EC;font-size:30px;font-weight:800;line-height:1.2;letter-spacing:-.01em;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.evx-cover{margin-top:16px;border-radius:22px;overflow:hidden}
+.evx-tag{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:99px;background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));color:#FFF3E4;font-size:14px;box-shadow:inset 0 0 0 1px rgba(233,169,94,.6)}
+.evx-tag .i{width:16px;height:16px}.evx-tag b{font-size:15px}
+.evx-rem.is-static{cursor:default}.evx-rem.is-static::after{display:none}
+.evx-row .v{flex:1;min-width:0;font-size:15.5px;overflow-wrap:anywhere}
+.evx-ava{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;color:#1E140C;flex:none}
+.evx-ava .i{width:15px;height:15px}
+.evx-emo{width:22px;text-align:center;font-size:18px;flex:none}
+.evx-nav{display:flex;gap:6px;flex:none}
+.evx-notev{display:flex;gap:12px;padding:14px 16px;align-items:flex-start}
+.evx-notev p{margin:0;flex:1;font-size:15px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.evx-ph{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:15.5px}
+.evx .ev-from{color:#EBA864;align-self:center}
+.evx-f .evx-save + .evx-del{margin-top:-2px}
+
 .evx-del{align-self:center;border:0;background:none;color:#FF9A8A;font:inherit;font-size:14.5px;display:inline-flex;align-items:center;gap:6px;padding:10px}
 .evx-del .i{width:17px;height:17px}
 /* ---------- פתק על המקרר ---------- */
@@ -2656,9 +2686,8 @@ const Notify = {
     const dmy = d => { const x = parse(d); return `${x.getDate()}.${x.getMonth() + 1}`; };
     for (const e of DB.events) if (e.date){
       const place = e.place ? " · " + e.place : "";
-      // 24 hours before the start (all-day events: the day before at 09:00)
-      add(e.time ? at(e.date, e.time) - 864e5 : at(e.date, "09:00") - 864e5, remind, "remind", `📅 מחר: ${e.title}`, `${e.time || "כל היום"}${place}`, `e1-${e.id}`);
-      if (e.time) add(at(e.date, e.time) - 60*60e3, remind, "remind", `⏰ בעוד שעה: ${e.title}`, `${e.time}${place}`, `eh-${e.id}`);
+      // the event's own choice (EvRemind); default: 24 h + 1 h before (all-day: the day before at 09:00)
+      for (const r of EvRemind.plan(e)) add(r.at(at), remind, "remind", r.title(e.title), `${e.time || "כל היום"}${place}`, `${r.tag}-${e.id}`);
     }
     for (const k of DB.tasks) if (!k.done && k.date){
       const to = k.assignee && USERS[k.assignee] ? remind.filter(x => x === k.assignee) : remind;
@@ -4561,6 +4590,32 @@ function budgetSheet(){
   };
 }
 
+
+/* event reminders: one choice per event (e.remind, "" = the default) */
+const EvRemind = {
+  TIMED: [["", "יום לפני + שעה לפני"], ["15m", "רבע שעה לפני"], ["1h", "שעה לפני"], ["3h", "3 שעות לפני"], ["1d", "יום לפני"], ["2d", "יומיים לפני"], ["1w", "שבוע לפני"], ["none", "בלי תזכורת"]],
+  ALLDAY: [["", "יום לפני, 09:00"], ["0d", "באותו בוקר, 07:00"], ["2d", "יומיים לפני, 09:00"], ["1w", "שבוע לפני, 09:00"], ["none", "בלי תזכורת"]],
+  opts: timed => timed ? EvRemind.TIMED : EvRemind.ALLDAY,
+  label(e){ const o = EvRemind.opts(!!e.time).find(x => x[0] === (e.remind || "")); return (o || EvRemind.opts(!!e.time)[0])[1]; },
+  /* → [{ tag, at(atFn) → ms, title(name) }] */
+  plan(e){
+    const r = e.remind || "", d = e.date, t = e.time, H = 60*60e3, D = 864e5;
+    const valid = EvRemind.opts(!!t).some(x => x[0] === r) ? r : "";
+    if (valid === "none") return [];
+    const one = (tag, f, title) => ({ tag, at: f, title });
+    const tomorrow = n => `📅 מחר: ${n}`;
+    if (t){
+      if (valid === "") return [one("e1", at => at(d, t) - D, tomorrow), one("eh", at => at(d, t) - H, n => `⏰ בעוד שעה: ${n}`)];
+      const ms = { "15m": 15*60e3, "1h": H, "3h": 3*H, "1d": D, "2d": 2*D, "1w": 7*D }[valid];
+      const txt = { "15m": "בעוד רבע שעה", "1h": "בעוד שעה", "3h": "בעוד 3 שעות", "1d": "מחר", "2d": "בעוד יומיים", "1w": "בעוד שבוע" }[valid];
+      return [one("er", at => at(d, t) - ms, n => `${valid === "1d" ? "📅" : "⏰"} ${txt}: ${n}`)];
+    }
+    if (valid === "0d") return [one("er", at => at(d, "07:00"), n => `📅 היום: ${n}`)];
+    if (valid === "2d") return [one("er", at => at(d, "09:00") - 2*D, n => `📅 בעוד יומיים: ${n}`)];
+    if (valid === "1w") return [one("er", at => at(d, "09:00") - 7*D, n => `📅 בעוד שבוע: ${n}`)];
+    return [one("e1", at => at(d, "09:00") - D, tomorrow)];
+  },
+};
 /* ================= Sheets ================= */
 function openSheet(html){
   S.panel = null;
@@ -5492,28 +5547,35 @@ function eventView(ev){
   const d = parse(ev.date), place = ev.place || (idea && idea.place) || "";
   const ts = idea ? ideaTasks(idea) : DB.tasks.filter(t => t.eventId === ev.id);
   const who = ev.who && USERS[ev.who], tix = idea && extUrl(idea.tixLink);
-  const when = `${DAYS[d.getDay()]}, ${d.getDate()} ב${MONTHS[d.getMonth()]}${ev.end ? ` – ${shortDate(ev.end)}` : ""}`;
-  const sh = openSheet(`${head(esc(ev.title))}
-    <div class="detail evv">
-      ${idea && idea.image ? `<button type="button" class="ev-cover" data-photos aria-label="תמונות">${coverHTML(idea, "wide")}</button>` : ""}
-      <div class="ev-when"><div class="c-date"><small>${DAYS[d.getDay()]}</small><b class="tabular">${d.getDate()}</b><small>${MONTHS[d.getMonth()]}</small></div>
-        <div class="w"><b>${esc(when)}</b><small>${ev.time ? `<span class="tabular">${ev.time}</span>` : "כל היום"}</small></div>
-        <span class="ev-who">${who ? `<i style="background:${who.color};${avaStyle(who)}">${initial(who)}</i>${esc(who.name)}` : "יחד"}</span></div>
-      ${place || (idea && idea.cost) || ev.note ? `<div class="info">
-        ${place ? `<div class="r"><span class="k">📍</span><span class="v">${esc(place)}</span>${navLinks(place)}</div>` : ""}
-        ${idea && idea.cost ? `<div class="r"><span class="k">${COST[idea.cost][0]}</span><span class="v">${idea.cost === "tix" ? "כרטיסים" : COST[idea.cost][1]}${idea.cost !== "free" && idea.price ? ` · ${esc(priceTxt(idea.price))}` : ""}</span>${tix ? `<a class="tixb" href="${esc(tix)}" target="_blank" rel="noopener">לרכישה ↗</a>` : ""}</div>` : ""}
-        ${ev.note ? `<div class="r"><span class="k">📝</span><span class="v">${esc(ev.note)}</span></div>` : ""}
-      </div>` : ""}
-      ${ev.links?.length || ev.fileCount ? `<section class="if-sec ev-att"><header><h4>${icon("link")}קישורים וקבצים</h4></header>
+  const tileV = ds => { const x = parse(ds); return `<div class="evx-tile"><small>${x.getDay() === 6 ? "שבת" : "יום " + DAYS[x.getDay()]}</small><b>${x.getDate()}</b><small>${MONTHS[x.getMonth()]}</small></div>`; };
+  const en = ev.end && ev.end > ev.date ? ev.end : "", nDays = en ? Math.round((parse(en) - d) / 864e5) + 1 : 1;
+  const span = nDays === 1 ? (ev.time ? `יום אחד · ${ev.time}` : "יום אחד") : nDays === 2 ? "יומיים" : `${nDays} ימים`;
+  const card = (ic, body, extra = "") => `<div class="evx-card evx-row">${ic}<span class="v">${body}</span>${extra}</div>`;
+  const sh = openSheet(`<div class="evx-top"><span>אירוע</span><button type="button" class="evx-x" data-close aria-label="סגירה">${icon("close")}</button></div>
+    <div class="detail evv evx-f">
+      ${idea && idea.image ? `<button type="button" class="ev-cover evx-cover" data-photos aria-label="תמונות">${coverHTML(idea, "wide")}</button>` : ""}
+      <div class="evx-title"><h2>${esc(ev.title)}</h2>
+        <svg viewBox="0 0 130 18" fill="none" aria-hidden="true"><path d="M2 9C30 3 78 1 128 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M24 15C52 9 88 8 126 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".75"/></svg></div>
+      <section class="evx-card evx-when">
+        <div class="evx-wh"><span>${icon("cal")}מתי</span><span class="evx-tag">${ev.time ? `${icon("clock")}<b class="tabular">${ev.time}</b>` : "כל היום"}</span></div>
+        <div class="evx-tiles ${en ? "" : "one"}">${tileV(ev.date)}${en ? `<svg class="evx-arr" viewBox="0 0 28 16" fill="none" aria-hidden="true"><path d="M23 8H5M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><div class="evx-tw">${tileV(en)}</div>` : ""}</div>
+        <div class="evx-foot"><span>${icon("clock")}<b>${span}</b></span><span class="evx-rem is-static">${icon("bell")}<b>תזכורת: ${esc(EvRemind.label(ev))}</b></span></div>
+      </section>
+      ${card(who ? `<i class="evx-ava" style="background:${who.color};${avaStyle(who)}">${initial(who)}</i>` : `<i class="evx-ava" style="background:${together()};color:#3A220E">${icon("user")}</i>`, who ? esc(who.name) : "יחד")}
+      ${place ? card(icon("pin"), esc(place), `<span class="evx-nav">${navLinks(place)}</span>`) : ""}
+      ${idea && idea.cost ? card(`<span class="evx-emo">${COST[idea.cost][0]}</span>`, `${idea.cost === "tix" ? "כרטיסים" : COST[idea.cost][1]}${idea.cost !== "free" && idea.price ? ` · ${esc(priceTxt(idea.price))}` : ""}`, tix ? `<a class="tixb" href="${esc(tix)}" target="_blank" rel="noopener">לרכישה ↗</a>` : "") : ""}
+      ${ev.note ? `<div class="evx-card evx-notev"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg><p>${esc(ev.note)}</p></div>` : ""}
+      ${ev.links?.length || ev.fileCount ? `<section class="evx-card evx-pane ev-att"><header class="evx-ph">${icon("link")}<span>קבצים וקישורים</span></header>
         ${(ev.links || []).map(u => `<a class="tk-it ev-lk" href="${esc(u)}" target="_blank" rel="noopener">${icon("link")}<span>${esc(hostOf(u))}</span><small>↗</small></a>`).join("")}
         <div class="tk-list" id="evFiles">${ev.fileCount ? `<p class="tk-wait">טוען קבצים…</p>` : ""}</div></section>` : ""}
-      <section class="if-sec"><header><h4>${icon("chk")}משימות</h4><small>${ts.length ? `${ts.filter(t => t.done).length}/${ts.length} בוצעו` : "חלוקת משימות לאירוע"}</small></header>
+      <section class="evx-card evx-tasks"><header>${icon("chk")}<span>משימות לאירוע</span><small>${ts.length ? `${ts.filter(t => t.done).length}/${ts.length} בוצעו` : "יופיעו במסך המשימות"}</small></header>
         <div id="evTasks">${ts.map(t => `<div class="st-row ${t.done ? "done" : ""}" data-t="${t.id}">
           <button type="button" class="dot ${t.done ? "on" : ""}" aria-label="סימון">${icon("tick")}</button><span class="t">${esc(t.title)}</span>${t.buy ? `<span class="st-cart on lbl" aria-label="ברשימת קניות">${shopIcon(t.buy)}<b>${shopOf(t.buy)[1]}</b></span>` : ""}<button type="button" class="st-whob" data-who style="border:0;background:none;padding:0" aria-label="אחראי">${whoChip(t.assignee)}</button></div>`).join("")}</div>
-        ${canEdit() ? `<div class="st-add">${icon("plus")}<input id="evNew" placeholder="משימה חדשה — למשל: להכין צידנית" aria-label="משימה חדשה" autocomplete="off"></div>` : ""}</section>
+        ${canEdit() ? `<div class="st-add">${icon("plus")}<input id="evNew" placeholder="הוספת משימה" aria-label="משימה חדשה" autocomplete="off"></div>` : ""}</section>
       ${idea ? `<button type="button" class="ev-from" data-idea>💡 מתוך הרעיון "${esc(idea.title)}" ←</button>` : ""}
-      ${canEdit() ? `<div class="actions"><button class="danger" id="del">${icon("trash")}מחיקה</button><button class="secondary" id="edit">${icon("edit")}עריכה</button></div>` : ""}
+      ${canEdit() ? `<button type="button" class="evx-save" id="edit">${icon("edit")}עריכה</button><button type="button" class="evx-del" id="del">${icon("trash")}מחיקת האירוע</button>` : ""}
     </div>`);
+  sh.classList.add("evx");
   const again = () => eventView(ev);
   if (ev.fileCount) TaskFiles.list(ev).then(a => { const box = sh.querySelector("#evFiles"); if (!box || !box.isConnected) return;
       box.innerHTML = a.map((p, k) => { const kind = fileKind(p); return `<button type="button" class="tk-it tk-file tk-open" data-of="${k}">${kind === "img" ? `<img src="${esc(p.img)}" alt="">` : `<span class="tk-doc ${kind}" data-thumb="${k}">${kind === "pdf" ? "PDF" : "📄"}</span>`}<span><b>${esc(p.name || "קובץ")}</b><small>${kb(p.size || 0)}</small></span></button>`; }).join("");
@@ -5580,14 +5642,18 @@ function eventSheet(ev, preset={}){
       <section class="evx-card evx-when">
         <div class="evx-wh"><span>${icon("cal")}מתי</span>
           <label class="evx-sw"><span>כל היום</span><input type="checkbox" id="evAll" ${allDay0 ? "checked" : ""}><i aria-hidden="true"></i></label></div>
-        <div class="evx-tiles">
+        <div class="evx-tiles" id="evTiles">
           <label class="evx-tile" id="evT1"><small></small><b></b><small></small><input type="date" name="date" value="${e.date || ""}" required aria-label="תאריך"></label>
           <svg class="evx-arr" viewBox="0 0 28 16" fill="none" aria-hidden="true"><path d="M23 8H5M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           <div class="evx-tw"><label class="evx-tile" id="evT2"><small></small><b></b><small></small><input type="date" name="end" value="${e.end || ""}" aria-label="עד תאריך"></label>
             <button type="button" class="evx-clr" id="evEndX" aria-label="בלי תאריך סיום">${icon("close")}</button></div>
         </div>
-        <label class="evx-time" id="evTime"><span>${icon("clock")}שעה</span><input type="time" name="time" value="${e.time || ""}" aria-label="שעה"></label>
-        <div class="evx-foot"><span>${icon("clock")}<b id="evSpan"></b></span><span class="evx-rem">${icon("bell")}<b id="evRem"></b></span></div>
+        <div class="evx-opts">
+          <label class="evx-pill" id="evTime"><span class="k">${icon("clock")}שעה</span><b id="evTimeTxt"></b><input type="time" name="time" value="${e.time || ""}" aria-label="שעה"></label>
+          <label class="evx-pill evx-add" id="evAddEnd">${icon("plus")}<span>עד תאריך</span><input type="date" id="evEndPick" aria-label="עד תאריך — לאירוע של כמה ימים"></label>
+        </div>
+        <div class="evx-foot"><span>${icon("clock")}<b id="evSpan"></b></span><button type="button" class="evx-rem" id="evRemBtn" aria-expanded="false">${icon("bell")}<b id="evRem"></b></button></div>
+        <div class="evx-rems" id="evRems" hidden role="radiogroup" aria-label="תזכורת"></div>
       </section>
       <div class="evx-who" role="radiogroup" aria-label="של מי" style="grid-template-columns:repeat(${whoOpts.length},minmax(0,1fr))">${whoSeg}</div>
       <label class="evx-card evx-row">${icon("pin")}<input name="place" placeholder="איפה?" value="${esc(e.place)}" aria-label="מקום" autocomplete="off"></label>
@@ -5615,23 +5681,35 @@ function eventSheet(ev, preset={}){
   if (!edit) setTimeout(()=> (e.title ? f.date : f.title).focus(), 260);
   kit.wire(sh);
   // the "when" card: date tiles, all-day switch, how long + which reminder
-  const all = sh.querySelector("#evAll"); let lastTime = e.time || "09:00";
-  const tile = (el, ds, empty) => { const [a, b, c] = el.querySelectorAll("small,b");
-    if (!ds){ a.textContent = "עד תאריך"; b.textContent = "+"; c.textContent = "לא חובה"; el.classList.add("empty"); return; }
-    const d = parse(ds); el.classList.remove("empty"); a.textContent = d.getDay() === 6 ? "שבת" : `יום ${DAYS[d.getDay()]}`; b.textContent = d.getDate(); c.textContent = MONTHS[d.getMonth()]; };
+  const all = sh.querySelector("#evAll"); let lastTime = e.time || "09:00", remind = e.remind || "";
+  const tile = (el, ds) => { const [a, b, c] = el.querySelectorAll("small,b"); if (!ds) return;
+    const d = parse(ds); a.textContent = d.getDay() === 6 ? "שבת" : `יום ${DAYS[d.getDay()]}`; b.textContent = d.getDate(); c.textContent = MONTHS[d.getMonth()]; };
+  const drawRems = () => { const timed = !all.checked && !!f.time.value, o = EvRemind.opts(timed);
+    if (!o.some(x => x[0] === remind)) remind = "";
+    sh.querySelector("#evRem").textContent = "תזכורת: " + (o.find(x => x[0] === remind) || o[0])[1];
+    sh.querySelector("#evRems").innerHTML = o.map(([v, l]) => `<button type="button" role="radio" aria-checked="${v === remind}" data-rem="${v}">${l}</button>`).join(""); };
   const drawWhen = () => {
     const ds = f.date.value, en = f.end.value && f.end.value > ds ? f.end.value : "";
+    if (!en) f.end.value = "";
     tile(sh.querySelector("#evT1"), ds); tile(sh.querySelector("#evT2"), en);
-    sh.querySelector("#evEndX").hidden = !en;
+    sh.querySelector("#evTiles").classList.toggle("one", !en);
+    sh.querySelector("#evAddEnd").hidden = !!en;
     sh.querySelector("#evTime").hidden = all.checked;
+    sh.querySelector("#evTimeTxt").textContent = f.time.value || "בחירה";
+    sh.querySelector(".evx-opts").hidden = all.checked && !!en;
     const n = en ? Math.round((parse(en) - parse(ds)) / 864e5) + 1 : 1;
     sh.querySelector("#evSpan").textContent = n === 1 ? (all.checked || !f.time.value ? "יום אחד" : `יום אחד · ${f.time.value}`) : n === 2 ? "יומיים" : `${n} ימים`;
-    sh.querySelector("#evRem").textContent = all.checked || !f.time.value ? "תזכורת: יום לפני, 09:00" : "תזכורת: 24 שעות לפני";
+    drawRems();
   };
   all.onchange = () => { if (all.checked){ if (f.time.value) lastTime = f.time.value; f.time.value = ""; } else f.time.value = lastTime; drawWhen(); };
   ["date", "end", "time"].forEach(n => f[n].addEventListener("change", drawWhen));
-  sh.querySelectorAll(".evx-tile input").forEach(inp => inp.addEventListener("click", () => { try { inp.showPicker(); } catch(_){} }));
+  const pick = sh.querySelector("#evEndPick");
+  pick.addEventListener("change", () => { if (pick.value){ f.end.value = pick.value; pick.value = ""; drawWhen(); } });
+  pick.addEventListener("focus", () => { if (!pick.value && f.date.value) pick.min = f.date.value; });
+  sh.querySelectorAll(".evx-tile input,.evx-pill input").forEach(inp => inp.addEventListener("click", () => { try { inp.showPicker(); } catch(_){} }));
   sh.querySelector("#evEndX").onclick = () => { f.end.value = ""; drawWhen(); };
+  sh.querySelector("#evRemBtn").onclick = () => { const r = sh.querySelector("#evRems"); r.hidden = !r.hidden; sh.querySelector("#evRemBtn").setAttribute("aria-expanded", String(!r.hidden)); };
+  sh.querySelector("#evRems").onclick = x => { const b = x.target.closest("[data-rem]"); if (!b) return; remind = b.dataset.rem; drawRems(); sh.querySelector("#evRems").hidden = true; sh.querySelector("#evRemBtn").setAttribute("aria-expanded", "false"); };
   drawWhen();
   // files + note: small cards that open their full panel
   const sums = () => { const nl = kit.links(true).length, nf = sh.querySelectorAll("#tkFiles .tk-file").length || (ev && ev.fileCount) || 0;
@@ -5670,7 +5748,7 @@ function eventSheet(ev, preset={}){
     x.preventDefault(); addRow();
     if (!f.title.value.trim() || !f.date.value){ sh.querySelector("#eerr").textContent="שם ותאריך הם שדות חובה."; return; }
     const end = f.end.value && f.end.value > f.date.value ? f.end.value : "";
-    const data = { title:f.title.value.trim(), date:f.date.value, time: sh.querySelector("#evAll").checked ? "" : f.time.value, end, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim(), links:kit.links(true) };
+    const data = { title:f.title.value.trim(), date:f.date.value, time: sh.querySelector("#evAll").checked ? "" : f.time.value, end, remind, who: f.querySelector('input[name=who]:checked')?.value || null, place:f.place.value.trim(), note:f.note.value.trim(), links:kit.links(true) };
     try { Object.assign(data, await kit.saveFiles(true, f.querySelector("[type=submit]"), "שמירה") || {}); }
     catch(y){ sh.querySelector("#eerr").textContent = y && y.code === "limit" ? `אפשר עד ${Photos.max()} קבצים לאירוע` : errText(y); return; }
     const oldDate = edit ? ev.date : null;
