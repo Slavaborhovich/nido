@@ -14,7 +14,7 @@
 <title>Nido</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,500;1,500&family=Gveret+Levin&family=Amatic+SC:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&family=Frank+Ruhl+Libre:wght@500;700;900&family=Playfair+Display:ital,wght@0,500;1,500&family=Gveret+Levin&family=Amatic+SC:wght@700&display=swap" rel="stylesheet">
 <style>
 :root, :root[data-theme="light"], :root[data-theme="dark"]{
   color-scheme:dark;
@@ -1911,6 +1911,93 @@ html[data-skin="light"] #sheetRoot{--bg:#17110C;--bg-2:#1F1711;--surface:rgba(40
 #sheetRoot .sheet .evx-foot > span:first-child{padding:0 4px}
 #sheetRoot .sheet .evx-rem{width:100%;height:46px;border-radius:16px;justify-content:flex-start;padding:0 14px;font-size:14.5px;white-space:nowrap}
 #sheetRoot .sheet .evx-rem b{flex:1;text-align:start;overflow:hidden;text-overflow:ellipsis}
+
+/* ================= Nido Home · upgraded (Nov 2026): warm glass, serif name, 3D art — look only ================= */
+.t-art{display:none}
+.t-legrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}
+.t-legrow .t-legend{margin:0}
+.t-legrow #allCal{border:0;background:none;color:var(--blue);font-size:13px;padding:4px}
+.t-swoosh,.t-welcome svg{display:none}
+.t-welcome{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.t-sec p{display:none}
+.t-sec h3 svg{display:none}
+html:not([data-skin]){
+  --g-glass:linear-gradient(155deg,rgba(104,73,48,.66),rgba(52,35,22,.62));
+  --g-line:rgba(255,218,170,.22);
+  --g-shadow:inset 0 1px 0 rgba(255,236,205,.20),0 18px 40px rgba(12,6,2,.45);
+  --g-amber:linear-gradient(180deg,#FFD08A,#EE9F4F);
+}
+html:not([data-skin]) body{font-family:var(--font)}
+/* glass windows everywhere on the main screens */
+html:not([data-skin]) #app :is(.panel,.ttile,.t-empty,.sv-card,.offer,.cal,.idea,.next){
+  background:var(--g-glass);border:1px solid var(--g-line);box-shadow:var(--g-shadow);
+  backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2)}
+html:not([data-skin]) #app :is(.panel,.idea,.cal){border-radius:24px}
+/* screen titles: the serif of the Nido wordmark */
+html:not([data-skin]) .top h1{font-family:"Frank Ruhl Libre",serif;font-weight:700;font-size:32px;letter-spacing:0}
+/* segmented controls: amber pill for the chosen one */
+html:not([data-skin]) #app .seg{border-radius:22px;padding:4px;background:rgba(255,232,200,.08);border-color:rgba(255,218,170,.16)}
+html:not([data-skin]) #app .seg :is(button,label span){border-radius:18px}
+html:not([data-skin]) #app .seg :is(button[aria-pressed="true"],input:checked+span){background:var(--g-amber);color:#2B190B;font-weight:600;box-shadow:0 4px 12px rgba(238,159,79,.35)}
+/* buttons */
+html:not([data-skin]) :is(.primary,.fab){background:var(--g-amber);color:#2B190B;box-shadow:0 10px 24px rgba(238,159,79,.42),inset 0 1px 0 rgba(255,255,255,.55)}
+html:not([data-skin]) .fab{border-radius:50%}
+/* floating tab bar */
+html:not([data-skin]) nav.tabs .row{height:70px;border-radius:35px;padding:0 10px;background:linear-gradient(155deg,rgba(92,64,42,.72),rgba(44,30,19,.72));border:1px solid var(--g-line);
+  box-shadow:inset 0 1px 0 rgba(255,236,205,.18),0 18px 40px rgba(10,5,2,.55);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2)}
+html:not([data-skin]) nav.tabs button{height:50px;min-width:48px;border-radius:25px;--nv1:#6A4E36;--nv2:#F0D3AA;--nv3:#8A6A4E}
+html:not([data-skin]) nav.tabs button svg.nv{width:27px;height:27px}
+html:not([data-skin]) nav.tabs button[aria-current="page"]{background:var(--g-amber);color:#2B190B;font-size:15px;font-weight:700;padding:0 18px;
+  box-shadow:0 6px 18px rgba(238,159,79,.45),inset 0 1px 0 rgba(255,255,255,.5);--nv1:#FFF0DC;--nv2:#3A2210;--nv3:#fff}
+
+/* ---- Today ---- */
+html:not([data-skin]) .t-date{gap:0;padding:6px 14px;border-radius:999px;background:rgba(40,28,19,.55);border:1px solid var(--g-line);color:var(--text);font-size:14px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+html:not([data-skin]) .t-date .pill{background:none!important;border:0;border-inline-start:1px solid rgba(255,218,170,.3);border-radius:0;margin-inline-start:10px;padding:0 0 0 0;padding-inline-start:10px;font-size:14px}
+html:not([data-skin]) .t-me .ava{width:54px;height:54px;font-size:20px;box-shadow:0 0 0 3px #E8A95C,0 0 0 5px rgba(23,15,9,.5),0 8px 20px rgba(0,0,0,.4)}
+html:not([data-skin]) .t-greet{padding:14px 2px 18px}
+html:not([data-skin]) .t-greet h2{font-weight:400;font-size:20px;line-height:1.2}
+html:not([data-skin]) .t-greet h2 .hi{display:block;color:#F3E2CC}
+html:not([data-skin]) .t-greet h2 b{display:block;font-family:"Frank Ruhl Libre",serif;font-weight:900;font-size:56px;line-height:1.05;margin-top:2px}
+html:not([data-skin]) .t-swoosh{display:block;width:120px;height:12px;margin-top:2px;fill:none;stroke:#F2B66B;stroke-width:4;stroke-linecap:round}
+html:not([data-skin]) .t-welcome{display:flex;align-items:center;gap:6px;color:#EBD8C0;font-size:15px}
+html:not([data-skin]) .t-welcome svg{display:block;width:16px;height:16px;fill:rgba(242,182,107,.3);stroke:#F2B66B;stroke-width:1.8}
+html:not([data-skin]) .t-legrow{height:40px;padding:0 14px;border-radius:20px;background:rgba(40,28,19,.45);border:1px solid rgba(255,218,170,.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+html:not([data-skin]) .t-legrow .t-legend{font-size:13px;color:#F3E2CC;gap:14px}
+html:not([data-skin]) .t-legrow .t-legend i{width:10px;height:10px;border-radius:3px}
+html:not([data-skin]) .t-legrow #allCal{font-size:15px;font-weight:700;color:#F2B66B;padding:4px 0 4px 2px;border-inline-start:1px solid rgba(255,218,170,.3);padding-inline-start:12px}
+
+html:not([data-skin]) .next{border-radius:30px;padding:18px 18px 16px;box-shadow:inset 0 1px 0 rgba(255,236,205,.22),inset 0 -2px 0 rgba(242,182,107,.55),0 0 0 1px rgba(255,200,140,.25),0 20px 46px rgba(10,5,2,.55)}
+html:not([data-skin]) .next::before{background:radial-gradient(rgba(255,200,130,.22),transparent 68%)}
+html:not([data-skin]) .next .tag{height:32px;padding:0 12px;background:rgba(255,232,200,.08);border-color:rgba(255,218,170,.18);font-size:13px}
+html:not([data-skin]) .next .t-art{display:block;position:absolute;left:14px;top:58px;width:92px;height:92px;object-fit:cover;
+  -webkit-mask-image:radial-gradient(closest-side,#000 72%,transparent 100%);mask-image:radial-gradient(closest-side,#000 72%,transparent 100%)}
+html:not([data-skin]) .next h4{font-size:24px;font-weight:700;margin:16px 0 6px;padding-inline-end:100px}
+html:not([data-skin]) .next .meta{padding-inline-end:100px;font-size:15px;color:#EBD8C0}
+html:not([data-skin]) .next .bar{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,218,170,.18)}
+html:not([data-skin]) .cdE.long .days b{font-size:48px;font-weight:700}
+html:not([data-skin]) .cdE.long .days span{font-size:14px;letter-spacing:0;color:#F3E2CC}
+html:not([data-skin]) .cdE .u{min-width:52px}
+html:not([data-skin]) .cdE .u b{font-size:30px;font-weight:700}
+html:not([data-skin]) .cdE .u small{font-size:12px;letter-spacing:0;color:#E2CCAE}
+html:not([data-skin]) .cdE .u.s b{opacity:1}
+html:not([data-skin]) .cdE.long .dv{height:44px;background:rgba(255,218,170,.3)}
+html:not([data-skin]) .cdE i{opacity:.5}
+html:not([data-skin]) .cdE .lb{font-size:13px;letter-spacing:0;color:#E2CCAE}
+
+html:not([data-skin]) .t-sec{margin:18px 2px 10px;align-items:center}
+html:not([data-skin]) .t-sec h3{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700}
+html:not([data-skin]) .t-sec h3 svg{display:block;width:22px;height:22px;color:#F2B66B}
+html:not([data-skin]) .t-sec h3 span{font-size:14px;color:#C9B39C}
+html:not([data-skin]) .tgrid{gap:12px}
+html:not([data-skin]) .ttile{border-radius:24px;min-height:136px}
+html:not([data-skin]) .ttile .ty{display:none}
+html:not([data-skin]) .ttile .t-art.sm{display:block;width:54px;height:54px;object-fit:cover;margin:-6px -6px 0 0;
+  -webkit-mask-image:radial-gradient(closest-side,#000 72%,transparent 100%);mask-image:radial-gradient(closest-side,#000 72%,transparent 100%)}
+html:not([data-skin]) .ttile .when b{font-size:19px;font-weight:700}
+html:not([data-skin]) .ttile .w{font-size:16px;font-weight:700}
+html:not([data-skin]) .ttile .k{font-size:13px;color:#E2CCAE}
+html:not([data-skin]) .ttile::after{left:18px;right:18px;height:3px;border-radius:3px;background:var(--oc,transparent);opacity:1}
 </style>
 </head>
 <body>
@@ -3745,7 +3832,7 @@ let me = null;
 const S = { shopList:"shop", surveyOpen:null, tab:"today", taskView:"active", take:false, takeSel:new Set(), calMonth:null, calSel:iso(new Date()), addMore:false };
 
 /* ================= Shell ================= */
-const ALL_TABS = [["today","היום","home"],["tasks","משימות","chk"],["shop","קניות","cart"],["money","הוצאות","money"],["cal","יומן","cal"],["ideas","רעיונות","bulb"]];
+const ALL_TABS = [["today","היום","home"],["money","הוצאות","money"],["cal","יומן","cal"],["tasks","משימות","chk"],["shop","קניות","cart"],["ideas","רעיונות","bulb"]];
 const TABS = { map: f => tabsNow().map(f), some: f => tabsNow().some(f) };      // the screens this person has right now
 function tabsNow(){ return ALL_TABS.filter(t => t[0] !== "money" || moneyOn()); }
 function renderTabs(){
@@ -3924,6 +4011,7 @@ function renderToday(){
     const c = countdown(first), win = 24*60, pct = c ? Math.round(Math.max(0,Math.min(1,1 - c.m/win))*100) : 0;
     hero = `<button class="next" data-i="0" style="--oc:${ownCol(first)}">
       <div class="top"><span class="tag"><i style="${first.date?"":"background:var(--gold);box-shadow:0 0 0 3px rgba(242,196,107,.18)"}"></i>${first.date?"הבא בתור":"מחכה למישהו"}</span><span class="tag">${icon(TY[first.ty][0])}${TY[first.ty][1]}</span></div>
+      <img class="t-art" src="icons/3d/${first.ty}.png" alt="" aria-hidden="true">
       <h4>${esc(first.title)}</h4>
       <div class="meta">${first.date?`<span>${icon("clock")}<b class="tabular" style="font-weight:500">${dl(first)}${first.time?" · "+first.time:""}</b></span>`:""}
         ${first.place?`<span>${icon("pin")}${esc(first.place)}</span>`:""}${first.who?`<span>${who(first.who)}</span>`:(first.date?"":`<span>${who(null)}</span>`)}</div>
@@ -3937,12 +4025,13 @@ function renderToday(){
       <div class="t-date"><span>יום ${DAYS[now.getDay()]}</span><span class="pill">${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)}</span></div>
       <div class="t-me">${roleOf()==="viewer"?`<span class="ro-pill">צפייה בלבד</span>`:""}<button class="ava" id="meBtn" aria-label="הפרופיל שלי" style="background:linear-gradient(140deg,${meU().color},#C98540);${avaStyle(meU())}">${initial(meU())}</button></div>
     </header>
-    <section class="t-greet"><h2>${greeting(now.getHours())}, <b>${esc(meU().name)}</b></h2><p>${sub}</p></section>
-    <div class="t-sec"><h3>בקרוב<span>${items.length}</span></h3><button id="allCal">יומן</button></div>
-    ${items.length ? `<div class="cv-legend t-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${together()}"></i>יחד</span></div>` : ""}
-    ${ items.length ? hero + (rest.length ? `<div class="tgrid">${rest.map((x,i)=>`
+    <section class="t-greet"><h2><span class="hi">${greeting(now.getHours())},</span> <b>${esc(meU().name)}</b></h2>
+      <svg class="t-swoosh" viewBox="0 0 160 14" aria-hidden="true"><path d="M156 9C110 2 50 2 4 10"/></svg>
+      <p class="t-welcome">ברוכים הבאים לבית שלנו <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></p></section>
+    <div class="t-legrow">${items.length ? `<div class="cv-legend t-legend">${people().map(k => `<span><i style="background:${USERS[k].color}"></i>${esc(USERS[k].name)}</span>`).join("")}<span><i style="background:${together()}"></i>יחד</span></div>` : "<span></span>"}<button id="allCal">יומן</button></div>
+    ${ items.length ? hero + (rest.length ? `<div class="t-sec"><h3>${icon("cal")}הקרובים אלינו<span>${items.length}</span></h3><p>${sub}</p></div><div class="tgrid">${rest.map((x,i)=>`
       <button class="ttile" data-i="${i+1}" style="--oc:${ownCol(x)}">
-        <div class="row"><span class="ty ty-${x.ty}">${icon(TY[x.ty][0])}</span><span class="when"><b>${x.time||"—"}</b>${dl(x)}</span></div>
+        <div class="row"><span class="ty ty-${x.ty}">${icon(TY[x.ty][0])}</span><img class="t-art sm" src="icons/3d/${x.ty}.png" alt="" aria-hidden="true"><span class="when"><b>${x.time||"—"}</b>${dl(x)}</span></div>
         <div class="bot"><div class="w">${esc(x.title)}</div><div class="k">${whoLine(x)}</div>${x.kind === "event" ? evLineHTML(x.ref) : ""}</div>
       </button>`).join("")}</div>` : "")
       : `<div class="t-empty">אין שום דבר קרוב. הבית רגוע.</div>` }`;
