@@ -212,44 +212,68 @@ li+li .up{border-top:1px solid var(--line)}
 .t-empty{padding:34px 18px;border-radius:24px;background:var(--surface);border:1px solid var(--line);text-align:center;color:var(--muted)}
 
 
-/* ---------- Splash: "קן שנבנה" — the nest builds itself, giggles happily while the family's data loads, then hops into the app ---------- */
-#splash{position:fixed;inset:0;z-index:100;cursor:pointer;overflow:hidden;--sp-text:#F7EEE4;--sp-muted:#D0BBA5;--sp-faint:#8E7862;--sp-gold:#F2C48A}
-#splash .bg{position:absolute;inset:0;opacity:0;background:radial-gradient(75% 48% at 50% 40%,#3B2716 0%,#1E150E 55%,#120C08 100%)}
-#splash .bg2{position:absolute;inset:0;opacity:0;background:#1A120C}
+/* ---------- Splash "ציפור הזהב": the nest appears in warm light, does its happy hop, a golden bird swoops in along a light trail and perches on the roof, then the brand — and a soft cross-fade into the app ---------- */
+#splash{position:fixed;inset:0;z-index:100;cursor:pointer;overflow:hidden;--sp-text:#FFE9B8;--sp-muted:#E8B565;--sp-faint:#A8743A;--sp-gold:#FFD27A;
+  --sp-logo:radial-gradient(90% 80% at 58% 26%,#FFF6D6 0%,#FFD983 26%,#E9A43E 60%,#9C5A15 100%);
+  --sp-word:linear-gradient(180deg,#FFF1C9 8%,#FFD983 40%,#E9A43E 72%,#A8661C 100%)}
+#splash .bg{position:absolute;inset:0;opacity:0;background:radial-gradient(75% 48% at 50% 40%,#4A2810 0%,#24130A 55%,#140A05 100%)}
+#splash .vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 42%,transparent 55%,rgba(6,3,1,.55) 100%);pointer-events:none;opacity:0}
 #splash .halo{position:absolute;left:50%;top:40%;width:460px;height:460px;margin:-230px 0 0 -230px;border-radius:50%;
-  background:radial-gradient(circle,rgba(242,182,107,.24) 0%,rgba(217,154,85,.08) 38%,transparent 66%);opacity:0}
+  background:radial-gradient(circle,rgba(255,170,70,.30) 0%,rgba(233,140,50,.10) 38%,transparent 66%);opacity:0}
+#splash .core{position:absolute;left:50%;top:40%;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,200,110,.26) 0%,rgba(245,160,60,.08) 45%,transparent 70%);opacity:0}
+#splash .motes{position:absolute;left:50%;top:40%;width:0;height:0}
+#splash .motes i{position:absolute;width:2px;height:2px;border-radius:50%;background:#FFD27A;box-shadow:0 0 6px 1px rgba(255,180,80,.6);opacity:0}
 #splash .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:10vh}
-#splash .nest{position:relative;width:140px;height:128px;transform-origin:50% 85%}
-#splash .nest img{position:absolute;left:0;top:0;width:140px;height:auto;display:block;filter:url(#nestCut) sepia(1) saturate(2.3) hue-rotate(-12deg) brightness(1.06)}
-/* the glow is its own soft layer behind the nest (a glow on the image itself would be cut square by the build-up mask) */
+#splash .stagewrap{position:relative;width:140px;height:128px}
+#splash .shadow{position:absolute;left:50%;top:112px;width:120px;height:18px;margin-left:-60px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(0,0,0,.55),rgba(0,0,0,.18) 60%,transparent);filter:blur(3px);opacity:0}
+#splash .nest{position:relative;width:140px;height:128px;transform-origin:50% 88%}
 #splash .nest::before{content:"";position:absolute;left:50%;top:58%;width:210px;height:170px;margin:-85px 0 0 -105px;border-radius:50%;
-  background:radial-gradient(closest-side,rgba(226,150,66,.30),rgba(226,150,66,.10) 55%,transparent);filter:blur(6px);pointer-events:none}
-#splash .nest .ghost{opacity:.13;filter:url(#nestCut) sepia(1) saturate(2) hue-rotate(-12deg) brightness(1.1)}
-#splash .nest .real{clip-path:inset(100% 0 0 0)}
+  background:radial-gradient(closest-side,rgba(240,150,50,.34),rgba(240,150,50,.11) 55%,transparent);filter:blur(6px);pointer-events:none}
+/* the original logo, painted in the bird's glossy gold through a mask of the logo itself */
+#splash .logoW{position:absolute;left:0;top:0;width:140px;height:124px;filter:drop-shadow(0 0 8px rgba(255,170,60,.35)) drop-shadow(0 5px 6px rgba(15,6,0,.6))}
+#splash .lg{position:absolute;inset:0;background:var(--sp-logo);-webkit-mask:var(--logo) 0 0/140px auto no-repeat;mask:var(--logo) 0 0/140px auto no-repeat}
+#splash .lg.ghost{opacity:.13}
+#splash .lg.real{clip-path:inset(100% 0 0 0)}
+#splash .sheen{position:absolute;left:0;top:0;width:140px;height:124px;pointer-events:none;mix-blend-mode:screen;
+  -webkit-mask:var(--logo) 0 0/140px auto no-repeat;mask:var(--logo) 0 0/140px auto no-repeat;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,244,220,.85) 50%,transparent 65%) -160px 0/300px 100% no-repeat}
+#splash .trail{position:absolute;left:0;top:0;width:140px;height:124px;overflow:visible;pointer-events:none}
+#splash .trail path{filter:drop-shadow(0 0 4px rgba(255,190,90,.8))}
+/* the bird: feet = bottom-center of its box, perched on the roof ridge */
+#splash .bird{position:absolute;left:48px;top:-41px;width:64px;height:51px;opacity:0;transform-origin:50% 90%}
+#splash .bird > svg{width:100%;height:100%;overflow:visible;display:block;transform-origin:50% 90%;
+  filter:drop-shadow(0 0 7px rgba(255,190,90,.45)) drop-shadow(0 3px 3px rgba(20,8,0,.45))}
+#splash .bird .wN,#splash .bird .wF{transform-origin:0 0}
+#splash .bird .tail{transform-box:view-box;transform-origin:26px 52px}
+#splash .bird .eye{transform-box:fill-box;transform-origin:50% 50%}
 #splash .fx{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
-#splash .fx i{position:absolute;left:0;top:0;font-style:normal;font-size:15px;color:var(--sp-gold);opacity:0;text-shadow:0 0 10px rgba(242,182,107,.6)}
-#splash h1{margin:22px 0 0;font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:62px;line-height:1;color:var(--sp-text);direction:ltr;opacity:0}
+#splash .fx i{position:absolute;left:0;top:0;font-style:normal;color:var(--sp-gold);opacity:0;text-shadow:0 0 8px rgba(255,170,60,.65)}
+#splash h1{margin:22px 0 0;font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:62px;line-height:1.08;direction:ltr;opacity:0;color:transparent;
+  background:linear-gradient(100deg,transparent 42%,rgba(255,251,235,.95) 50%,transparent 58%) 120% 0/260% 100% no-repeat,var(--sp-word);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 18px rgba(255,170,60,.22)) drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 #splash h1 em{font-style:italic}
-#splash .motto{margin:16px 0 0;font-size:17px;font-weight:300;color:var(--sp-muted);white-space:nowrap;opacity:0}
-#splash .load{margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0}
-#splash .bar{width:160px;height:3px;border-radius:3px;background:rgba(255,226,190,.12);overflow:hidden;direction:ltr}
-#splash .bar i{display:block;height:100%;width:8%;border-radius:3px;background:linear-gradient(90deg,#B9843D,#F2C48A);transition:width .5s cubic-bezier(.22,1,.36,1)}
-#splash .load small{font-size:12.5px;color:var(--sp-faint)}
+#splash .motto{margin:14px 0 0;font-size:17px;font-weight:300;color:var(--sp-muted);white-space:nowrap;opacity:0}
 #splash .studio{position:absolute;left:0;right:0;bottom:calc(40px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;direction:ltr}
-#splash .studio .line{width:110px;height:1px;background:linear-gradient(90deg,transparent,rgba(242,196,138,.55),transparent)}
+#splash .studio .line{width:110px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,200,110,.7),transparent)}
 #splash .studio span{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--sp-faint)}
 #splash .studio b{font-weight:600;color:var(--sp-muted);letter-spacing:.32em}
-/* Nido Light: the same nest on warm cream */
-html[data-skin="light"] #splash{--sp-text:#2A1D12;--sp-muted:#76604B;--sp-faint:#9C8670;--sp-gold:#C9964F}
-html[data-skin="light"] #splash .bg{background:radial-gradient(75% 48% at 50% 40%,#FFF9EF 0%,#F6EBDA 55%,#EBDCC5 100%)}
-html[data-skin="light"] #splash .bg2{background:#F6EFE5}
-html[data-skin="light"] #splash .halo{background:radial-gradient(circle,rgba(233,178,113,.32) 0%,rgba(217,154,85,.1) 40%,transparent 66%)}
-/* the logo's faint built-in glow (invisible on dark) is cut away on cream, and it turns golden brown */
-html[data-skin="light"] #splash .nest img{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg)}
-html[data-skin="light"] #splash .nest::before{background:radial-gradient(closest-side,rgba(214,150,80,.20),rgba(214,150,80,.06) 55%,transparent)}
-html[data-skin="light"] #splash .nest .ghost{filter:url(#nestCut) brightness(0) invert(.26) sepia(1) saturate(4.5) hue-rotate(-14deg)}
-html[data-skin="light"] #splash .bar{background:rgba(110,78,40,.13)}
+/* Nido Light: the same gold, a touch deeper so it reads on cream */
+html[data-skin="light"] #splash{--sp-text:#6E3A0C;--sp-muted:#8A5A24;--sp-faint:#A8743A;--sp-gold:#D98A2B;
+  --sp-logo:radial-gradient(90% 80% at 58% 26%,#FFE7A8 0%,#F2B852 24%,#D98A2B 58%,#8A4A10 100%);
+  --sp-word:linear-gradient(180deg,#E9A43E 8%,#C77A22 45%,#9C5A15 75%,#6E3A0C 100%)}
+html[data-skin="light"] #splash .bg{background:radial-gradient(75% 48% at 50% 40%,#FFF6E6 0%,#F7E6CA 55%,#EED5AE 100%)}
+html[data-skin="light"] #splash .vig{background:radial-gradient(120% 80% at 50% 42%,transparent 60%,rgba(150,95,30,.14) 100%)}
+html[data-skin="light"] #splash .halo{background:radial-gradient(circle,rgba(240,170,80,.34) 0%,rgba(217,154,85,.1) 40%,transparent 66%)}
+html[data-skin="light"] #splash .core{background:radial-gradient(circle,rgba(255,215,140,.35) 0%,rgba(245,175,80,.1) 45%,transparent 70%)}
+html[data-skin="light"] #splash .nest::before{background:radial-gradient(closest-side,rgba(214,150,80,.22),rgba(214,150,80,.06) 55%,transparent)}
+html[data-skin="light"] #splash .logoW{filter:drop-shadow(0 4px 6px rgba(120,70,20,.28))}
+html[data-skin="light"] #splash .shadow{background:radial-gradient(closest-side,rgba(110,60,15,.28),rgba(110,60,15,.08) 60%,transparent)}
+html[data-skin="light"] #splash .sheen{mix-blend-mode:normal;opacity:.7}
+html[data-skin="light"] #splash h1{filter:drop-shadow(0 1px 1px rgba(120,70,20,.2))}
 html[data-skin="light"] #splash .fx i{text-shadow:none}
+html[data-skin="light"] #splash .motes i{background:#E9A43E;box-shadow:none}
 
 
 /* ---------- Segmented ---------- */
@@ -6923,39 +6947,83 @@ function setAmbient(force){
 }
 function hideAmbient(){ document.getElementById("ambient").classList.remove("on"); clearInterval(ambientTimer); }
 
-/* ================= Splash: "קן שנבנה" =================
-   The nest builds itself from the bottom up, then giggles (a happy wiggle, little hearts and sparkles) while the
-   family's data loads; the bar follows the real loading. When everything is in, it hops and melts into the app.
-   About 3 s in all (at most ~5 s if the server is slow — the app already shows the copy saved on the phone); a tap skips it.
-   Shown every time the app starts (owner's choice, 11.10) — not when it only comes back from the background. */
+/* ================= Splash: "ציפור הזהב" =================
+   א  the nest appears in warm golden light (builds bottom-up, a soft 3D settle, one light sweep)
+   ב  its happy hop — crouch, launch, hang time, a weighted landing and a small rebound
+   ג  a golden bird swoops in along a light trail with real wing-beats, slows, flares and perches on the roof
+   ד  the name rises with one golden light pass, then the motto and the studio line
+   ה  when the family's data is in: the content melts into the light and cross-fades straight into the app
+   No loading bar (owner's choice, 3.11). The data keeps loading underneath; the splash waits for the bird to settle
+   (~3.6 s) and never stays more than ~4.2 s even if the server is slow — the app already shows the copy saved on the phone.
+   A tap skips it. Shown every time the app starts (owner's choice, 11.10) — not when it only comes back from the background. */
 const EZ = "cubic-bezier(.22,1,.36,1)", IO = "cubic-bezier(.65,0,.35,1)";
-const SPLASH_MIN = 1700, SPLASH_MAX = 3600;
+const SPLASH_MAX = 4200;
 function appProgress(){ return !CLOUD ? 1 : !Cloud.user ? .1 : !Cloud.loaded ? .2 : .2 + .8 * Cloud.loaded.size / COLS.length; }
+const SPLASH_FEATHERS = `
+  <path d="M52 44 C47 32 40 18 27 5 C29 12 27 13 22 13 C29 18 28 21 21 23 C30 26 29 29 23 32 C32 34 32 37 28 40 C37 41 42 44 52 44 Z"/>
+  <path d="M52 44 C47 32 40 18 27 5 C29 12 27 13 22 13 C29 18 28 21 21 23 C30 26 29 29 23 32 C32 34 32 37 28 40 C37 41 42 44 52 44 Z" fill="url(#spWingHi)" opacity=".55"/>
+  <path d="M27 13 C35 20 42 30 50 42 M28 22 C36 28 43 35 50 43 M29 31 C37 35 44 39 50 44" fill="none" stroke="#9A5A16" stroke-width=".9" stroke-opacity=".55" stroke-linecap="round"/>
+  <path d="M27 5 C38 16 46 30 52 44" fill="none" stroke="#FFF4D2" stroke-width="1.1" stroke-opacity=".7" stroke-linecap="round"/>`;
+/* the golden bird, facing right; viewBox 0 0 100 80, feet at (50,72). Wings rotate at the shoulder:
+   0 = raised high, -74 = folded on the back, -112 = bottom of the down-stroke */
+const SPLASH_BIRD = `
+<svg viewBox="0 0 100 80" aria-hidden="true">
+  <defs>
+    <radialGradient id="spBody" cx="62%" cy="30%" r="75%"><stop offset="0" stop-color="#FFF6D6"/><stop offset=".28" stop-color="#FFD983"/><stop offset=".62" stop-color="#E9A43E"/><stop offset="1" stop-color="#9C5A15"/></radialGradient>
+    <linearGradient id="spWing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE7A8"/><stop offset=".45" stop-color="#F2B852"/><stop offset="1" stop-color="#B36A1C"/></linearGradient>
+    <linearGradient id="spWingFar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D99A45"/><stop offset="1" stop-color="#7E4610"/></linearGradient>
+    <linearGradient id="spWingHi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8E0"/><stop offset=".5" stop-color="#FFF8E0" stop-opacity="0"/></linearGradient>
+    <linearGradient id="spTail" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7C66A"/><stop offset="1" stop-color="#A45E17"/></linearGradient>
+  </defs>
+  <g transform="translate(57 41) rotate(10)"><g class="wF" fill="url(#spWingFar)"><g transform="translate(-52 -44)">${SPLASH_FEATHERS.replace(/url\(#spWingHi\)/, "none")}</g></g></g>
+  <g class="tail" fill="url(#spTail)">
+    <path d="M30 50 C22 54 14 60 6 63 C14 64 20 63 25 61 C19 66 15 69 12 72 C21 70 28 64 33 57 Z"/>
+    <path d="M28 54 C22 60 18 64 14 67" fill="none" stroke="#8A4C12" stroke-width=".8" stroke-opacity=".5"/>
+  </g>
+  <path d="M48 66 L46 72 M54 66 L55 72" stroke="#B9761F" stroke-width="2" stroke-linecap="round"/>
+  <path d="M43 71.5 L49 72 M51 72 L58 71.5" stroke="#B9761F" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M66 17 C74 13 83 17 84 26 C85 32 81 37 77 41 C75 54 64 66 48 67 C36 67 28 60 28 52 C28 42 40 36 52 36 C57 33 59 22 66 17 Z" fill="url(#spBody)"/>
+  <ellipse cx="72" cy="22" rx="6" ry="3.2" fill="#FFFBEA" opacity=".55" transform="rotate(-20 72 22)"/>
+  <path d="M56 46 C62 44 70 46 74 50" fill="none" stroke="#FFF7DC" stroke-width="2.2" stroke-opacity=".45" stroke-linecap="round"/>
+  <path d="M83.5 24.5 L92 27.5 L83.5 30 Z" fill="#D98A2B"/><path d="M83.5 24.5 L92 27.5 L84 27.6 Z" fill="#F8C774"/>
+  <g class="eye"><circle cx="77" cy="24.5" r="2.3" fill="#2B1606"/><circle cx="77.8" cy="23.7" r=".75" fill="#FFF"/></g>
+  <g transform="translate(52 44)"><g class="wN" fill="url(#spWing)"><g transform="translate(-52 -44)">${SPLASH_FEATHERS}</g></g></g>
+</svg>`;
 function playSplash(onCovered){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cold = document.getElementById("login").hidden;
   const src = document.querySelector("#login .brand .logo")?.src || "";
   const el = document.createElement("div"); el.id = "splash"; el.setAttribute("role","presentation");
-  el.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nestCut"><feComponentTransfer><feFuncA type="table" tableValues="0 0 0 .6 1 1"/></feComponentTransfer></filter></svg>
-    <div class="bg"></div><div class="bg2"></div><div class="halo"></div>
+  el.style.setProperty("--logo", `url("${src}")`);
+  el.innerHTML = `
+    <div class="bg"></div><div class="halo"></div><div class="core"></div><div class="motes"></div><div class="vig"></div>
     <div class="center">
-      <div class="nest"><img class="ghost" src="${src}" alt=""><img class="real" src="${src}" alt=""><div class="fx"></div></div>
+      <div class="stagewrap">
+        <div class="shadow"></div>
+        <div class="nest">
+          <div class="logoW"><div class="lg ghost"></div><div class="lg real"></div></div>
+          <div class="sheen"></div>
+          <svg class="trail" viewBox="0 0 140 124" aria-hidden="true"><defs><linearGradient id="spTrail" gradientUnits="userSpaceOnUse" x1="-230" y1="0" x2="80" y2="0"><stop offset="0" stop-color="#FFC56A" stop-opacity="0"/><stop offset=".7" stop-color="#FFC56A" stop-opacity=".55"/><stop offset="1" stop-color="#FFE9B8" stop-opacity=".95"/></linearGradient></defs><path fill="none" stroke="url(#spTrail)" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <div class="bird">${SPLASH_BIRD}</div>
+          <div class="fx"></div>
+        </div>
+      </div>
       <h1 aria-label="Nido">Ni<em>do</em></h1>
       <p class="motto">לא רק לנהל את הבית — להרגיש בבית</p>
-      <div class="load"><div class="bar"><i></i></div><small>מסנכרן את המשפחה…</small></div>
     </div>
     <div class="studio"><div class="line"></div><span>By <b>Borhovich</b> studio</span></div>`;
   if (cold) el.querySelector(".bg").style.opacity = "1";            // opaque from the first frame: nothing flashes underneath
   document.body.appendChild(el);
   const $s = q => el.querySelector(q), A = (n, k, o) => n && n.animate ? n.animate(k, { fill:"both", ...o }) : null;
-  const nest = $s(".nest"), real = $s(".real"), fx = $s(".fx"), bar = $s(".bar i"), lbl = $s(".load small");
+  const nest = $s(".nest"), real = $s(".lg.real"), sheen = $s(".sheen"), shadow = $s(".shadow"), trail = $s(".trail path"), fx = $s(".fx"),
+        bird = $s(".bird"), body = bird.firstElementChild, wN = $s(".wN"), wF = $s(".wF"), tail = $s(".tail"), eye = $s(".eye"), core = $s(".core");
   const brand = document.querySelector("#login .brand"), form = document.querySelector("#login form"), rest = document.querySelectorAll("#login .demo, #login .phase-demo");
   const loginAnims = [];
   let covered = false; const cover = () => { if (covered) return; covered = true; onCovered && onCovered(); };
-  const t0 = Date.now(); let timers = [];
+  const t0 = Date.now(); let timers = [], finished = false;
   const later = (f, ms) => timers.push(setTimeout(f, ms));
 
-  // 1 · the backdrop, then the nest builds itself bottom-up and settles with a little squash
+  // the backdrop (after signing in: the login form steps aside first)
   if (!cold){
     A($s(".bg"), [{opacity:0},{opacity:1}], { duration:reduce ? 300 : 650, easing:IO });
     loginAnims.push(A(form, [{opacity:1, transform:"none"}, {opacity:0, transform:"translateY(14px)"}], { duration:500, easing:IO }));
@@ -6964,59 +7032,117 @@ function playSplash(onCovered){
     later(cover, reduce ? 320 : 680);
   } else cover();
   const d0 = cold ? 80 : 380;
-  A($s(".halo"), [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"scale(1)"}], { duration:2200, delay:d0, easing:EZ });
+  A($s(".vig"), [{opacity:0},{opacity:1}], { duration:900, delay:d0, easing:IO });
+  A($s(".halo"), [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"none"}], { duration:2000, delay:d0, easing:EZ });
+  A(core, [{opacity:0, transform:"scale(.7)"},{opacity:1, transform:"none"}], { duration:1600, delay:d0 + 200, easing:EZ });
+
+  let MIN;
   if (reduce){
-    const b0 = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
-    if (b0) b0.onfinish = () => { real.style.clipPath = "none"; b0.cancel(); };
-    [".motto", "h1", ".load", ".studio"].forEach(q => A($s(q), [{opacity:0},{opacity:1}], { duration:400, delay:d0 + 200 }));
+    // calm version: everything simply fades in, the bird is already home with folded wings
+    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
+    A(wN, [{transform:"rotate(-74deg) scale(.9)"},{transform:"rotate(-74deg) scale(.9)"}], { duration:1 });
+    A(wF, [{transform:"rotate(-74deg) scale(.9)"},{transform:"rotate(-74deg) scale(.9)"}], { duration:1 });
+    [".shadow", ".bird", "h1", ".motto", ".studio"].forEach(q => A($s(q), [{opacity:0},{opacity:1}], { duration:400, delay:d0 + 200 }));
+    MIN = 700;
   } else {
-    const build = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:1050, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
+    /* א · the symbol appears */
+    const build = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:950, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
     if (build) build.onfinish = () => { real.style.clipPath = "none"; build.cancel(); };      // fully built → no mask left at all
-    A(nest, [{transform:"scale(.92) translateY(8px)", opacity:.4},{transform:"none", opacity:1}], { duration:900, delay:d0, easing:EZ });
-    later(() => A(nest, [{transform:"none"},{transform:"scale(1.07,.92)", offset:.35},{transform:"scale(.97,1.04) translateY(-3px)", offset:.7},{transform:"none"}], { duration:420, easing:"ease-out", fill:"none" }), d0 + 1050);
-    A($s("h1"), [{opacity:0, transform:"translateY(12px)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 650, easing:EZ });
-    A($s(".motto"), [{opacity:0, transform:"translateY(10px)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 850, easing:EZ });
-    A($s(".load"), [{opacity:0},{opacity:1}], { duration:700, delay:d0 + 1100, easing:EZ });
-    A($s(".studio"), [{opacity:0, transform:"translateY(8px)"},{opacity:1, transform:"none"}], { duration:1100, delay:d0 + 1200, easing:EZ });
+    A(nest, [{transform:"perspective(600px) rotateX(18deg) scale(.9) translateY(10px)", opacity:.35},{transform:"none", opacity:1}], { duration:1100, delay:d0, easing:EZ });
+    A(shadow, [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 200, easing:EZ });
+    A(sheen, [{backgroundPosition:"-160px 0"},{backgroundPosition:"200px 0"}], { duration:1100, delay:d0 + 700, easing:"cubic-bezier(.45,0,.25,1)" });
+    motes();
+
+    /* ב · the happy hop */
+    const HOP = d0 + 900;
+    A(nest, [
+      {transform:"none", easing:"cubic-bezier(.3,0,.5,1)"},
+      {transform:"scale(1.07,.91)", offset:.16, easing:"cubic-bezier(.2,.8,.4,1)"},                              // crouch
+      {transform:"translateY(-6px) scale(.95,1.07)", offset:.26, easing:"cubic-bezier(.15,.7,.35,1)"},            // launch
+      {transform:"translateY(-24px) scale(.99,1.01) rotate(-2deg)", offset:.48, easing:"cubic-bezier(.55,0,.85,.4)"}, // hang, then gravity
+      {transform:"translateY(0) scale(.97,1.04)", offset:.68, easing:"cubic-bezier(.2,.8,.3,1)"},                 // touch down
+      {transform:"scale(1.09,.9)", offset:.76, easing:"cubic-bezier(.3,0,.3,1)"},                                 // weight
+      {transform:"translateY(-4px) scale(.98,1.02)", offset:.87, easing:"ease-in-out"},                           // rebound
+      {transform:"none"}
+    ], { duration:900, delay:HOP, fill:"none" });
+    A(shadow, [
+      {transform:"none", opacity:1},{transform:"scale(1.08,1)", opacity:1, offset:.16},{transform:"scale(.92)", opacity:.9, offset:.26},
+      {transform:"scale(.66)", opacity:.45, offset:.48},{transform:"scale(1)", opacity:1, offset:.68},{transform:"scale(1.12,1)", opacity:1, offset:.76},
+      {transform:"scale(.95)", opacity:.9, offset:.87},{transform:"none", opacity:1}
+    ], { duration:900, delay:HOP, fill:"none", easing:"ease-in-out" });
+    later(() => sparkle(2, 46), HOP + 690);
+
+    /* ג · the bird */
+    const FLY = 1350, START = HOP + 500, PERCH = { x:80, y:5 };              // the roof ridge, in logo px (bird's feet)
+    const P = [{x:-230,y:110},{x:-110,y:175},{x:-150,y:-75},{x:0,y:0}];      // cubic curve relative to the perch
+    const bez = (t, k) => (1-t)**3*P[0][k] + 3*(1-t)**2*t*P[1][k] + 3*(1-t)*t*t*P[2][k] + t**3*P[3][k];
+    const dbz = (t, k) => 3*(1-t)**2*(P[1][k]-P[0][k]) + 6*(1-t)*t*(P[2][k]-P[1][k]) + 3*t*t*(P[3][k]-P[2][k]);
+    trail.setAttribute("d", `M${PERCH.x+P[0].x} ${PERCH.y+P[0].y} C${PERCH.x+P[1].x} ${PERCH.y+P[1].y} ${PERCH.x+P[2].x} ${PERCH.y+P[2].y} ${PERCH.x} ${PERCH.y-4}`);
+    const LEN = trail.getTotalLength ? trail.getTotalLength() : 400; trail.style.strokeDasharray = LEN; trail.style.strokeDashoffset = LEN;
+    const kf = [], tkf = [], N = 40;
+    for (let i = 0; i <= N; i++){
+      const t = i / N, e = 1 - Math.pow(1 - t, 2.3);                         // slows down into the landing
+      const x = bez(e, "x"), y = bez(e, "y") + Math.sin(t * 8 * Math.PI) * 2.5 * (1 - t);   // each wing-beat lifts the body a little
+      let ang = Math.atan2(dbz(e, "y"), dbz(e, "x")) * 180 / Math.PI * .45;
+      if (t > .8) ang = ang * (1 - (t - .8) / .2) - 14 * Math.sin((t - .8) / .2 * Math.PI);  // flare: chest up before touchdown
+      kf.push({ offset:t, transform:`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${(1.25 - .25 * e).toFixed(3)})`, opacity: t < .06 ? t / .06 : 1 });
+      tkf.push({ offset:t, strokeDashoffset: LEN * (1 - e) });
+    }
+    A(bird, kf, { duration:FLY, delay:START, easing:"linear" });
+    A(trail, tkf, { duration:FLY, delay:START, easing:"linear" });
+    A(trail, [{opacity:1},{opacity:1, offset:.6},{opacity:0}], { duration:1500, delay:START + FLY - 300, easing:"ease-out" });
+    const dn = "cubic-bezier(.55,0,.85,.55)", up = "cubic-bezier(.25,.4,.45,1)", R = a => `rotate(${a}deg)`;
+    const wingKF = [   // fast down-stroke, softer recovery; glide; a big flare and a brake; wings up on landing
+      {transform:R(0), easing:dn},{transform:R(-112)+" scaleY(.85)", offset:.08, easing:up},{transform:R(0), offset:.19, easing:dn},
+      {transform:R(-112)+" scaleY(.85)", offset:.27, easing:up},{transform:R(0), offset:.38, easing:dn},{transform:R(-105)+" scaleY(.85)", offset:.46, easing:up},
+      {transform:R(-35), offset:.56, easing:"ease-in-out"},{transform:R(-38), offset:.74, easing:"ease-in-out"},
+      {transform:R(12), offset:.86, easing:dn},{transform:R(-60), offset:.93, easing:up},{transform:R(6)}
+    ];
+    A(wN, wingKF, { duration:FLY + 150, delay:START, easing:"linear" });
+    A(wF, wingKF, { duration:FLY + 150, delay:START + 25, easing:"linear" });
+    const LANDED = START + FLY;
+    later(() => {   // touchdown: the nest feels the weight, the bird settles, wings stay up a moment and fold
+      A(nest, [{transform:"none"},{transform:"translateY(2px) scale(1.025,.975)", offset:.35},{transform:"translateY(-.5px)", offset:.7},{transform:"none"}], { duration:560, easing:"ease-out", fill:"none" });
+      A(body, [{transform:"none"},{transform:"translateY(2px) scale(1.08,.9)", offset:.3},{transform:"translateY(-1.5px) scale(.97,1.04)", offset:.62},{transform:"translateY(.5px)", offset:.82},{transform:"none"}], { duration:620, easing:"ease-out", fill:"none" });
+      A(tail, [{transform:"none"},{transform:"rotate(-12deg)", offset:.4},{transform:"rotate(4deg)", offset:.75},{transform:"none"}], { duration:620, easing:"ease-out", fill:"none" });
+      const fold = [{transform:"rotate(6deg)"},{transform:"rotate(-8deg)", offset:.25},{transform:"rotate(4deg)", offset:.45},{transform:"rotate(-74deg) scale(.9)"}];
+      A(wN, fold, { duration:900, delay:500, easing:"cubic-bezier(.4,0,.2,1)" });
+      A(wF, fold, { duration:900, delay:530, easing:"cubic-bezier(.4,0,.2,1)" });
+      sparkle(2, 38);
+    }, LANDED);
+
+    /* ד · the brand */
+    const BRAND = LANDED - 250;
+    A($s("h1"), [{opacity:0, transform:"translateY(14px)"},{opacity:1, transform:"none"}], { duration:1000, delay:BRAND, easing:EZ });
+    A($s("h1"), [{backgroundPosition:"120% 0, 0 0"},{backgroundPosition:"-20% 0, 0 0"}], { duration:1400, delay:BRAND + 300, easing:"cubic-bezier(.45,0,.25,1)" });
+    A($s(".motto"), [{opacity:0, transform:"translateY(10px)"},{opacity:1, transform:"none"}], { duration:1000, delay:BRAND + 260, easing:EZ });
+    A($s(".studio"), [{opacity:0, transform:"translateY(8px)"},{opacity:1, transform:"none"}], { duration:1100, delay:BRAND + 450, easing:EZ });
+
+    // still loading: the bird lives quietly in its nest — blinks, looks around, flicks its tail, stretches a wing; the light breathes
+    const idle = (n = 0) => {
+      if (finished) return;
+      [ () => A(eye, [{transform:"none"},{transform:"scaleY(.1)", offset:.5},{transform:"none"}], { duration:170, fill:"none" }),
+        () => A(body, [{transform:"none"},{transform:"rotate(-4deg) translateY(-1px)", offset:.35},{transform:"rotate(-4deg) translateY(-1px)", offset:.65},{transform:"none"}], { duration:1100, easing:"ease-in-out", fill:"none" }),
+        () => A(tail, [{transform:"none"},{transform:"rotate(-14deg)", offset:.3},{transform:"rotate(5deg)", offset:.6},{transform:"none"}], { duration:520, easing:"ease-out", fill:"none" }),
+        () => { A(wN, [{transform:"rotate(-74deg) scale(.9)"},{transform:"rotate(-50deg) scale(.95)", offset:.4},{transform:"rotate(-74deg) scale(.9)"}], { duration:700, easing:"ease-in-out" });
+                A(core, [{opacity:1},{opacity:.7, offset:.5},{opacity:1}], { duration:1800, easing:"ease-in-out", fill:"none" }); },
+      ][n % 4]();
+      later(() => idle(n + 1), 900);
+    };
+    later(() => idle(), LANDED + 1700);
+    MIN = LANDED + 800;                     // the bird has landed and settled
   }
 
-  // 2 · while loading: giggles — a ticklish wiggle with a tiny hop, and hearts / sparkles popping out
-  const pops = ["♥", "✦", "✧", "♥", "✦"];
-  const giggle = () => {
-    if (finished || reduce) return;
-    A(nest, [{transform:"none"},{transform:"rotate(-6deg) scale(1.04,.96)", offset:.12},{transform:"rotate(5deg) translateY(-4px)", offset:.26},
-      {transform:"rotate(-4deg) scale(1.03,.97)", offset:.4},{transform:"rotate(3deg) translateY(-2px)", offset:.54},{transform:"rotate(-1.5deg)", offset:.68},{transform:"none"}],
-      { duration:900, easing:"ease-in-out", fill:"none" });
-    for (let k = 0; k < 3; k++){
-      const p = document.createElement("i"), ang = (-140 + Math.random() * 100) * Math.PI / 180, r = 70 + Math.random() * 30;
-      p.textContent = pops[(Math.random() * pops.length) | 0]; p.style.fontSize = (11 + Math.random() * 8) + "px"; fx.appendChild(p);
-      const x = Math.cos(ang) * r, y = Math.sin(ang) * r - 10;
-      A(p, [{opacity:0, transform:"translate(-50%,-50%) scale(.4)"},{opacity:1, transform:`translate(calc(-50% + ${x * .55}px), calc(-50% + ${y * .55}px)) scale(1)`, offset:.35},
-        {opacity:0, transform:`translate(calc(-50% + ${x}px), calc(-50% + ${y - 26}px)) scale(.8) rotate(${Math.random() * 40 - 20}deg)`}], { duration:1300, delay:120 + k * 140, easing:"cubic-bezier(.2,.7,.3,1)", fill:"forwards" });
-      later(() => p.remove(), 1700 + k * 140);
-    }
-    later(giggle, 1400);
-  };
-  later(giggle, d0 + 1550);
-
-  // 3 · the bar follows the real loading; when it's all in (and the nest had its moment) → a happy hop, then into the app
-  let finished = false;
+  // ה · when the data is in (and the bird has settled) → into the app; never longer than SPLASH_MAX
   const tick = () => {
     if (finished) return;
-    const pr = appProgress(); if (bar) bar.style.width = Math.max(8, Math.round(pr * 100)) + "%";
-    const t = Date.now() - t0;
-    if ((pr >= 1 && t >= (reduce ? 700 : SPLASH_MIN)) || t >= SPLASH_MAX){ if (lbl) lbl.textContent = pr >= 1 ? "הכול מוכן 🤎" : "פותח…"; return happy(); }
+    const pr = appProgress(), t = Date.now() - t0;
+    if ((pr >= 1 && t >= MIN) || t >= SPLASH_MAX) return finish();
     later(tick, 120);
   };
   later(tick, 150);
-  const happy = () => {
-    if (finished) return;
-    if (reduce) return finish();
-    A(nest, [{transform:"none"},{transform:"scale(1.06,.9)", offset:.25},{transform:"translateY(-14px) scale(.96,1.06)", offset:.55},{transform:"scale(1.04,.95)", offset:.8},{transform:"none"}], { duration:520, easing:"ease-out", fill:"none" });
-    later(finish, 300);
-  };
 
-  // 4 · hand-off: content dissolves, the backdrop melts into the app's own background, the app cascades in
+  // hand-off: the content melts into a warm light, and the splash cross-fades straight into the app (no dark gap)
   const finish = () => {
     if (finished) return; finished = true; cover(); timers.forEach(clearTimeout); timers = [];
     el.style.pointerEvents = "none";
@@ -7024,19 +7150,41 @@ function playSplash(onCovered){
     const done = () => { el.remove(); if (brand) brand.style.visibility = ""; loginAnims.forEach(a => a && a.cancel()); };
     if (reduce){ A(el, [{opacity:1},{opacity:0}], { duration:350 }); setTimeout(done, 400); return; }
     parts.forEach(n => { n.style.opacity = "0"; });
-    [".center", ".studio", ".halo"].forEach(q => A($s(q), [{opacity:1, transform:"none"},{opacity:0, transform: q === ".center" ? "scale(1.04) translateY(-8px)" : "none"}], { duration:450, easing:IO }));
-    A($s(".bg2"), [{opacity:0},{opacity:1}], { duration:450, easing:IO });
+    A($s(".center"), [{opacity:1, transform:"none", filter:"blur(0)"},{opacity:0, transform:"scale(1.035) translateY(-6px)", filter:"blur(3px)"}], { duration:520, easing:IO });
+    A($s(".studio"), [{opacity:1},{opacity:0}], { duration:400, easing:IO });
+    A($s(".halo"), [{opacity:1, transform:"none"},{opacity:1, transform:"scale(1.25)", offset:.45},{opacity:0, transform:"scale(1.6)"}], { duration:900, easing:IO });
+    A(core, [{opacity:1, transform:"none"},{opacity:1, transform:"scale(1.5)", offset:.4},{opacity:0, transform:"scale(2.2)"}], { duration:900, easing:IO });
     setTimeout(() => {
-      A(el, [{opacity:1},{opacity:0}], { duration:600, easing:IO });
+      A(el, [{opacity:1},{opacity:0}], { duration:700, easing:"cubic-bezier(.4,0,.2,1)" });
       parts.forEach((n, i) => {
-        const anim = n.animate([{opacity:0, transform:"translateY(18px)"},{opacity:1, transform:"none"}], { duration:900, delay:80*i, easing:EZ, fill:"backwards" });
+        const anim = n.animate([{opacity:0, transform:"translateY(18px)"},{opacity:1, transform:"none"}], { duration:900, delay:70*i, easing:EZ, fill:"backwards" });
         n.style.opacity = "";
         anim.onfinish = () => { n.style.transform = ""; };
       });
-      setTimeout(done, 650);
-    }, 350);
+      setTimeout(done, 720);
+    }, 200);
   };
   el.addEventListener("click", () => { if (!covered) cover(); finish(); });
+
+  function sparkle(n, r0){
+    for (let k = 0; k < n; k++){
+      const p = document.createElement("i"), ang = (-150 + Math.random() * 120) * Math.PI / 180, r = r0 + Math.random() * 18;
+      p.textContent = "✦"; p.style.fontSize = (7 + Math.random() * 5) + "px"; fx.appendChild(p);
+      const x = Math.cos(ang) * r, y = Math.sin(ang) * r;
+      A(p, [{opacity:0, transform:"translate(-50%,-50%) scale(.3)"},{opacity:.9, transform:`translate(calc(-50% + ${x*.6}px),calc(-50% + ${y*.6}px)) scale(1)`, offset:.35},
+        {opacity:0, transform:`translate(calc(-50% + ${x}px),calc(-50% + ${y - 14}px)) scale(.6) rotate(30deg)`}], { duration:1000, delay:k * 110, easing:"cubic-bezier(.2,.7,.3,1)" });
+      later(() => p.remove(), 1300 + k * 110);
+    }
+  }
+  function motes(){   // a few tiny specks of light drifting up through the glow — very quiet
+    const box = $s(".motes");
+    for (let k = 0; k < 7; k++){
+      const m = document.createElement("i");
+      m.style.left = ((Math.random() - .5) * 220) + "px"; m.style.top = (30 + Math.random() * 90) + "px"; box.appendChild(m);
+      A(m, [{opacity:0, transform:"none"},{opacity:.25 + Math.random() * .35, offset:.3},{opacity:0, transform:`translate(${(Math.random() - .5) * 30}px,-${70 + Math.random() * 60}px)`}],
+        { duration:4200 + Math.random() * 2500, delay:300 + Math.random() * 1800, easing:"ease-out", iterations:Infinity, fill:"none" });
+    }
+  }
 }
 
 /* ================= Profile & users admin ================= */

@@ -1,4 +1,5 @@
-// Splash "קן שנבנה": waits for the real loading (~3 s in all, at most ~5 s), a tap skips it,
+// Splash "ציפור הזהב": nest appears, happy hop, the golden bird lands on the roof, brand; waits for the real loading
+// (~4.5 s in all, at most ~5 s), no loading bar, a tap skips it,
 // shown on every start of the app, Light gets the cream version. Local demo mode, no network.
 //   node tests/splash.test.cjs
 const path = require("path");
@@ -18,15 +19,19 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   const until = async ms => { const t = Date.now(); while (Date.now() - t < ms){ if (await gone()) return Date.now() - t; await p.waitForTimeout(100); } return -1; };
   await p.waitForTimeout(800);
   ok(!(await gone()), "after signing in the nest splash shows");
-  const t1 = await until(3500);
-  ok(t1 >= 0 && t1 + 800 <= 3600, `data ready (demo) → into the app after ~${((t1 + 800) / 1000).toFixed(1)} s (was 4.3 s)`);
+  const t1 = await until(4800);
+  ok(t1 >= 0 && t1 + 800 <= 5000, `data ready (demo) → the whole sequence plays → into the app after ~${((t1 + 800) / 1000).toFixed(1)} s`);
 
   await run(() => { localStorage.removeItem("nido.seenAt"); const t = Date.now(); window.appProgress = () => Math.min(1, (Date.now() - t) / 3500); playSplash(null); });
   await p.waitForTimeout(2600);
-  ok(!(await gone()) && await run(() => parseFloat(document.querySelector("#splash .bar i").style.width) > 50), "still loading → stays, the bar follows the progress");
-  ok(await run(() => document.querySelector("#splash .nest").getAnimations().length > 0 || document.querySelectorAll("#splash .fx i").length > 0), "…and the nest giggles meanwhile");
+  ok(!(await gone()) && await run(() => !document.querySelector("#splash .bar")), "still loading → stays (no loading bar)");
+  await p.waitForTimeout(700);
+  ok(await run(() => { const n = document.querySelector("#splash .nest").getBoundingClientRect(), r = document.querySelector("#splash .bird").getBoundingClientRect();
+    const fx = r.left + r.width / 2 - n.left, fy = r.bottom - n.top; return getComputedStyle(document.querySelector("#splash .bird")).opacity === "1" && Math.abs(fx - 80) < 6 && Math.abs(fy - 5) < 6; }),
+    "the bird landed exactly on the roof ridge");
+  ok(await run(() => document.querySelector("#splash .bird").getAnimations({ subtree:true }).length > 0), "…and it stays alive in the nest meanwhile");
   const t2 = await until(3000);
-  ok(t2 >= 0, `loading done → hop → into the app (${((2600 + t2) / 1000).toFixed(1)} s, loading took 3.5 s)`);
+  ok(t2 >= 0, `loading done → into the app (${((3300 + t2) / 1000).toFixed(1)} s, loading took 3.5 s)`);
 
   await run(() => { localStorage.removeItem("nido.seenAt"); window.appProgress = () => .3; playSplash(null); });
   const t3 = await until(6000);
@@ -42,7 +47,7 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
 
   await run(() => { localStorage.removeItem("nido.seenAt"); Skin.apply("light"); window.appProgress = () => .3; playSplash(null); });
   await p.waitForTimeout(800);
-  ok(await run(() => getComputedStyle(document.querySelector("#splash .bg")).backgroundImage.includes("255, 249, 239")), "Nido Light → the cream version");
+  ok(await run(() => getComputedStyle(document.querySelector("#splash .bg")).backgroundImage.includes("255, 246, 230")), "Nido Light → the cream version");
   ok(errs.length === 0, `no page errors (${errs.join("; ") || "none"})`);
   await b.close(); console.log(`\n${f ? "✘ " + f + " FAILED" : "✔ all passed"} (${n} checks)`); process.exit(f ? 1 : 0);
 })();
