@@ -1,6 +1,6 @@
 /* Nido service worker — the app opens offline; online it always fetches the newest version. */
 const CACHE = "nido-shell-" + new URL(self.registration.scope).pathname;
-const VERSION = 2;   // bump to force phones to pick up a new worker
+const VERSION = 3;   // bump to force phones to pick up a new worker
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {

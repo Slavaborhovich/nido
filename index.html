@@ -216,6 +216,9 @@ li+li .up{border-top:1px solid var(--line)}
 #splash{position:fixed;inset:0;z-index:100;cursor:pointer;overflow:hidden;--sp-text:#FFE9B8;--sp-muted:#E8B565;--sp-faint:#A8743A;--sp-gold:#FFD27A;
   --sp-logo:radial-gradient(90% 80% at 58% 26%,#FFF6D6 0%,#FFD983 26%,#E9A43E 60%,#9C5A15 100%);
   --sp-word:linear-gradient(180deg,#FFF1C9 8%,#FFD983 40%,#E9A43E 72%,#A8661C 100%)}
+#splash.cold{background:#17110C}
+html:has(> body > #splash),html:has(> body > #splash) body{overflow:hidden}
+@media (pointer:coarse){html{scrollbar-width:none}html::-webkit-scrollbar{display:none}}
 #splash .bg{position:absolute;inset:0;opacity:0;background:radial-gradient(75% 48% at 50% 40%,#4A2810 0%,#24130A 55%,#140A05 100%)}
 #splash .vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 42%,transparent 55%,rgba(6,3,1,.55) 100%);pointer-events:none;opacity:0}
 #splash .halo{position:absolute;left:50%;top:40%;width:460px;height:460px;margin:-230px 0 0 -230px;border-radius:50%;
@@ -6958,6 +6961,7 @@ function hideAmbient(){ document.getElementById("ambient").classList.remove("on"
    A tap skips it. Shown every time the app starts (owner's choice, 11.10) — not when it only comes back from the background. */
 const EZ = "cubic-bezier(.22,1,.36,1)", IO = "cubic-bezier(.65,0,.35,1)";
 const SPLASH_MAX = 4200;
+const LAUNCH_ICON = 151;   // width (css px) of the logo drawing on Android's own launch screen — the splash starts from exactly that
 function appProgress(){ return !CLOUD ? 1 : !Cloud.user ? .1 : !Cloud.loaded ? .2 : .2 + .8 * Cloud.loaded.size / COLS.length; }
 const SPLASH_FEATHERS = `
   <path d="M52 44 C47 32 40 18 27 5 C29 12 27 13 22 13 C29 18 28 21 21 23 C30 26 29 29 23 32 C32 34 32 37 28 40 C37 41 42 44 52 44 Z"/>
@@ -7012,7 +7016,7 @@ function playSplash(onCovered){
       <p class="motto">לא רק לנהל את הבית — להרגיש בבית</p>
     </div>
     <div class="studio"><div class="line"></div><span>By <b>Borhovich</b> studio</span></div>`;
-  if (cold) el.querySelector(".bg").style.opacity = "1";            // opaque from the first frame: nothing flashes underneath
+  if (cold) el.classList.add("cold");                               // opaque from the first frame (same colour as the phone's launch screen): nothing flashes underneath
   document.body.appendChild(el);
   const $s = q => el.querySelector(q), A = (n, k, o) => n && n.animate ? n.animate(k, { fill:"both", ...o }) : null;
   const nest = $s(".nest"), real = $s(".lg.real"), sheen = $s(".sheen"), shadow = $s(".shadow"), trail = $s(".trail path"), fx = $s(".fx"),
@@ -7030,8 +7034,19 @@ function playSplash(onCovered){
     rest.forEach(n => loginAnims.push(A(n, [{opacity:1},{opacity:0}], { duration:350 })));
     if (brand) loginAnims.push(A(brand, [{opacity:1},{opacity:0}], { duration:450, easing:IO }));
     later(cover, reduce ? 320 : 680);
-  } else cover();
+  } else { cover(); A($s(".bg"), [{opacity:0},{opacity:1}], { duration:reduce ? 300 : 900, easing:IO }); }
   const d0 = cold ? 80 : 380;
+  /* cold start: the phone's own launch screen (Android) shows the app icon in the middle of the screen.
+     The splash starts with the logo exactly there, already drawn, and glides it up into place — one continuous picture. */
+  const fromLaunch = (() => {
+    if (!cold) return null;
+    const r = $s(".logoW").getBoundingClientRect(); if (!r.width) return null;
+    const bars = Math.max(0, (screen.height || innerHeight) - innerHeight);
+    const tx = innerWidth / 2, ty = innerHeight / 2 + Math.min(10, bars * .12), sc = (LAUNCH_ICON / r.width).toFixed(3);
+    const tf = (x, y) => `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${sc})`;
+    nest.style.transform = tf(0, 0); const q = $s(".logoW").getBoundingClientRect(); nest.style.transform = "";   // measure with the scale applied
+    return tf(tx - (q.left + q.width / 2), ty - (q.top + q.height / 2));
+  })();
   A($s(".vig"), [{opacity:0},{opacity:1}], { duration:900, delay:d0, easing:IO });
   A($s(".halo"), [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"none"}], { duration:2000, delay:d0, easing:EZ });
   A(core, [{opacity:0, transform:"scale(.7)"},{opacity:1, transform:"none"}], { duration:1600, delay:d0 + 200, easing:EZ });
@@ -7039,16 +7054,22 @@ function playSplash(onCovered){
   let MIN;
   if (reduce){
     // calm version: everything simply fades in, the bird is already home with folded wings
-    A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
+    if (fromLaunch){ real.style.clipPath = "none"; A(nest, [{transform:fromLaunch},{transform:"none"}], { duration:500, delay:d0, easing:EZ }); }
+    else A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:400, delay:d0 });
     A(wN, [{transform:"rotate(-74deg) scale(.9)"},{transform:"rotate(-74deg) scale(.9)"}], { duration:1 });
     A(wF, [{transform:"rotate(-74deg) scale(.9)"},{transform:"rotate(-74deg) scale(.9)"}], { duration:1 });
     [".shadow", ".bird", "h1", ".motto", ".studio"].forEach(q => A($s(q), [{opacity:0},{opacity:1}], { duration:400, delay:d0 + 200 }));
     MIN = 700;
   } else {
     /* א · the symbol appears */
-    const build = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:950, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
-    if (build) build.onfinish = () => { real.style.clipPath = "none"; build.cancel(); };      // fully built → no mask left at all
-    A(nest, [{transform:"perspective(600px) rotateX(18deg) scale(.9) translateY(10px)", opacity:.35},{transform:"none", opacity:1}], { duration:1100, delay:d0, easing:EZ });
+    if (fromLaunch){                    // already on screen (the launch icon) → no drawing-in, just the glide up into place
+      real.style.clipPath = "none";
+      A(nest, [{transform:fromLaunch},{transform:"none"}], { duration:900, delay:d0, easing:"cubic-bezier(.45,0,.2,1)" });
+    } else {
+      const build = A(real, [{clipPath:"inset(100% 0 0 0)"},{clipPath:"inset(0 0 0 0)"}], { duration:950, delay:d0, easing:"cubic-bezier(.33,0,.2,1)" });
+      if (build) build.onfinish = () => { real.style.clipPath = "none"; build.cancel(); };      // fully built → no mask left at all
+      A(nest, [{transform:"perspective(600px) rotateX(18deg) scale(.9) translateY(10px)", opacity:.35},{transform:"none", opacity:1}], { duration:1100, delay:d0, easing:EZ });
+    }
     A(shadow, [{opacity:0, transform:"scale(.6)"},{opacity:1, transform:"none"}], { duration:1000, delay:d0 + 200, easing:EZ });
     A(sheen, [{backgroundPosition:"-160px 0"},{backgroundPosition:"200px 0"}], { duration:1100, delay:d0 + 700, easing:"cubic-bezier(.45,0,.25,1)" });
     motes();
