@@ -48,6 +48,14 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await run(() => { localStorage.removeItem("nido.seenAt"); Skin.apply("light"); window.appProgress = () => .3; playSplash(null); });
   await p.waitForTimeout(800);
   ok(await run(() => getComputedStyle(document.querySelector("#splash .bg")).backgroundImage.includes("255, 246, 230")), "Nido Light → the cream version");
+  // cold start: the splash begins where Android's launch screen left the icon (middle of the screen, same size), no page scrollbar meanwhile
+  await run(() => Skin.apply("home")); await p.reload(); await p.waitForTimeout(60);
+  ok(await run(() => { const r = document.querySelector("#splash .logoW").getBoundingClientRect(), cy = r.top + r.height / 2;
+    return Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2 && cy >= innerHeight / 2 - 2 && cy <= innerHeight / 2 + 12 && Math.abs(r.width - LAUNCH_ICON) < 4; }),
+    "cold start → the logo starts exactly where the phone's launch screen shows the icon");
+  ok(await run(() => getComputedStyle(document.documentElement).overflow === "hidden"), "…and the page can't scroll (no scrollbar flash) while the splash is up");
+  const t4 = await until(6000);
+  ok(t4 >= 0 && await run(() => getComputedStyle(document.documentElement).overflow !== "hidden"), "…scrolling is back once in the app");
   ok(errs.length === 0, `no page errors (${errs.join("; ") || "none"})`);
   await b.close(); console.log(`\n${f ? "✘ " + f + " FAILED" : "✔ all passed"} (${n} checks)`); process.exit(f ? 1 : 0);
 })();
