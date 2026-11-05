@@ -21,12 +21,17 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await p.evaluate(() => document.querySelector("#tkBuy").hidden), "no suggestion before typing");
   await p.fill("#tf input[name=title]", "לקנות סוללות לשלט");
   ok(await p.evaluate(() => { const x = document.querySelector("#tkBuy"); return !x.hidden && /נשמע כמו קנייה/.test(x.textContent) && x.querySelectorAll("[data-bl]").length >= 2; }), "suggestion card with the lists");
-  await p.click("#tkBuy [data-bl=home]"); await p.click("#tkBuy [data-yes]");
-  ok(await p.evaluate(() => document.querySelector("#tkBuy").classList.contains("done") && /רשימת לבית/.test(document.querySelector("#tkBuy").textContent)), "after 'הוסף לרשימה': one line 'ייכנס לרשימת לבית'");
+  await p.click("#tkBuy [data-bl=home]");
+  ok(await p.evaluate(() => document.querySelector("#tkBuy").classList.contains("done") && /רשימת לבית/.test(document.querySelector("#tkBuy").textContent)), "tapping a list adds it right away: one line 'ייכנס לרשימת לבית'");
   await p.click("#tf button[type=submit]"); await p.waitForTimeout(300);
   ok(await p.evaluate(() => !document.querySelector(".cfm-scrim")), "no extra popup on save");
   const tk = await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות סוללות לשלט"); const it = DB.shop.find(i => i.fromTask === t.id); return { buy:t.buy, it: it && it.name, list: it && it.list }; });
   ok(tk.buy === "home" && tk.it === "סוללות לשלט" && tk.list === "home", "task linked to a shopping item in לבית");
+
+  // untouched card on save → only a task, and no second window
+  await p.evaluate(() => taskSheet()); await p.waitForTimeout(400);
+  await p.fill("#tf input[name=title]", "לקנות מתנה לסבתא"); await p.click("#tf button[type=submit]"); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות מתנה לסבתא"); return !document.querySelector(".cfm-scrim") && t && !t.buy; }), "card left untouched → saved as a task, no list popup");
 
   // "לא, תודה" → plain task
   await p.evaluate(() => taskSheet()); await p.waitForTimeout(400);
@@ -50,6 +55,15 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   let ex = await exps();
   ok(ex.length === 1 && ex[0].amount === 2490 && ex[0].cat === "home" && ex[0].desc === "סוללות לשלט" && ex[0].payer === "slava", "saved: ₪24.90, לבית, paid by me");
   ok(await p.evaluate(() => !document.querySelector(".bxp-scrim") || !document.querySelector(".bxp-scrim.show")), "window closed");
+
+  // marked "not done" again → the expense goes away
+  await p.evaluate(() => { S.taskView = "done"; go("tasks"); renderTasks(); }); await p.waitForTimeout(300);
+  await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות סוללות לשלט"); document.querySelector(`.task[data-id="${t.id}"] .check`).click(); });
+  await p.waitForTimeout(500);
+  ok((await exps()).length === 0 && await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות סוללות לשלט"); return !t.done && !t.exp; }), "task back to active → its expense is removed");
+  await p.evaluate(() => completeTask(DB.tasks.find(x => x.title === "לקנות סוללות לשלט"))); await p.waitForTimeout(700);
+  await p.fill("#bxA", "24.90"); await p.click(".bxp .go"); await p.waitForTimeout(500);
+  ok((await exps()).length === 1, "done again → asked again, saved once");
 
   // 4. shopping round → one total
   await p.evaluate(() => { DB.shop = DB.shop.filter(i => shopKey(i.list) !== "super");

@@ -4125,7 +4125,7 @@ function renderToday(){
       const t = DB.tasks.find(y => y.id === tg.dataset.tt); if (!t || !canEdit()) return;
       const spent = !t.done && spentFor(t);
       if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
-      if (t.buy) syncBuy(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); spentLater(spent); return;
+      if (t.buy) syncBuy(t); if (!t.done) unspend(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); spentLater(spent); return;
     }
     const x = items[+b.dataset.i];
     if (x.kind==="event"){ eventView(x.ref); }
@@ -4189,7 +4189,7 @@ function renderTasks(){
     if (btn.dataset.act==="toggle"){
       if (!t.done){ btn.classList.add("on"); row.classList.add("leaving"); setTimeout(()=>{ completeTask(t); renderTasks(); }, 320); }
       else if (t.kind==="shop"){ toast("משימת קניות שהושלמה לא חוזרת לפעילות"); }
-      else { t.done=false; delete t.doneAt; delete t.doneBy; if (t.buy) syncBuy(t); save(); renderTasks(); }
+      else { t.done=false; delete t.doneAt; delete t.doneBy; if (t.buy) syncBuy(t); unspend(t); save(); renderTasks(); }
     } else if (t.kind==="shop"){ go("shop"); } else taskSheet(t);
   };
 }
@@ -4200,7 +4200,7 @@ function completeTask(t){
     t.items = DB.shop.filter(i=>i.taskId===t.id).map(i=>i.name);
     /* the round's total → one expense. "חסרו" = what I marked missing since this round began (it stayed on a list) */
     const missing = DB.shop.filter(i => i.missing && i.missing.by === me && i.missing.at >= (t.created || 0)).length;
-    if (t.items.length) spentLater({ kicker:"סיימת את הקנייה", title:shopOf(t.list)[1], desc:t.title, cat:listCat(t.list), round:{ bought:t.items.length, missing }, from:"shop" });
+    if (t.items.length) spentLater({ kicker:"סיימת את הקנייה", title:shopOf(t.list)[1], desc:t.title, cat:listCat(t.list), round:{ bought:t.items.length, missing }, from:"shop", task:t.id });
     DB.shop.filter(i => i.taskId===t.id && i.fromTask).forEach(i => {        // bought → the idea's sub-task is done
       const st = DB.tasks.find(x => x.id===i.fromTask); if (st && !st.done){ st.done = true; st.doneAt = Date.now(); st.doneBy = me; delete st.shopItemId; }
     });
@@ -4803,10 +4803,10 @@ function spentFor(t){
   if (!t) return null;
   if (t.buy){ const it = t.shopItemId && DB.shop.find(i => i.id === t.shopItemId);
     if (it && it.takenBy) return null;                       // already in someone's shopping round → counted in that total
-    const n = buyName(t.title); return { kicker:"נקנה, והמשימה נסגרה", title:n, desc:n, cat:listCat(t.buy), from:"task" }; }
+    const n = buyName(t.title); return { kicker:"נקנה, והמשימה נסגרה", title:n, desc:n, cat:listCat(t.buy), from:"task", task:t.id }; }
   if (t.kind === "survey"){ const s = DB.survey.find(x => x.id === t.surveyId), o = s && (s.offers || []).find(x => x.id === s.chosen);
     if (!s) return null;
-    return { kicker:"נקנה, והמשימה נסגרה", title: o ? `${s.title} · ${o.store}` : s.title, desc: (o ? `${s.title} · ${o.store}` : s.title), cat:"home", amount: o && +o.price > 0 ? +o.price : "", from:"survey" }; }
+    return { kicker:"נקנה, והמשימה נסגרה", title: o ? `${s.title} · ${o.store}` : s.title, desc: (o ? `${s.title} · ${o.store}` : s.title), cat:"home", amount: o && +o.price > 0 ? +o.price : "", from:"survey", task:t.id }; }
   return null;
 }
 function spentLater(o){ if (o && canLogExp()) setTimeout(() => askSpent(o), 420); }
@@ -4854,12 +4854,24 @@ function askSpent(o){
     const amount = parseAmount(f.amount.value);
     if (!amount){ err.textContent = "מה הסכום? למשל 186.40"; f.amount.focus(); return; }
     const d = iso(new Date());
-    const e = { id:uid(), amount, desc:String(o.desc || "").trim().slice(0, 80), cat, payer:payers[pi], date:d, month:monthOf(d), note:"", by:me, at:Date.now(), upd:Date.now(), from:o.from || "" };
+    const e = { id:uid(), amount, desc:String(o.desc || "").trim().slice(0, 80), cat, payer:payers[pi], date:d, month:monthOf(d), note:"", by:me, at:Date.now(), upd:Date.now(), from:o.from || "", ...(CLOUD && Cloud.user ? { uid:Cloud.user.uid } : {}) };
     busyBtn(go, true, "שומר…");
     try { await Money.put(e, null); }
     catch(x){ busyBtn(go, false, "שמירה בהוצאות"); err.textContent = errText(x); return; }
+    const tk = o.task && DB.tasks.find(x => x.id === o.task);
+    if (tk && tk.done){ tk.exp = { id:e.id, amount:e.amount, cat:e.cat, payer:e.payer, month:e.month }; save(); }
+    else if (tk){ Money.del(e).catch(() => {}); }               // marked "not done" while this window was open
     close(); toast(`נשמר בהוצאות · ${nis(amount)}`);
   };
+}
+/* a task marked "not done" again → the expense it made goes away too */
+async function unspend(t){
+  const x = t && t.exp; if (!x) return; delete t.exp; save();
+  let e = x;
+  try {
+    if (CLOUD && moneyOn()){ const d = await Cloud.fb.getDoc(Money.ref("expenses", x.id)); if (!d.exists()) return; e = { id:x.id, ...d.data() }; }   // the manager may have edited it since
+    await Money.del(e); toast(`ההוצאה של ${nis(e.amount)} ירדה מההוצאות`);
+  } catch(err){ console.warn("[money] unspend", err); }
 }
 
 function planSheet(p){
@@ -5100,10 +5112,11 @@ function taskSheet(t){
     bx.className = "tk-buy"; bx.hidden = buyAns === "no" || !isBuy(f.title.value); if (bx.hidden) return;
     bx.innerHTML = `<div class="hd"><span class="ic">${flu("shop")}</span><div><b>נשמע כמו קנייה</b><small>להוסיף גם לרשימת הקניות?</small></div></div>
       <div class="ls" role="group" aria-label="רשימה">${shops().map(([k, n]) => `<button type="button" data-bl="${k}" aria-pressed="${k === buyPick}">${esc(n)}</button>`).join("")}</div>
-      <div class="bt"><button type="button" class="yes" data-yes>הוסף לרשימה</button><button type="button" class="no" data-no>לא, תודה</button></div>`; };
+      <div class="bt"><button type="button" class="yes" data-yes>הוסף לסופר</button><button type="button" class="no" data-no>לא, תודה</button></div>`;
+    bx.querySelector("[data-yes]").textContent = `הוסף ל${shopOf(buyPick)[1].replace(/^ל/, "")}`; };
   if (bx){ f.title.addEventListener("input", drawBuy);
     bx.onclick = e => { const b = e.target.closest("button"); if (!b) return;
-      if (b.dataset.bl){ buyPick = b.dataset.bl; } else if (b.dataset.yes !== undefined) buyAns = "yes"; else if (b.dataset.no !== undefined) buyAns = "no"; else if (b.dataset.undo !== undefined) buyAns = null;
+      if (b.dataset.bl){ buyPick = b.dataset.bl; buyAns = "yes"; } else if (b.dataset.yes !== undefined) buyAns = "yes"; else if (b.dataset.no !== undefined) buyAns = "no"; else if (b.dataset.undo !== undefined) buyAns = null;
       drawBuy(); }; }
   kit.wire(sh);
   /* place */
@@ -5123,7 +5136,7 @@ function taskSheet(t){
   f.onsubmit = async e => {
     e.preventDefault();
     const title = f.title.value.trim(); if (!title){ f.title.focus(); return; }
-    const buy = !edit && isBuy(title) && canEdit() ? (buyAns === "yes" ? buyPick : buyAns === "no" ? false : await askList(title)) : (edit ? t.buy || false : false);
+    const buy = !edit && isBuy(title) && canEdit() ? (!bx ? await askList(title) : buyAns === "yes" ? buyPick : false) : (edit ? t.buy || false : false);
     const vis = k => !sh.querySelector(`[data-f="${k}"]`).hidden;
     const data = {
       title,
@@ -5957,7 +5970,7 @@ function eventView(ev){
     if (e.target.closest(".dot")){
       const spent = !t.done && spentFor(t);
       if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
-      if (t.buy) syncBuy(t); save(); again(); spentLater(spent); return;
+      if (t.buy) syncBuy(t); if (!t.done) unspend(t); save(); again(); spentLater(spent); return;
     }
     if (e.target.closest("[data-who]") && !t.done){ const P = peopleCycle(); t.assignee = P[(P.indexOf(t.assignee) + 1) % P.length]; save(); again(); }
   });
@@ -6604,7 +6617,7 @@ function ideaDetail(i){
     const b = e.target.closest(".dot"); if (!b) return; const t = DB.tasks.find(x => x.id===b.closest("[data-t]").dataset.t);
     const spent = !t.done && spentFor(t);
     if (t.done){ t.done=false; delete t.doneAt; delete t.doneBy; } else { t.done=true; t.doneAt=Date.now(); t.doneBy=me; }
-    if (t.buy) syncBuy(t);
+    if (t.buy) syncBuy(t); if (!t.done) unspend(t);
     save(); renderIdeas(); ideaDetail(i); spentLater(spent);
   };
   sh.querySelector("#want").onclick = () => { toggleLike(i); renderIdeas(); ideaDetail(i); };

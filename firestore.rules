@@ -24,7 +24,7 @@ service cloud.firestore {
         allow write: if !(col in ['photos', 'expenses', 'expmonths', 'expmeta']) && canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
       }
       // family expenses: only the family's admin (and the system admin inside his own family) read and manage them.
-      // An editor may only ADD one — the "כמה עלה?" after a purchase (Nov 2026) — never read, change or delete.
+      // An editor may only ADD one — the "כמה עלה?" after a purchase (Nov 2026) — and delete only the ones she added; never read or change.
       match /envs/{env}/expenses/{id} {
         function envOk()    { return env == 'prod' || (env == 'test' && fid == 'home'); }
         function validExp() { return request.resource.data.amount is int && request.resource.data.amount > 0 && request.resource.data.amount <= 1000000000
@@ -34,7 +34,9 @@ service cloud.firestore {
                          && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 80; }
         allow read, delete: if moneyIn(fid) && envOk();
         allow create, update: if moneyIn(fid) && envOk() && validExp();
-        allow create: if canEditIn(fid) && envOk() && validExp();
+        allow create: if canEditIn(fid) && envOk() && validExp() && request.resource.data.get('uid', '') == request.auth.uid;
+        // …and take back her own when the task is marked "not done" again
+        allow delete: if canEditIn(fid) && envOk() && resource.data.get('uid', '') == request.auth.uid;
       }
       match /envs/{env}/expmonths/{month} {
         allow read, write: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
