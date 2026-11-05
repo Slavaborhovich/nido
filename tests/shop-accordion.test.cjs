@@ -58,7 +58,8 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await R(() => { document.querySelector('#if input[name=list][value="ph"]').click(); document.querySelector("#if [type=submit]").click(); }); await p.waitForTimeout(300);
   ok(await R(() => DB.shop.filter(i => i.taskId === myShopTask("ph").id).length === 2 && DB.shop.filter(i => i.taskId === myShopTask("super").id).length === 1), "a taken item moved to סופר פארם moves to that task");
   // finishing one list's task leaves the other
-  await R(() => completeTask(myShopTask("ph"))); await p.waitForTimeout(300);
+  await R(() => completeTask(myShopTask("ph"))); await p.waitForTimeout(700);
+  await p.evaluate(() => document.querySelector(".bxp .skip")?.click()); await p.waitForTimeout(300);   // "כמה יצא בסך הכל?" → דלג
   ok(await R(() => !!myShopTask("super") && DB.shop.filter(i => i.list === "ph").length === 0 && DB.shop.filter(i => i.takenBy === me).length === 1), "done with סופר פארם → its items leave; the סופר task stays");
   ok(await R(() => DB.shop.filter(i => i.takenBy === me).length === 1), "items of the open task stay on the list until it is done");
 

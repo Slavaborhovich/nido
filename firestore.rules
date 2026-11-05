@@ -23,18 +23,24 @@ service cloud.firestore {
         allow read:  if !(col in ['photos', 'expenses', 'expmonths', 'expmeta']) && inFamily(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
         allow write: if !(col in ['photos', 'expenses', 'expmonths', 'expmeta']) && canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
       }
-      // family expenses: only the family's admin (and the system admin inside his own family) — never editors or view-only members
+      // family expenses: only the family's admin (and the system admin inside his own family) read and manage them.
+      // An editor may only ADD one — the "כמה עלה?" after a purchase (Nov 2026) — never read, change or delete.
       match /envs/{env}/expenses/{id} {
-        allow read, delete: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
-        allow create, update: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'))
-                         && request.resource.data.amount is int && request.resource.data.amount > 0 && request.resource.data.amount <= 1000000000
+        function envOk()    { return env == 'prod' || (env == 'test' && fid == 'home'); }
+        function validExp() { return request.resource.data.amount is int && request.resource.data.amount > 0 && request.resource.data.amount <= 1000000000
                          && request.resource.data.month is string && request.resource.data.month.matches('[0-9]{4}-[0-9]{2}')
                          && request.resource.data.date is string && request.resource.data.date.matches(request.resource.data.month + '-[0-9]{2}')
                          && request.resource.data.desc is string && request.resource.data.desc.size() <= 80
-                         && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 80;
+                         && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 80; }
+        allow read, delete: if moneyIn(fid) && envOk();
+        allow create, update: if moneyIn(fid) && envOk() && validExp();
+        allow create: if canEditIn(fid) && envOk() && validExp();
       }
       match /envs/{env}/expmonths/{month} {
         allow read, write: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));
+        // an editor's purchase adds to the month's running totals (written blind — editors can't read them)
+        allow create, update: if canEditIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'))
+                         && request.resource.data.keys().hasOnly(['total', 'n', 'cats', 'payers']);
       }
       match /envs/{env}/expmeta/{doc} {
         allow read, write: if moneyIn(fid) && (env == 'prod' || (env == 'test' && fid == 'home'));

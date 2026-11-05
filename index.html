@@ -680,6 +680,59 @@ nav.tabs button[aria-current="page"]{--nv1:#FFF0DC;--nv2:#4A2A10;--nv3:#fff}
 .cfm-scrim.show{opacity:1}
 .cfm{width:100%;max-width:340px;padding:22px 20px 16px;border-radius:24px;background:#2A1E15;border:1px solid rgba(255,214,170,.16);box-shadow:0 24px 60px rgba(0,0,0,.5);transform:scale(.96);transition:transform .2s}
 .cfm-scrim.show .cfm{transform:none}
+/* bought → expense: "כמה עלה?" / "כמה יצא בסך הכל?" (warm glass bottom window, same look in both skins) */
+.bxp-scrim{position:fixed;inset:0;z-index:62;background:rgba(12,7,3,.62);display:flex;align-items:flex-end;opacity:0;transition:opacity .22s}
+.bxp-scrim.show{opacity:1}
+.bxp{width:100%;max-width:560px;margin:0 auto;box-sizing:border-box;padding:12px 20px calc(18px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;background:linear-gradient(180deg,#2B1E14 0,#1C130C 260px);border-top:1px solid rgba(255,214,170,.18);box-shadow:0 -12px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,240,220,.06);color:#F7EEE4;transform:translateY(28px);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:92vh;overflow:auto}
+.bxp-scrim.show .bxp{transform:none}
+.bxp .grab{display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,214,170,.22);margin:0 auto 16px}
+.bxp .hd{display:flex;align-items:center;gap:12px}
+.bxp .okc{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(179,207,159,.18);color:#B3CF9F}
+.bxp .okc svg{width:22px;height:22px}
+.bxp .kk{display:block;font-size:14px;color:#C9B39C}
+.bxp h3{margin:0;font-size:20px;font-weight:700;color:#FFF6EC;line-height:1.25}
+.bxp .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+.bxp :is(.stats div,.amt,.payr){background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.06)}
+.bxp .stats div{border-radius:18px;padding:10px 14px}
+.bxp .stats b{display:block;font-size:24px;font-weight:800;line-height:1.2}
+.bxp .stats .g{color:#B3CF9F}.bxp .stats .a{color:#F2B66B}
+.bxp .stats span{font-size:13.5px;color:#D0BBA5}
+.bxp .lb{display:block;margin:18px 0 6px;font-size:14px;color:#C9B39C}
+.bxp .amt{height:68px;border-radius:20px;padding:0 18px;display:flex;align-items:center;gap:8px;box-shadow:0 0 0 1.5px rgba(233,169,94,.7)}
+.bxp .amt span{font-size:30px;font-weight:700;color:#F2B66B}
+.bxp .amt input{flex:1;min-width:0;background:none;border:0;outline:0;color:#FFF6EC;font:800 32px var(--font);direction:ltr;text-align:right;color-scheme:dark}
+.bxp .amt input::placeholder{color:#7E6A57}
+.bxp .hint{margin:8px 2px 0;font-size:13px;color:#A8927C}
+.bxp .cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bxp .cats button{height:42px;border-radius:99px;border:1px solid rgba(255,214,170,.14);background:rgba(40,28,19,.55);color:#E3D2BE;font:500 14px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+.bxp .cats button.on{background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));border-color:rgba(233,169,94,.75);color:#FFF3E4;font-weight:600}
+.bxp .payr{margin-top:12px;width:100%;height:48px;border-radius:16px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;color:#E3D2BE;font:400 14.5px var(--font)}
+.bxp .payr b{color:#FFF3E4;font-weight:600}
+.bxp .err{min-height:18px;margin:6px 2px 0;font-size:13px;color:#FF9A8A}
+.bxp .go{margin-top:8px;width:100%;height:56px;border:0;border-radius:99px;background:linear-gradient(180deg,#F3C07E,#D99550);box-shadow:inset 0 1px 0 rgba(255,250,240,.55),0 12px 28px rgba(217,149,80,.28);color:#2E1A0A;font:700 17px var(--font)}
+.bxp .go:disabled{opacity:.6}
+.bxp .skip{margin-top:4px;width:100%;height:44px;border:0;background:none;color:#D0BBA5;font:500 15px var(--font)}
+/* task window: "נשמע כמו קנייה" suggestion while typing */
+.tk-buy{margin:12px 0 4px;border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(155deg,rgba(120,84,50,.78),rgba(60,40,24,.78));border:1px solid rgba(242,182,107,.45);box-shadow:0 14px 34px rgba(10,5,2,.35),inset 0 1px 0 rgba(255,236,205,.2);color:#F7EEE4}
+.tk-buy[hidden]{display:none}
+.tk-buy .hd{display:flex;align-items:center;gap:12px}
+.tk-buy .ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;background:rgba(242,182,107,.2)}
+.tk-buy .ic img{width:28px;height:28px}
+.tk-buy b{display:block;font-size:16px;color:#FFF3E4}
+.tk-buy small{display:block;font-size:14px;color:#E3D2BE}
+.tk-buy .ls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tk-buy .ls button{height:40px;border-radius:99px;border:1px solid rgba(255,214,170,.14);background:rgba(40,28,19,.55);color:#E3D2BE;font:500 14px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+.tk-buy .ls button[aria-pressed="true"]{background:linear-gradient(180deg,rgba(233,169,94,.30),rgba(233,169,94,.12));border-color:rgba(233,169,94,.75);color:#FFF3E4;font-weight:600}
+.tk-buy .bt{display:flex;gap:8px}
+.tk-buy .bt button{flex:1;height:44px;border-radius:99px;font:600 15px var(--font)}
+.tk-buy .bt .yes{border:0;background:linear-gradient(180deg,#F3C07E,#D99550);color:#2E1A0A;font-weight:700}
+.tk-buy .bt .no{border:1px solid rgba(255,214,170,.14);background:rgba(40,28,19,.55);color:#E3D2BE}
+.tk-buy.done{flex-direction:row;align-items:center;padding:10px 14px;gap:10px}
+.tk-buy.done span{flex:1;font-size:14.5px}
+.tk-buy.done button{border:0;background:none;color:#F2C98F;font:600 14px var(--font);padding:6px}
+/* a shopping item that came from a task */
+.sh-list .ftask{display:inline-flex;align-items:center;gap:4px;margin-top:2px;font-size:12.5px;color:var(--sc,#F2C98F)}
+.sh-list .ftask svg{width:13px;height:13px}
 .cfm .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,154,138,.12);color:var(--err);margin-bottom:12px}
 .cfm .ic svg{width:22px;height:22px}
 .cfm h3{margin:0;font-size:18px;font-weight:600}
@@ -4070,8 +4123,9 @@ function renderToday(){
     const tg = e.target.closest("[data-tt]");
     if (tg){                                   // tapping a task tag marks it done (tap again to undo)
       const t = DB.tasks.find(y => y.id === tg.dataset.tt); if (!t || !canEdit()) return;
+      const spent = !t.done && spentFor(t);
       if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
-      if (t.buy) syncBuy(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); return;
+      if (t.buy) syncBuy(t); save(); renderToday(); toast(t.done ? `✓ ${t.title}` : `"${t.title}" חזרה לפעילות`); spentLater(spent); return;
     }
     const x = items[+b.dataset.i];
     if (x.kind==="event"){ eventView(x.ref); }
@@ -4140,15 +4194,20 @@ function renderTasks(){
   };
 }
 function completeTask(t){
+  const spent = spentFor(t);                     // read before syncBuy takes the item off the list
   t.done = true; t.doneAt = Date.now(); t.doneBy = me;
   if (t.kind==="shop"){
     t.items = DB.shop.filter(i=>i.taskId===t.id).map(i=>i.name);
+    /* the round's total → one expense. "חסרו" = what I marked missing since this round began (it stayed on a list) */
+    const missing = DB.shop.filter(i => i.missing && i.missing.by === me && i.missing.at >= (t.created || 0)).length;
+    if (t.items.length) spentLater({ kicker:"סיימת את הקנייה", title:shopOf(t.list)[1], desc:t.title, cat:listCat(t.list), round:{ bought:t.items.length, missing }, from:"shop" });
     DB.shop.filter(i => i.taskId===t.id && i.fromTask).forEach(i => {        // bought → the idea's sub-task is done
       const st = DB.tasks.find(x => x.id===i.fromTask); if (st && !st.done){ st.done = true; st.doneAt = Date.now(); st.doneBy = me; delete st.shopItemId; }
     });
     DB.shop = DB.shop.filter(i=>i.taskId!==t.id);
     toast(`הקניות הושלמו · ${t.items.length} פריטים ירדו מהרשימה`);
-  } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הקניות");
+  } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הקניות"); spentLater(spent);
+  } else if (t.kind === "survey"){ toast("בוצע"); spentLater(spent);
   } else if (t.repeat && t.repeat!=="none"){
     const base = t.date ? parse(t.date) : new Date();
     const next = t.repeat==="daily" ? addDays(base,1) : t.repeat==="weekly" ? addDays(base,7) : new Date(base.getFullYear(), base.getMonth()+1, base.getDate());
@@ -4250,7 +4309,7 @@ const Money = {
     b.set(this.ref("expenses", id), x);
     if (old) b.set(this.ref("expmonths", old.month), this.inc(old, -1), { merge:true });
     b.set(this.ref("expmonths", e.month), this.inc(e, 1), { merge:true });
-    await b.commit(); this.loadMonths();
+    await b.commit(); if (moneyOn()) this.loadMonths();          // an editor may add an expense but not read the totals
   },
   async del(e){
     if (!CLOUD){ const d = this.L(); d.ex = d.ex.filter(x => x.id !== e.id); this.saveL(d); this.refreshLocal(); return; }
@@ -4729,6 +4788,80 @@ function expenseSheet(e, preset){
   };
 }
 
+/* ================= bought → expense (Nov 2026) =================
+   A purchase can go straight into the expenses, always skippable:
+     · one bought thing (a "לקנות" task, or the offer chosen in סקר שוק) → "כמה עלה?" for that thing
+     · a finished shopping round ("אני לוקח" task) → one "כמה יצא בסך הכל?" → ONE expense, not one per item
+   The category comes from the list's picture (סופר → סופר ומזון, סופר־פארם → בריאות …).
+   Asked of whoever can edit — system admin, family manager, editor — when the family has expenses. An editor can only ADD
+   an expense (firestore.rules); the expenses screen itself stays with the family manager and the system admin. */
+const LIST_CAT = { cart:"food", pill:"health", house:"home", teddy:"kids", tshirt:"clothes", plate:"eatout", gift:"fun", car:"car", key:"home", sparkles:"other", balloon:"fun", fuel:"fuel" };
+const listCat = k => { const l = shopList(k); return (l && LIST_CAT[l.pic]) || "other"; };
+function canLogExp(){ return !!me && canEdit() && (!CLOUD || ENV === "test" || moneyFeat(Cloud.fam, FAM.features)); }
+/* what to ask once task t is done (read BEFORE syncBuy drops its shopping item); null = nothing to ask */
+function spentFor(t){
+  if (!t) return null;
+  if (t.buy){ const it = t.shopItemId && DB.shop.find(i => i.id === t.shopItemId);
+    if (it && it.takenBy) return null;                       // already in someone's shopping round → counted in that total
+    const n = buyName(t.title); return { kicker:"נקנה, והמשימה נסגרה", title:n, desc:n, cat:listCat(t.buy), from:"task" }; }
+  if (t.kind === "survey"){ const s = DB.survey.find(x => x.id === t.surveyId), o = s && (s.offers || []).find(x => x.id === s.chosen);
+    if (!s) return null;
+    return { kicker:"נקנה, והמשימה נסגרה", title: o ? `${s.title} · ${o.store}` : s.title, desc: (o ? `${s.title} · ${o.store}` : s.title), cat:"home", amount: o && +o.price > 0 ? +o.price : "", from:"survey" }; }
+  return null;
+}
+function spentLater(o){ if (o && canLogExp()) setTimeout(() => askSpent(o), 420); }
+function askSpent(o){
+  if (!canLogExp() || document.querySelector(".bxp-scrim")) return;
+  let cats = Money.cats(), cat = o.cat, all = false, pi = 0;
+  const payers = [me, ...people().filter(k => k !== me), TOGETHER];
+  const w = document.createElement("div"); w.className = "bxp-scrim";
+  w.innerHTML = `<form class="bxp" role="dialog" aria-modal="true" aria-labelledby="bxT" novalidate>
+    <span class="grab" aria-hidden="true"></span>
+    <div class="hd"><span class="okc" aria-hidden="true">${icon("tick")}</span><div><span class="kk"></span><h3 id="bxT"></h3></div></div>
+    ${o.round ? `<div class="stats"><div><b class="g">${o.round.bought}</b><span>${o.round.bought === 1 ? "פריט נקנה" : "פריטים נקנו"}</span></div>
+      <div><b class="a">${o.round.missing}</b><span>${o.round.missing === 1 ? "חסר, נשאר ברשימה" : "חסרו, נשארו ברשימה"}</span></div></div>` : ""}
+    <label class="lb" for="bxA">${o.round ? "כמה יצא בסך הכל?" : "כמה עלה?"}</label>
+    <div class="amt"><span aria-hidden="true">₪</span><input id="bxA" name="amount" inputmode="decimal" autocomplete="off" placeholder="0"></div>
+    ${o.round ? `<p class="hint">נשמר כהוצאה אחת, לא לפי פריט.</p>` : ""}
+    <span class="lb">קטגוריה</span><div class="cats" id="bxC" role="group" aria-label="קטגוריה"></div>
+    <button type="button" class="payr" id="bxP"><span>מי שילם</span><b></b></button>
+    <p class="err" id="bxE" role="alert"></p>
+    <button type="submit" class="go">שמירה בהוצאות</button>
+    <button type="button" class="skip">דלג</button></form>`;
+  const f = w.querySelector("form"), box = w.querySelector("#bxC"), err = w.querySelector("#bxE"), go = w.querySelector(".go");
+  w.querySelector(".kk").textContent = o.kicker; w.querySelector("#bxT").textContent = o.title;
+  if (o.amount) f.amount.value = String(o.amount);
+  const drawCats = () => { if (!cats.some(c => c.id === cat)) cat = "other";
+    const pref = [cat, "food", "home", "eatout", "fun", "health"].filter((v, i, a) => a.indexOf(v) === i && cats.some(c => c.id === v));
+    const show = all ? cats : [...pref.map(id => cats.find(c => c.id === id)), ...cats.filter(c => !pref.includes(c.id))].slice(0, 5);
+    box.innerHTML = show.map(c => `<button type="button" class="${c.id === cat ? "on" : ""}" data-c="${esc(c.id)}" aria-pressed="${c.id === cat}">${esc(c.name)}</button>`).join("")
+      + (all ? "" : `<button type="button" data-more>עוד…</button>`); };
+  const drawPay = () => { w.querySelector("#bxP b").textContent = payerName(payers[pi]); };
+  drawCats(); drawPay();
+  box.onclick = e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.more !== undefined) all = true; else cat = b.dataset.c; drawCats(); };
+  w.querySelector("#bxP").onclick = () => { pi = (pi + 1) % payers.length; drawPay(); };
+  /* the family manager may have renamed / added categories: read them once if they aren't loaded (editors can't, and keep the built-in ones) */
+  if (moneyOn() && CLOUD && Cloud.fb && !Money.settings) Cloud.fb.getDoc(Money.ref("expmeta", "settings")).then(d => { if (d.exists() && !Money.settings){ Money.settings = d.data(); cats = Money.cats(); if (w.isConnected) drawCats(); } }).catch(() => {});
+  document.body.appendChild(w); requestAnimationFrame(() => w.classList.add("show"));
+  const key = e => { if (e.key === "Escape") close(); };
+  const close = () => { w.classList.remove("show"); document.removeEventListener("keydown", key); setTimeout(() => w.remove(), 240); };
+  document.addEventListener("keydown", key);
+  w.querySelector(".skip").onclick = close;
+  w.onclick = e => { if (e.target === w) close(); };
+  setTimeout(() => { if (!o.amount) f.amount.focus(); }, 300);
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const amount = parseAmount(f.amount.value);
+    if (!amount){ err.textContent = "מה הסכום? למשל 186.40"; f.amount.focus(); return; }
+    const d = iso(new Date());
+    const e = { id:uid(), amount, desc:String(o.desc || "").trim().slice(0, 80), cat, payer:payers[pi], date:d, month:monthOf(d), note:"", by:me, at:Date.now(), upd:Date.now(), from:o.from || "" };
+    busyBtn(go, true, "שומר…");
+    try { await Money.put(e, null); }
+    catch(x){ busyBtn(go, false, "שמירה בהוצאות"); err.textContent = errText(x); return; }
+    close(); toast(`נשמר בהוצאות · ${nis(amount)}`);
+  };
+}
+
 function planSheet(p){
   if (!p) return;
   const today = iso(new Date()), { it, up, paid, left } = planLeft(p, today), c = Money.cat(p.cat), inst = p.kind === "inst", last = it[it.length - 1];
@@ -4928,6 +5061,7 @@ function taskSheet(t){
   const sh = fullSheet(`${head(edit?"עריכת משימה":"משימה חדשה")}
     <form id="tf">
       <input class="input" name="title" placeholder="מה צריך לעשות?" value="${esc(t.title)}" autocomplete="off" required>
+      ${!edit && canEdit() ? `<div class="tk-buy" id="tkBuy" hidden aria-live="polite"></div>` : ""}
       <div class="chips">
         <button type="button" class="chip ${has.who?"on":""}" data-r="who">${icon("user")}אחראי</button>
         <button type="button" class="chip ${has.date?"on":""}" data-r="date">${icon("cal")}תאריך</button>
@@ -4957,6 +5091,20 @@ function taskSheet(t){
     </form>`);
   const f = sh.querySelector("#tf");
   if (!edit) setTimeout(()=>f.title.focus(), 260);
+  /* "לקנות …" → a suggestion right under the title: which list, add / no thanks (answered here, no popup on save) */
+  const bx = sh.querySelector("#tkBuy"); let buyPick = shopKey("super"), buyAns = null;
+  const drawBuy = () => { if (!bx) return;
+    if (!isBuy(f.title.value)){ bx.hidden = true; return; }
+    if (buyAns === "yes"){ bx.hidden = false; bx.className = "tk-buy done";
+      bx.innerHTML = `${flu(buyPick)}<span>ייכנס ל${esc(shopTo(buyPick))}</span><button type="button" data-undo>שינוי</button>`; return; }
+    bx.className = "tk-buy"; bx.hidden = buyAns === "no" || !isBuy(f.title.value); if (bx.hidden) return;
+    bx.innerHTML = `<div class="hd"><span class="ic">${flu("shop")}</span><div><b>נשמע כמו קנייה</b><small>להוסיף גם לרשימת הקניות?</small></div></div>
+      <div class="ls" role="group" aria-label="רשימה">${shops().map(([k, n]) => `<button type="button" data-bl="${k}" aria-pressed="${k === buyPick}">${esc(n)}</button>`).join("")}</div>
+      <div class="bt"><button type="button" class="yes" data-yes>הוסף לרשימה</button><button type="button" class="no" data-no>לא, תודה</button></div>`; };
+  if (bx){ f.title.addEventListener("input", drawBuy);
+    bx.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.bl){ buyPick = b.dataset.bl; } else if (b.dataset.yes !== undefined) buyAns = "yes"; else if (b.dataset.no !== undefined) buyAns = "no"; else if (b.dataset.undo !== undefined) buyAns = null;
+      drawBuy(); }; }
   kit.wire(sh);
   /* place */
   const navNow = () => { const v = f.place.value.trim(); sh.querySelector("#tkNav").innerHTML = v ? placeLinks(v) : ""; };
@@ -4975,7 +5123,7 @@ function taskSheet(t){
   f.onsubmit = async e => {
     e.preventDefault();
     const title = f.title.value.trim(); if (!title){ f.title.focus(); return; }
-    const buy = !edit && isBuy(title) && canEdit() ? await askList(title) : (edit ? t.buy || false : false);
+    const buy = !edit && isBuy(title) && canEdit() ? (buyAns === "yes" ? buyPick : buyAns === "no" ? false : await askList(title)) : (edit ? t.buy || false : false);
     const vis = k => !sh.querySelector(`[data-f="${k}"]`).hidden;
     const data = {
       title,
@@ -5078,7 +5226,7 @@ function renderShop(){
     const was = mine, now = S.take ? S.takeSel.has(i.id) : mine;
     return `<li class="${i.missing ? "miss" : ""}${i.link ? " has-link" : ""}"><button class="item ${S.take && was !== now ? "pending" : ""}" data-id="${i.id}">
       <span class="box ${other ? "other" : now ? "on" : ""}" ${other ? "" : 'role="checkbox"'} aria-checked="${now}" aria-label="${now ? "ביטול" : "אני לוקח"}">${icon("tick")}</span>
-      <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}${i.missing ? `<span class="mtag">לא היה ב${esc(shopOf(i.missing.where)[1])} · ${missDays(i.missing)}</span>` : ""}</span>
+      <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}${(() => { const st = i.fromTask && DB.tasks.find(x => x.id === i.fromTask); return st ? `<span class="ftask">${icon("link")}מקושר למשימה${st.assignee && USERS[st.assignee] ? ` · ${esc(USERS[st.assignee].name)}` : ""}</span>` : ""; })()}${i.missing ? `<span class="mtag">לא היה ב${esc(shopOf(i.missing.where)[1])} · ${missDays(i.missing)}</span>` : ""}</span>
       ${i.takenBy && USERS[i.takenBy] ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i style="${avaStyle(USERS[i.takenBy])}">${initial(USERS[i.takenBy])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
       ${i.image ? `<img class="ithumb" src="${esc(i.image)}" alt="">` : ""}
     </button>${i.link ? `<a class="ilink" href="${esc(i.link)}" target="_blank" rel="noopener" aria-label="קישור: ${esc(hostOf(i.link))}">${icon("link")}</a>` : ""}${i.missing && canEdit() ? `<button type="button" class="mmove" data-move="${i.id}">העברה</button>` : ""}</li>`; };
@@ -5807,8 +5955,9 @@ function eventView(ev){
     const row = e.target.closest("[data-t]"); if (!row) return;
     const t = DB.tasks.find(x => x.id === row.dataset.t); if (!t || !canEdit()) return;
     if (e.target.closest(".dot")){
+      const spent = !t.done && spentFor(t);
       if (t.done){ t.done = false; delete t.doneAt; delete t.doneBy; } else { t.done = true; t.doneAt = Date.now(); t.doneBy = me; }
-      if (t.buy) syncBuy(t); save(); again(); return;
+      if (t.buy) syncBuy(t); save(); again(); spentLater(spent); return;
     }
     if (e.target.closest("[data-who]") && !t.done){ const P = peopleCycle(); t.assignee = P[(P.indexOf(t.assignee) + 1) % P.length]; save(); again(); }
   });
@@ -6453,9 +6602,10 @@ function ideaDetail(i){
   bindFeedback(sh.querySelector("#dFb"), state, () => { i.rating = state.rating; i.review = (state.review||"").trim(); save(); renderIdeas(); });
   const dt = sh.querySelector("#dTasks"); if (dt) dt.onclick = e => {
     const b = e.target.closest(".dot"); if (!b) return; const t = DB.tasks.find(x => x.id===b.closest("[data-t]").dataset.t);
+    const spent = !t.done && spentFor(t);
     if (t.done){ t.done=false; delete t.doneAt; delete t.doneBy; } else { t.done=true; t.doneAt=Date.now(); t.doneBy=me; }
     if (t.buy) syncBuy(t);
-    save(); renderIdeas(); ideaDetail(i);
+    save(); renderIdeas(); ideaDetail(i); spentLater(spent);
   };
   sh.querySelector("#want").onclick = () => { toggleLike(i); renderIdeas(); ideaDetail(i); };
   sh.querySelector("#plan").onclick = () => { closeSheet(); setTimeout(()=>eventSheet(null, { title:i.title, ideaId:i.id, place:i.place||"", date:iso(new Date()) }), 230); };

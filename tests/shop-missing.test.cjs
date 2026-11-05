@@ -68,7 +68,8 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await R(() => document.getElementById("takeOk").click()); await p.waitForTimeout(300);
   await R(id => itemSheet(DB.shop.find(i => i.id === id)), bread); await p.waitForTimeout(300);
   await p.click("#miss"); await p.waitForTimeout(300); await p.click("#mf [type=submit]"); await p.waitForTimeout(300);
-  await R(() => completeTask(myShopTask())); await p.waitForTimeout(300);
+  await R(() => completeTask(myShopTask())); await p.waitForTimeout(700);
+  await p.evaluate(() => document.querySelector(".bxp .skip")?.click()); await p.waitForTimeout(300);   // "כמה יצא בסך הכל?" → דלג
   ok(await R(id => { const i = DB.shop.find(x => x.id === id); return i && i.list === "super" && i.missing && !i.taskId; }, bread), "finishing the trip keeps the missing item in its list");
   ok(await R(() => !DB.shop.some(i => i.name === "ביצים") && DB.shop.filter(i => i.list === "super" && !i.missing).length === 2), "…while what was bought came off the list");
 
