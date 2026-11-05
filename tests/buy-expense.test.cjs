@@ -91,6 +91,12 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await p.waitForTimeout(700);
   ok(!(await p.evaluate(() => document.querySelector(".bxp-scrim"))), "item already taken into a round → no separate question");
 
+  // 6b. a "לקנות …" task that isn't on any list still asks
+  await p.evaluate(() => { const t = { id:uid(), kind:"task", title:"לקנות טלוויזיה", assignee:null, date:null, time:null, repeat:"none", done:false, buy:false, created:Date.now() }; DB.tasks.push(t); completeTask(t); });
+  await p.waitForTimeout(700);
+  ok(await p.evaluate(() => { const w = document.querySelector(".bxp-scrim.show"); return w && w.querySelector("#bxT").textContent === "טלוויזיה" && w.querySelector("#bxC .on").textContent === "אחר"; }), "'לקנות טלוויזיה' without a list → asked too (category אחר)");
+  await p.click(".bxp .skip"); await p.waitForTimeout(400);
+
   // 7. view-only member: never asked
   await p.evaluate(() => { USERS[me].role = "viewer"; const t = { id:uid(), kind:"task", title:"לקנות מטריה", assignee:null, date:null, time:null, repeat:"none", done:false, buy:"home", created:Date.now() }; DB.tasks.push(t); syncBuy(t); completeTask(t); USERS[me].role = "admin"; });
   await p.waitForTimeout(700);

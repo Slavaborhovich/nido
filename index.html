@@ -3898,7 +3898,7 @@ const Admin = {
 /* re-render after a remote change, but never under the user's fingers */
 function uiBusy(){
   const a = document.activeElement;
-  return !!($("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim") || S.take || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && $("#app").contains(a)));
+  return !!($("#sheetRoot").innerHTML || document.querySelector(".cfm-scrim, .bxp-scrim") || S.take || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && $("#app").contains(a)));
 }
 function softRender(){
   if (!me || $("#app").hidden) return;
@@ -4207,12 +4207,12 @@ function completeTask(t){
     DB.shop = DB.shop.filter(i=>i.taskId!==t.id);
     toast(`הקניות הושלמו · ${t.items.length} פריטים ירדו מהרשימה`);
   } else if (t.buy){ syncBuy(t); toast("בוצע · ירד מרשימת הקניות"); spentLater(spent);
-  } else if (t.kind === "survey"){ toast("בוצע"); spentLater(spent);
+  } else if (t.kind === "survey" || (spent && !(t.repeat && t.repeat !== "none"))){ toast("בוצע"); spentLater(spent);
   } else if (t.repeat && t.repeat!=="none"){
     const base = t.date ? parse(t.date) : new Date();
     const next = t.repeat==="daily" ? addDays(base,1) : t.repeat==="weekly" ? addDays(base,7) : new Date(base.getFullYear(), base.getMonth()+1, base.getDate());
     DB.tasks.push({ ...t, id:uid(), done:false, doneAt:undefined, doneBy:undefined, date:iso(next), created:Date.now(), spawned:true });
-    toast(`בוצע · הפעם הבאה: ${dayLabel(iso(next))}`);
+    toast(`בוצע · הפעם הבאה: ${dayLabel(iso(next))}`); spentLater(spent);
   } else toast("בוצע");
   save();
 }
@@ -4801,15 +4801,19 @@ function canLogExp(){ return !!me && canEdit() && (!CLOUD || ENV === "test" || m
 /* what to ask once task t is done (read BEFORE syncBuy drops its shopping item); null = nothing to ask */
 function spentFor(t){
   if (!t) return null;
-  if (t.buy){ const it = t.shopItemId && DB.shop.find(i => i.id === t.shopItemId);
+  if (t.buy || (t.kind !== "shop" && t.kind !== "survey" && isBuy(t.title))){       // linked to a list, or just "לקנות …"
+    const it = t.shopItemId && DB.shop.find(i => i.id === t.shopItemId);
     if (it && it.takenBy) return null;                       // already in someone's shopping round → counted in that total
-    const n = buyName(t.title); return { kicker:"נקנה, והמשימה נסגרה", title:n, desc:n, cat:listCat(t.buy), from:"task", task:t.id }; }
+    const n = buyName(t.title); return { kicker:"נקנה, והמשימה נסגרה", title:n, desc:n, cat: t.buy ? listCat(t.buy) : "other", from:"task", task:t.id }; }
   if (t.kind === "survey"){ const s = DB.survey.find(x => x.id === t.surveyId), o = s && (s.offers || []).find(x => x.id === s.chosen);
     if (!s) return null;
     return { kicker:"נקנה, והמשימה נסגרה", title: o ? `${s.title} · ${o.store}` : s.title, desc: (o ? `${s.title} · ${o.store}` : s.title), cat:"home", amount: o && +o.price > 0 ? +o.price : "", from:"survey", task:t.id }; }
   return null;
 }
-function spentLater(o){ if (o && canLogExp()) setTimeout(() => askSpent(o), 420); }
+function spentLater(o){
+  if (o && canLogExp()) return setTimeout(() => askSpent(o), 420);
+  if (o && ENV === "test") toast(`(בדיקה) לא נשאל "כמה עלה" · ${!me ? "אין משתמש" : !canEdit() ? "צפייה בלבד" : "הוצאות כבויות למשפחה"}`);
+}
 function askSpent(o){
   if (!canLogExp() || document.querySelector(".bxp-scrim")) return;
   let cats = Money.cats(), cat = o.cat, all = false, pi = 0;
