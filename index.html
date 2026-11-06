@@ -730,6 +730,67 @@ nav.tabs button[aria-current="page"]{--nv1:#FFF0DC;--nv2:#4A2A10;--nv3:#fff}
 .tk-buy.done{flex-direction:row;align-items:center;padding:10px 14px;gap:10px}
 .tk-buy.done span{flex:1;font-size:14.5px}
 .tk-buy.done button{border:0;background:none;color:#F2C98F;font:600 14px var(--font);padding:6px}
+/* ---- shopping lists (Nov 2026): one glass card per list, the category picture beside it ---- */
+.dH1{display:flex;align-items:center;gap:10px}.dH1 .dH1i{width:40px;height:40px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}
+.dCard{position:relative;margin-bottom:14px;padding:18px 16px 16px;border-radius:30px;min-height:150px;display:flex;flex-direction:column;gap:12px;
+  background:linear-gradient(150deg,var(--sb),transparent 60%),linear-gradient(155deg,rgba(150,110,76,.52),rgba(88,60,38,.50));
+  border:1px solid rgba(255,230,200,.30);box-shadow:inset 0 1px 0 rgba(255,240,215,.28),0 18px 40px rgba(12,6,2,.40);
+  backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25)}
+.dArt{position:absolute;left:10px;top:6px;width:124px;height:104px;object-fit:contain;object-position:left top;filter:drop-shadow(0 14px 18px rgba(0,0,0,.38));pointer-events:none}
+.dGo{position:absolute;right:12px;top:58px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,230,200,.35);background:rgba(60,40,24,.35);color:#FFF3E4;display:grid;place-items:center;padding:0}
+.dGo svg{width:18px;height:18px;transform:scaleX(-1)}
+.dTxt{padding-inline-start:48px;padding-inline-end:112px;min-width:0}
+.dTag{display:inline-block;font-size:13px;font-weight:700;padding:3px 11px;border-radius:99px;background:var(--sc);color:#2B190B;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.dTxt h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:6px 0 4px;font-size:22px;font-weight:800;line-height:1.15;color:#FFF7EE;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.dMeta{display:flex;align-items:center;gap:6px;font-size:14px;color:#E9D7C2}.dMeta svg{width:16px;height:16px;color:#E9D7C2}
+.dPrev{margin-top:8px;font-size:14px;color:#F1E3D2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dTake{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border:0;border-radius:99px;background:var(--g-amber);color:#2B190B;font:700 16px var(--font);box-shadow:0 10px 22px rgba(238,159,79,.38),inset 0 1px 0 rgba(255,255,255,.55)}
+.dTake svg{width:20px;height:20px}
+.dProg{display:flex;align-items:center;gap:12px;padding-top:10px;border-top:1px solid rgba(255,230,200,.16)}
+.dProg span{font-size:14px;font-weight:600;color:var(--sc);white-space:nowrap}
+.dProg i{flex:1;height:8px;border-radius:4px;background:rgba(255,230,200,.16);overflow:hidden}.dProg b{display:block;height:100%;border-radius:4px;background:var(--sc)}
+.dArt{z-index:0}.dTake,.dProg,.dTxt,.dGo{position:relative;z-index:1}.dGo{position:absolute}
+
+.lw-hero{display:flex;align-items:center;gap:14px;margin:-6px 0 14px;padding:12px 14px;border-radius:24px;background:linear-gradient(150deg,var(--sb),transparent 65%),linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.14)}
+.lw-hero img{width:104px;height:88px;object-fit:contain;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));flex:none}
+.lw-hero p{display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:14px;color:#E3D2BE}.lw-hero p svg{width:16px;height:16px}
+.lw-hero .lw-who{color:var(--sc);font-weight:600}
+.lw-prog{display:flex;align-items:center;gap:10px;margin:0 2px 12px}.lw-prog i{flex:1;height:8px;border-radius:4px;background:rgba(255,214,170,.14);overflow:hidden}.lw-prog b{display:block;height:100%;border-radius:4px;background:var(--g-amber,#EE9F4F)}.lw-prog span{font-weight:700;color:#F2C46B;font-size:14px}
+.lw-list{list-style:none;margin:0;padding:4px 14px;border-radius:22px;background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));border:1px solid rgba(255,214,170,.12)}
+.lw-it{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,214,170,.09)}.lw-it:first-child{border-top:0}
+.lw-it .box{width:26px;height:26px;border-radius:9px;border:2px solid rgba(242,182,107,.7);display:grid;place-items:center;flex:none;color:transparent}
+.lw-it .box svg{width:15px;height:15px}.lw-it .box.on{background:var(--g-amber,#EE9F4F);border-color:transparent;color:#2B190B}
+.lw-it .n{flex:1;font-size:16px;color:#F7EEE4}.lw-it .n small{margin-inline-start:8px;font-size:13px;color:#C9B39C}
+.lw-it.got .n{color:#A8927C;text-decoration:line-through}.lw-it.miss .box{border-style:dashed;opacity:.6}.lw-it.miss .n{color:#D0BBA5}
+.lw-it .mt{font-size:12.5px;font-weight:600;color:#F2B66B;background:rgba(242,182,107,.14);padding:3px 9px;border-radius:99px}
+.lw-it .mb{height:32px;padding:0 10px;border-radius:99px;border:1px solid rgba(255,214,170,.16);background:rgba(40,28,19,.55);color:#D0BBA5;font:500 12.5px var(--font)}
+.lw-add{display:flex;gap:8px;margin-top:12px}.lw-add .input{flex:1}.lw-plus{width:52px;border-radius:18px;border:1px solid rgba(255,214,170,.16);background:rgba(242,182,107,.18);color:#F2B66B;display:grid;place-items:center}.lw-plus svg{width:20px;height:20px}
+.lw-hint{text-align:center;margin:14px 0 0}
+#sheetRoot .sheet .lw-hero~.actions .primary svg,#sheetRoot .sheet.lw .actions .primary svg{width:20px;height:20px;margin-inline-end:6px}
+.ad-lists{display:flex;flex-direction:column;gap:8px}
+.ad-l{display:flex;align-items:center;gap:12px;height:68px;padding:0 12px;border-radius:20px;border:1px solid rgba(255,214,170,.12);background:linear-gradient(180deg,rgba(62,44,30,.72),rgba(42,30,20,.72));color:#F7EEE4;text-align:start;font:inherit}
+.ad-l.on{background:linear-gradient(150deg,var(--sb),rgba(42,30,20,.72));border:1.5px solid var(--sc)}
+.ad-l img{width:56px;height:48px;object-fit:contain;flex:none}.ad-l span{flex:1;min-width:0}.ad-l b{display:block;font-size:15.5px}.ad-l small{font-size:12.5px;color:#D0BBA5}.ad-l .dTag{font-style:normal;font-size:11px;padding:1px 8px;margin-inline-end:4px}
+.ad-l .rad{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,214,170,.35);box-sizing:border-box;flex:none}.ad-l.on .rad{border:6px solid var(--sc)}
+.ad-new{display:flex;align-items:center;gap:8px;height:50px;padding:0 14px;border-radius:18px;border:1.5px dashed rgba(242,196,107,.45);background:none;color:#F2C98F;font:600 15px var(--font)}.ad-new svg{width:18px;height:18px}
+.ad-cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.ad-c{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:1px solid rgba(255,214,170,.14);background:rgba(40,28,19,.55);color:#E3D2BE;font:500 13px var(--font)}
+.ad-c img{width:58px;height:46px;object-fit:contain}.ad-c.on{background:linear-gradient(180deg,var(--sb),rgba(40,28,19,.55));border:1.5px solid var(--sc);color:#FFF3E4;font-weight:600}
+
+.dTxt{display:block;width:100%;border:0;background:none;color:inherit;font:inherit;text-align:start;padding-top:0;padding-bottom:0}
+.dTxt .dMeta,.dTxt .dPrev{display:flex}.dTxt .dPrev{display:block}
+.dEmpty{padding:22px;text-align:center;color:var(--muted)}
+.lw-hero{position:relative}.lw-ren{position:absolute;left:10px;top:10px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,214,170,.18);background:rgba(40,28,19,.5);color:#E3D2BE;display:grid;place-items:center}.lw-ren svg{width:16px;height:16px}
+.lw-it .dot{width:8px;height:8px;border-radius:50%;background:var(--sc,#F2B66B);margin:0 9px;flex:none;opacity:.8}
+.lw-it .n{border:0;background:none;text-align:start;font:inherit;padding:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}
+.lw-it .n small{margin:0}.lw-it .ft{display:inline-flex;align-items:center;gap:3px;color:#F2C98F!important}.lw-it .ft svg{width:12px;height:12px}
+.lw-it .ithumb{width:34px;height:34px;border-radius:10px;object-fit:cover;flex:none}
+.lw-add{margin-bottom:4px}
+.ad-new.on{border-style:solid;background:rgba(242,196,107,.12)}
+.tk-buy .or{font-size:13px;color:#E3D2BE;margin-top:-4px}
+.tk-buy .ob button{font-size:13px}
+#sheetRoot .sheet.lw .actions .primary svg{width:20px;height:20px;margin-inline-end:6px}
+
 /* a shopping item that came from a task */
 .sh-list .ftask{display:inline-flex;align-items:center;gap:4px;margin-top:2px;font-size:12.5px;color:var(--sc,#F2C98F)}
 .sh-list .ftask svg{width:13px;height:13px}
@@ -2228,7 +2289,7 @@ const avaStyle = u => u.photo ? `background-image:url(${u.photo});background-siz
 const FIREBASE_CONFIG = { /* public web config — access is protected by login + Firestore rules */
   apiKey:"AIzaSyAJAKpXPS_g6yUC7EMw-YwAAsWgXM1HJrY", authDomain:"nido-family-72346.firebaseapp.com", projectId:"nido-family-72346",
   storageBucket:"nido-family-72346.firebasestorage.app", messagingSenderId:"811741213614", appId:"1:811741213614:web:9d62867a1b934ba7648e3f" };
-const COLS = ["tasks","shop","events","ideas","survey","coupons","shoplists"];
+const COLS = ["tasks","shop","events","ideas","survey","coupons","shoplists","baskets"];
 const EMAIL_DOMAIN = "nido.family";
 if (CLOUD) document.documentElement.classList.add("cloud");
 
@@ -4196,7 +4257,11 @@ function renderTasks(){
 function completeTask(t){
   const spent = spentFor(t);                     // read before syncBuy takes the item off the list
   t.done = true; t.doneAt = Date.now(); t.doneBy = me;
-  if (t.kind==="shop"){
+  if (t.kind==="shop" && t.basketId){             // a whole list taken (Nov 2026)
+    const b = baskets().find(x => x.id === t.basketId), title = b ? bkTitle(b) : t.title, r = finishBasketTask(t);
+    if (r.bought) spentLater({ kicker:"סיימת את הקנייה", title, desc:t.title, cat:listCat(t.list), round:{ bought:r.bought, missing:r.rest }, from:"shop", task:t.id });
+    toast(`הקנייה הושלמה · ${r.bought} נקנו${r.rest ? ` · ${r.rest} מחכים ברשימה חדשה` : ""}`);
+  } else if (t.kind==="shop"){
     t.items = DB.shop.filter(i=>i.taskId===t.id).map(i=>i.name);
     /* the round's total → one expense. "חסרו" = what I marked missing since this round began (it stayed on a list) */
     const missing = DB.shop.filter(i => i.missing && i.missing.by === me && i.missing.at >= (t.created || 0)).length;
@@ -5108,19 +5173,22 @@ function taskSheet(t){
   const f = sh.querySelector("#tf");
   if (!edit) setTimeout(()=>f.title.focus(), 260);
   /* "לקנות …" → a suggestion right under the title: which list, add / no thanks (answered here, no popup on save) */
-  const bx = sh.querySelector("#tkBuy"); let buyPick = shopKey("super"), buyAns = null;
+  const bx = sh.querySelector("#tkBuy"); let buyPick = shopKey("super"), buyAns = null, buyBk = null;
+  const openBk = () => baskets().filter(b => bkItems(b).length && (!b.takenBy || b.takenBy === me)).slice(-4);
   const drawBuy = () => { if (!bx) return;
     if (!isBuy(f.title.value)){ bx.hidden = true; return; }
     if (buyAns === "yes"){ bx.hidden = false; bx.className = "tk-buy done";
-      bx.innerHTML = `${flu(buyPick)}<span>ייכנס ל${esc(shopTo(buyPick))}</span><button type="button" data-undo>שינוי</button>`; return; }
+      const ob = buyBk && baskets().find(b => b.id === buyBk);
+      bx.innerHTML = `${flu(buyPick)}<span>${ob ? `ייכנס ל${esc(bkTitle(ob))}` : `רשימה חדשה ב${esc(shopOf(buyPick)[1].replace(/^ל/, ""))}`}</span><button type="button" data-undo>שינוי</button>`; return; }
     bx.className = "tk-buy"; bx.hidden = buyAns === "no" || !isBuy(f.title.value); if (bx.hidden) return;
     bx.innerHTML = `<div class="hd"><span class="ic">${flu("shop")}</span><div><b>נשמע כמו קנייה</b><small>להוסיף גם לרשימת הקניות?</small></div></div>
-      <div class="ls" role="group" aria-label="רשימה">${shops().map(([k, n]) => `<button type="button" data-bl="${k}" aria-pressed="${k === buyPick}">${esc(n)}</button>`).join("")}</div>
+      <div class="ls" role="group" aria-label="רשימה חדשה">${shops().map(([k, n]) => `<button type="button" data-bl="${k}" aria-pressed="false">${esc(n)}</button>`).join("")}</div>
+      ${openBk().length ? `<small class="or">או להוסיף לרשימה פתוחה:</small><div class="ls ob" role="group" aria-label="רשימה פתוחה">${openBk().map(b => `<button type="button" data-bb="${b.id}" data-bc="${esc(b.cat)}" aria-pressed="false">${esc(bkTitle(b))}</button>`).join("")}</div>` : ""}
       <div class="bt"><button type="button" class="yes" data-yes>הוסף לסופר</button><button type="button" class="no" data-no>לא, תודה</button></div>`;
     bx.querySelector("[data-yes]").textContent = `הוסף ל${shopOf(buyPick)[1].replace(/^ל/, "")}`; };
   if (bx){ f.title.addEventListener("input", drawBuy);
     bx.onclick = e => { const b = e.target.closest("button"); if (!b) return;
-      if (b.dataset.bl){ buyPick = b.dataset.bl; buyAns = "yes"; } else if (b.dataset.yes !== undefined) buyAns = "yes"; else if (b.dataset.no !== undefined) buyAns = "no"; else if (b.dataset.undo !== undefined) buyAns = null;
+      if (b.dataset.bl){ buyPick = b.dataset.bl; buyBk = null; buyAns = "yes"; } else if (b.dataset.bb){ buyBk = b.dataset.bb; buyPick = b.dataset.bc; buyAns = "yes"; } else if (b.dataset.yes !== undefined) buyAns = "yes"; else if (b.dataset.no !== undefined) buyAns = "no"; else if (b.dataset.undo !== undefined) buyAns = null;
       drawBuy(); }; }
   kit.wire(sh);
   /* place */
@@ -5156,7 +5224,7 @@ function taskSheet(t){
     try { Object.assign(data, await kit.saveFiles(vis("files"), f.querySelector("[type=submit]"), edit ? "שמירה" : "הוספה") || {}); }
     catch(x){ return toast(x && x.code === "limit" ? `אפשר עד ${Photos.max()} קבצים למשימה` : errText(x)); }
     if (edit) Object.assign(t, data);
-    else { tk = { id:t.id, ...data, done:false, buy: buy || false, created:Date.now() }; DB.tasks.push(tk); }
+    else { tk = { id:t.id, ...data, done:false, buy: buy || false, created:Date.now() }; if (buy && buyBk) tk.buyBk = buyBk; DB.tasks.push(tk); }
     if (tk.buy) syncBuy(tk);
     save(); closeSheet(); S.taskView="active"; render();
     toast(edit ? "נשמר" : buy ? `המשימה נוספה · ונכנסה ל${shopTo(buy)} 🛒` : "המשימה נוספה");
@@ -5198,7 +5266,7 @@ const SHOP_COLORS = {
   teal:   ["#7FD6CF", "rgba(127,214,207,.15)", "#2F8A83", "rgba(47,138,131,.12)",  "#7ACDC6", "#6CB8B1"],
 };
 /* pictures a list can have (Fluent Emoji, stored with the app) and the small line icon that goes with each */
-const SHOP_PICS = ["cart", "pill", "house", "teddy", "tshirt", "plate", "gift", "car", "key", "sparkles", "balloon", "fuel"];
+const SHOP_PICS = ["cart", "pill", "house", "teddy", "baby", "tshirt", "plate", "gift", "car", "key", "sparkles", "balloon", "fuel"];
 const SHOP_SPRITE = { cart:"cart", house:"home", teddy:"kid" };
 const shopLists = () => (Array.isArray(DB.shoplists) && DB.shoplists.length) ? DB.shoplists : SHOP_DEF;
 /* [id, name, "רשימת …" form, line icon] — the shape the rest of the app reads */
@@ -5227,123 +5295,175 @@ function listsSeg(){
 }
 function bindSeg(){ $("#screen").querySelectorAll("[data-list]").forEach(b => b.onclick = () => { S.shopList = b.dataset.list; S.take = false; S.surveyOpen = null; renderShop(); }); }
 const missDays = m => { const d = Math.floor((new Date().setHours(0,0,0,0) - new Date(m.at).setHours(0,0,0,0)) / 864e5); return d <= 0 ? "היום" : d === 1 ? "אתמול" : `לפני ${d} ימים`; };
+/* ================= Shopping lists (Nov 2026) =================
+   The screen is made of the shopping lists the family opened ("קניות לשבת", or one item from a task).
+   A list = one document in DB.baskets { id, cat, name, by, created, takenBy }; its items stay in DB.shop with bk = the list's id.
+   cat = one of the family's categories (DB.shoplists: סופר · לבית · לנועם · פארמה) → its colour, illustration and expense category.
+   Someone takes a WHOLE list ("אני לוקח") → one shopping task; in the store they tick what they got, mark what wasn't there,
+   and "סיימתי" → one "כמה יצא בסך הכל?". The list then goes away; what wasn't bought waits in a new list of the same category. */
+const SHOP_ART = { cart:"super", house:"home", teddy:"noam", baby:"noam", pill:"ph" };
+const catArt = k => { const l = shopList(k), a = l && SHOP_ART[l.pic]; return a ? `icons/shop/${a}.webp` : `icons/fluent/${(l && l.pic) || "cart"}.png`; };
+const baskets = () => (DB.baskets || (DB.baskets = []));
+const bkItems = b => DB.shop.filter(i => i.bk === b.id);
+const bkTitle = b => { if (b.name) return b.name; const its = bkItems(b); return its.length === 1 ? its[0].name : shopTaskTitle(b.cat); };
+const bkTask = b => DB.tasks.find(t => t.kind === "shop" && !t.done && t.basketId === b.id);
+function newBasket(cat, name){ const b = { id:uid(), cat:shopKey(cat), name:(name || "").trim().slice(0, 40), by:me, created:Date.now(), takenBy:null }; baskets().push(b); return b; }
+/* every item belongs to a list: items from before lists (or added by an old version) are gathered into one list per category;
+   lists left with nothing in them go away. Returns true when something changed (the caller saves). */
+function tidyBaskets(){
+  if (!canEdit()) return false;
+  let ch = false; const have = new Set(baskets().map(b => b.id)), byCat = {};
+  DB.shop.forEach(i => { if (i.bk && have.has(i.bk)) return;
+    const k = shopKey(i.list); let b = byCat[k] || baskets().find(x => x.auto && x.cat === k && !x.takenBy);
+    if (!b){ b = newBasket(k, ""); b.auto = true; b.by = null; have.add(b.id); } byCat[k] = b;
+    i.bk = b.id; i.list = b.cat; ch = true; });
+  const used = new Set(DB.shop.map(i => i.bk)), keep = baskets().filter(b => used.has(b.id));
+  if (keep.length !== baskets().length){ DB.baskets = keep; ch = true; }
+  return ch;
+}
+/* take / give back a whole list */
+function takeBasket(b){
+  if (b.takenBy && b.takenBy !== me) return toast(`${(USERS[b.takenBy] || {}).name || "מישהו"} כבר לוקח את הרשימה`);
+  let t = bkTask(b);
+  if (!t){ t = { id:uid(), kind:"shop", list:b.cat, basketId:b.id, title:bkTitle(b), assignee:me, date:null, time:null, repeat:"none", done:false, created:Date.now() }; DB.tasks.push(t); }
+  b.takenBy = me; bkItems(b).forEach(i => { i.takenBy = me; i.taskId = t.id; });
+  save(); toast(`לקחת את "${bkTitle(b)}" · נוצרה משימת קניות 🛒`);
+}
+function dropBasket(b){
+  const t = bkTask(b); if (t) DB.tasks = DB.tasks.filter(x => x !== t);
+  b.takenBy = null; bkItems(b).forEach(i => { i.takenBy = null; i.taskId = null; delete i.got; });
+  save(); toast("הרשימה חזרה לכולם");
+}
+/* "סיימתי": what was ticked is bought (nothing ticked → everything not marked missing); the rest waits in a new list */
+function finishBasketTask(t){
+  const b = baskets().find(x => x.id === t.basketId), its = DB.shop.filter(i => i.taskId === t.id || (b && i.bk === b.id));
+  const anyGot = its.some(i => i.got), bought = its.filter(i => !i.missing && (anyGot ? i.got : true)), rest = its.filter(i => !bought.includes(i));
+  t.items = bought.map(i => i.name);
+  bought.forEach(i => { const st = i.fromTask && DB.tasks.find(x => x.id === i.fromTask); if (st && !st.done){ st.done = true; st.doneAt = Date.now(); st.doneBy = me; delete st.shopItemId; } });
+  DB.shop = DB.shop.filter(i => !bought.includes(i));
+  if (rest.length){ const nb = newBasket(b ? b.cat : t.list, b ? b.name : ""); rest.forEach(i => { i.bk = nb.id; i.takenBy = null; i.taskId = null; delete i.got; }); }
+  if (b) DB.baskets = baskets().filter(x => x !== b);
+  return { bought: bought.length, rest: rest.length };
+}
+
 function renderShop(){
   if (!LISTS.some(x => x[0] === S.shopList) || ((S.shopList === "survey" || S.shopList === "coupons") && !feat(S.shopList))) S.shopList = "shop";
   if (S.shopList==="survey") return renderSurvey();
   if (S.shopList==="coupons") return renderCoupons();
-  const items = DB.shop;
-  const takeable = items.some(i => !i.takenBy || i.takenBy===me);
-  /* one list open at a time (remembered on this phone); the open one comes first, the rest below as small cards */
-  if (S.shopAdd && shopLists().some(x => x.id === S.shopAdd)) ShopUI.set(S.shopAdd);
-  const open = ShopUI.open(), count = k => items.filter(i => shopKey(i.list) === k).length;
-  const order = [...shops().filter(x => x[0] === open), ...shops().filter(x => x[0] !== open)];
-  const row = i => {
-    const mine = i.takenBy===me, other = i.takenBy && !mine;
-    const sub = [i.qty, i.note].filter(Boolean).map(esc).join(" · ");
-    const was = mine, now = S.take ? S.takeSel.has(i.id) : mine;
-    return `<li class="${i.missing ? "miss" : ""}${i.link ? " has-link" : ""}"><button class="item ${S.take && was !== now ? "pending" : ""}" data-id="${i.id}">
-      <span class="box ${other ? "other" : now ? "on" : ""}" ${other ? "" : 'role="checkbox"'} aria-checked="${now}" aria-label="${now ? "ביטול" : "אני לוקח"}">${icon("tick")}</span>
-      <span class="body"><div class="name">${esc(i.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}${(() => { const st = i.fromTask && DB.tasks.find(x => x.id === i.fromTask); return st ? `<span class="ftask">${icon("link")}מקושר למשימה${st.assignee && USERS[st.assignee] ? ` · ${esc(USERS[st.assignee].name)}` : ""}</span>` : ""; })()}${i.missing ? `<span class="mtag">לא היה ב${esc(shopOf(i.missing.where)[1])} · ${missDays(i.missing)}</span>` : ""}</span>
-      ${i.takenBy && USERS[i.takenBy] ? `<span class="who" style="--c:${USERS[i.takenBy].color}"><i style="${avaStyle(USERS[i.takenBy])}">${initial(USERS[i.takenBy])}</i>${esc(USERS[i.takenBy].name)} לוקח</span>` : ""}
-      ${i.image ? `<img class="ithumb" src="${esc(i.image)}" alt="">` : ""}
-    </button>${i.link ? `<a class="ilink" href="${esc(i.link)}" target="_blank" rel="noopener" aria-label="קישור: ${esc(hostOf(i.link))}">${icon("link")}</a>` : ""}${i.missing && canEdit() ? `<button type="button" class="mmove" data-move="${i.id}">העברה</button>` : ""}</li>`; };
+  if (tidyBaskets()) save();
+  if (S.shopCat && !shopLists().some(x => x.id === S.shopCat)) S.shopCat = null;
+  const all = [...baskets()].filter(b => bkItems(b).length).sort((a, b) => ((b.takenBy === me) - (a.takenBy === me)) || ((b.created || 0) - (a.created || 0)));
+  const shown = S.shopCat ? all.filter(b => shopKey(b.cat) === S.shopCat) : all;
+  const card = b => { const its = bkItems(b), n = its.length, got = its.filter(i => i.got).length, tk = b.takenBy && USERS[b.takenBy], miss = its.filter(i => i.missing).length;
+    const by = b.by && USERS[b.by] ? USERS[b.by].name : "";
+    const meta = [n === 1 ? (its[0].fromTask ? "פריט אחד · ממשימה" : "פריט אחד") : `${n} פריטים`, tk ? "" : by, miss ? `${miss} חסר` : ""].filter(Boolean).join(" · ");
+    return `<section class="dCard" style="${shopStyle(b.cat)}" data-bk="${b.id}">
+      <img class="dArt" src="${catArt(b.cat)}" alt="" draggable="false">
+      <button type="button" class="dGo" data-open="${b.id}" aria-label="פתיחת הרשימה ${esc(bkTitle(b))}">${icon("next")}</button>
+      <button type="button" class="dTxt" data-open="${b.id}"><span class="dTag">${esc(shopOf(b.cat)[1])}</span><h3>${esc(bkTitle(b))}</h3>
+        <span class="dMeta">${icon("cal")}${esc(meta)}${b.created ? ` · ${dayLabel(iso(new Date(b.created)))}` : ""}</span>
+        ${n > 1 ? `<span class="dPrev">${its.slice(0, 4).map(i => esc(i.name)).join(" · ")}${n > 4 ? " ועוד…" : ""}</span>` : ""}</button>
+      ${tk ? `<div class="dProg"><span>${esc(tk.name)} לוקח${b.takenBy === me ? "/ת" : ""} · ${got}/${n}</span><i><b style="width:${n ? Math.round(got / n * 100) : 0}%"></b></i></div>`
+        : canEdit() ? `<button type="button" class="dTake" data-take="${b.id}">${icon("hand")}אני לוקח</button>` : ""}</section>`; };
+  const cnt = k => all.filter(b => shopKey(b.cat) === k).length;
   $("#screen").innerHTML = `
-    <header class="top"><h1>קניות</h1></header>
+    <header class="top"><h1 class="dH1">${flu("super", "dH1i")}קניות</h1></header>
     ${listsSeg()}
-    <div class="sh-chips" role="tablist" aria-label="רשימות הקניות" data-noswipe>${shops().map(([k, name]) => { const on = open === k;
-      return `<button type="button" role="tab" class="sh-chip ${on ? "on" : ""}" data-chip="${k}" aria-selected="${on}" style="${shopStyle(k)}">${flu(k)}<span>${esc(name)}</span><b>${count(k)}</b></button>`; }).join("")}</div>
-    ${order.map(([k, name]) => { const its = items.filter(i => shopKey(i.list) === k), closed = open !== k, taken = its.filter(i => i.takenBy).length;
-      const ok = its.filter(i => !i.missing), miss = its.filter(i => i.missing);
-      return `<section class="panel sh-card ${closed ? "closed" : ""}" data-sl="${k}" style="${shopStyle(k)}">
-        <div class="sh-top"><button type="button" class="sh-hd" data-fold="${k}" aria-expanded="${!closed}"><span class="sh-ic">${flu(k)}</span><span class="t"><b>${esc(name)}</b><small>${its.length ? `${its.length} ${its.length === 1 ? "פריט" : "פריטים"}${taken ? ` · ${taken} ${taken === 1 ? "נלקח" : "נלקחו"}` : ""}${miss.length ? ` · <span class="mcount">${miss.length} ${miss.length === 1 ? "חסר" : "חסרים"}</span>` : ""}` : "ריק"}</small></span>${icon("next", "i sh-chev")}</button>${canLists() ? `<button type="button" class="sh-edit" data-edit="${k}" aria-label="עריכת הרשימה ${esc(name)}">${icon("edit")}</button>` : ""}</div>
-        <ul class="sh-list">${ok.map(row).join("")}${miss.length ? `<li class="miss-h">חסר בחנות · ${miss.length}</li>${miss.map(row).join("")}` : ""}</ul>
-        ${!canEdit() ? "" : S.shopAdd === k ? `<form class="sh-add" data-add="${k}">
-            <div class="addrow"><input class="input" name="name" placeholder="מה להוסיף ל${esc(name.replace(/^ל/, ""))}?" autocomplete="off" aria-label="שם הפריט"><button class="go" type="submit" aria-label="הוסף" disabled>${icon("plus")}</button></div>
-            <div class="addmore" ${S.addMore?"":"hidden"}><input class="input" name="qty" placeholder="כמות" autocomplete="off" aria-label="כמות"><input class="input" name="note" placeholder="הערה" autocomplete="off" aria-label="הערה"></div></form>`
-          : `<button type="button" class="sh-plus" data-plus="${k}">${icon("plus")}הוספה ל${esc(name.replace(/^ל/, ""))}</button>`}
-      </section>`; }).join("")}
-    ${canLists() && !S.take ? `<button type="button" class="sh-new" id="newList">${icon("plus")}רשימה חדשה</button>` : ""}
-    ${takeable && !S.take ? `<p class="shop-tip sh-tip">סמנו ✓ מה שאתם לוקחים</p>` : ""}
-    ${S.take ? (() => { const mineNow = new Set(items.filter(i => i.takenBy===me).map(i => i.id));
-        const add = [...S.takeSel].filter(id => !mineNow.has(id)).length, drop = [...mineNow].filter(id => !S.takeSel.has(id)).length;
-        return `<div class="takebar"><div class="row">
-      <button class="secondary" id="takeCancel">ביטול</button>
-      <button class="primary" id="takeOk">${icon("hand")}${add ? `אני לוקח (${add})` : `לא לוקח (${drop})`}</button></div></div>`; })() : ""}`;
-
+    <div class="sh-chips" role="tablist" aria-label="קטגוריות" data-noswipe>
+      <button type="button" role="tab" class="sh-chip ${!S.shopCat ? "on" : ""}" data-cat="" aria-selected="${!S.shopCat}" style="--sc:#F2C46B;--sb:rgba(242,196,107,.18)"><span>הכל</span><b>${all.length}</b></button>
+      ${shops().map(([k, name]) => `<button type="button" role="tab" class="sh-chip ${S.shopCat === k ? "on" : ""}" data-cat="${k}" aria-selected="${S.shopCat === k}" style="${shopStyle(k)}">${flu(k)}<span>${esc(name)}</span>${cnt(k) ? `<b>${cnt(k)}</b>` : ""}</button>`).join("")}</div>
+    ${shown.length ? shown.map(card).join("") : `<div class="panel t-empty dEmpty">${S.shopCat ? `אין רשימות פתוחות ב${esc(shopOf(S.shopCat)[1])}.` : "אין רשימות פתוחות."}${canEdit() ? " לחצו ＋ כדי להוסיף." : ""}</div>`}
+    ${canEdit() ? `<button class="fab" id="fab" aria-label="הוספה לקניות">${icon("plus")}</button>` : ""}`;
   bindSeg();
   const sc = $("#screen");
-  sc.querySelectorAll("[data-fold]").forEach(b => b.onclick = () => { const k = b.dataset.fold; ShopUI.toggle(k); if (S.shopAdd && S.shopAdd !== ShopUI.open()) S.shopAdd = null; renderShop(); shopToCard(); });
-  sc.querySelectorAll("[data-chip]").forEach(b => b.onclick = () => { const k = b.dataset.chip; if (ShopUI.open() !== k){ ShopUI.set(k); if (S.shopAdd !== k) S.shopAdd = null; } renderShop(); shopToCard(); });
+  sc.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.shopCat = b.dataset.cat || null; renderShop(); });
   const ch = sc.querySelector(".sh-chip.on"); if (ch) ch.scrollIntoView({ block:"nearest", inline:"center" });
-  sc.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => { S.shopAdd = b.dataset.plus; S.addMore = false; renderShop(); sc.querySelector(".sh-add input[name=name]")?.focus(); });
-  sc.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => listSheet(shopList(b.dataset.edit)));
-  sc.querySelectorAll("[data-move]").forEach(b => b.onclick = () => { const it = DB.shop.find(i => i.id === b.dataset.move); if (it) moveSheet(it); });
-  const nl = $("#newList"); if (nl) nl.onclick = () => listSheet(null);
-  const f = sc.querySelector(".sh-add");
-  if (f){
-    f.name.oninput = () => { f.querySelector(".go").disabled = !f.name.value.trim(); if (f.name.value.trim() && !S.addMore){ S.addMore=true; f.querySelector(".addmore").hidden=false; } };
-    f.name.onkeydown = e => { if (e.key === "Escape"){ S.shopAdd = null; renderShop(); } };
-    f.onsubmit = e => {
-      e.preventDefault(); const name=f.name.value.trim(); if(!name) return;
-      DB.shop.push({ id:uid(), name, qty:f.qty.value.trim(), note:f.note.value.trim(), takenBy:null, taskId:null, list:f.dataset.add });
-      save(); S.addMore=false; renderShop(); $("#screen").querySelector(".sh-add input[name=name]")?.focus();
-    };
-  }
-  if (S.take){
-    $("#takeCancel").onclick = () => { S.take=false; S.takeSel=new Set(); renderShop(); };
-    $("#takeOk").onclick = confirmTake;
-  }
-  sc.querySelectorAll(".sh-list").forEach(ul => ul.onclick = e => {
-    const b = e.target.closest(".item"); if (!b) return;
-    const id = b.dataset.id, it = DB.shop.find(i=>i.id===id); if (!it) return;
-    // the checkbox: mark / unmark right away; "אני לוקח" at the bottom confirms. The name opens the item.
-    if (e.target.closest(".box")){
-      if (it.takenBy && it.takenBy !== me){ toast(`${USERS[it.takenBy] ? USERS[it.takenBy].name : "מישהו"} כבר לוקח את זה`); return; }
-      if (!canEdit()) return;
-      const mineNow = new Set(DB.shop.filter(i=>i.takenBy===me).map(i=>i.id));
-      if (!S.take){ S.take = true; S.takeSel = new Set(mineNow); }
-      S.takeSel.has(id) ? S.takeSel.delete(id) : S.takeSel.add(id);
-      if (S.takeSel.size === mineNow.size && [...mineNow].every(x => S.takeSel.has(x))){ S.take = false; S.takeSel = new Set(); }
-      renderShop(); return;
-    }
-    itemSheet(it);
-  });
+  sc.querySelectorAll("[data-open]").forEach(x => x.onclick = () => { const b = baskets().find(y => y.id === x.dataset.open); if (b) basketSheet(b); });
+  sc.querySelectorAll("[data-take]").forEach(x => x.onclick = () => { const b = baskets().find(y => y.id === x.dataset.take); if (b){ takeBasket(b); renderShop(); basketSheet(b); } });
+  const fab = $("#fab"); if (fab) fab.onclick = () => addSheet();
 }
-/* which cards are folded — this phone only */
-/* which list is open — one at a time, this phone only. "" = all closed; nothing saved yet → the first list */
-const ShopUI = {
-  KEY: "nido.shopOpen",
-  open(){ let v = null; try { v = localStorage.getItem(this.KEY); } catch(e){}
-    if (v === "") return "";
-    return v && shopLists().some(x => x.id === v) ? v : shopKey("super"); },
-  set(k){ try { localStorage.setItem(this.KEY, k); } catch(e){} },
-  closed(k){ return this.open() !== k; },
-  toggle(k){ this.set(this.open() === k ? "" : k); },
-};
-/* after switching lists: bring the open card into view (it is first, just under the list row) */
-function shopToCard(){ const c = $("#screen .sh-card:not(.closed)"); if (!c) return; const top = c.getBoundingClientRect().top;
-  if (top < 70 || top > innerHeight * .45) window.scrollTo({ top: Math.max(0, scrollY + top - 140), behavior: "smooth" }); }
-function confirmTake(){
-  const before = new Set(DB.tasks.filter(t => t.kind==="shop" && !t.done && t.assignee===me).map(t => t.id));
-  for (const i of DB.shop){
-    if (S.takeSel.has(i.id)){ if (i.takenBy !== me) takeInto(i); }     // already mine → stays in its task
-    else if (i.takenBy===me){ i.takenBy=null; i.taskId=null; }
-  }
-  // a shopping task left with no items goes away
-  DB.tasks = DB.tasks.filter(t => !(t.kind==="shop" && !t.done && t.assignee===me && !DB.shop.some(i => i.taskId===t.id)));
-  const made = DB.tasks.filter(t => t.kind==="shop" && !t.done && t.assignee===me && !before.has(t.id));
-  save(); S.take=false; renderShop();
-  toast(!S.takeSel.size ? "הפריטים חזרו לרשימה"
-    : made.length === 1 ? `נוצרה משימה: ${made[0].title} 🛒`
-    : made.length > 1 ? `נוצרו ${made.length} משימות קניות 🛒`
-    : "משימות הקניות שלך עודכנו");
-  S.takeSel = new Set();
+/* one list: its items; when it's mine, the in-store mode (tick, "לא היה", סיימתי) */
+function basketSheet(b){
+  const draw = () => {
+    if (!baskets().includes(b) || !bkItems(b).length){ closeSheet(); renderShop(); return; }
+    const its = bkItems(b), mine = b.takenBy === me, other = b.takenBy && !mine, n = its.length, got = its.filter(i => i.got).length;
+    const order = mine ? [...its.filter(i => !i.got && !i.missing), ...its.filter(i => i.missing && !i.got), ...its.filter(i => i.got)] : [...its.filter(i => !i.missing), ...its.filter(i => i.missing)];
+    const by = b.by && USERS[b.by] ? `פתח/ה ${USERS[b.by].name}` : "";
+    const row = i => `<li class="lw-it ${i.got ? "got" : ""} ${i.missing && !i.got ? "miss" : ""}" data-it="${i.id}">
+        ${mine ? `<button type="button" class="box ${i.got ? "on" : ""}" data-got aria-pressed="${!!i.got}" aria-label="${i.got ? "ביטול" : "קניתי"}">${icon("tick")}</button>` : `<span class="dot"></span>`}
+        <button type="button" class="n" data-edit>${esc(i.name)}${[i.qty, i.note].filter(Boolean).length ? `<small>${esc([i.qty, i.note].filter(Boolean).join(" · "))}</small>` : ""}${i.fromTask ? `<small class="ft">${icon("link")}ממשימה</small>` : ""}</button>
+        ${i.missing && !i.got ? `<span class="mt">חסר</span>` : mine && !i.got ? `<button type="button" class="mb" data-miss>לא היה</button>` : ""}
+        ${i.image ? `<img class="ithumb" src="${esc(i.image)}" alt="">` : ""}</li>`;
+    sh.querySelector(".inner").innerHTML = `<div class="grab"></div>
+      <div class="sheet-head"><h2>${esc(bkTitle(b))}</h2><button type="button" class="icon-btn" data-close aria-label="סגירה">${icon("close")}</button></div>
+      <div class="lw-hero" style="${shopStyle(b.cat)}"><img src="${catArt(b.cat)}" alt=""><div><span class="dTag">${esc(shopOf(b.cat)[1])}</span>
+        <p>${icon("cal")}${[`${n} ${n === 1 ? "פריט" : "פריטים"}`, by, b.created ? dayLabel(iso(new Date(b.created))) : ""].filter(Boolean).map(esc).join(" · ")}</p>
+        ${b.takenBy && USERS[b.takenBy] ? `<p class="lw-who">${esc(USERS[b.takenBy].name)} לוקח · ${got} מתוך ${n}</p>` : ""}</div>
+        ${canEdit() && !b.takenBy ? `<button type="button" class="lw-ren" data-rename aria-label="שינוי שם הרשימה">${icon("edit")}</button>` : ""}</div>
+      ${mine ? `<div class="lw-prog"><i><b style="width:${Math.round(got / n * 100)}%"></b></i><span dir="ltr">${got} / ${n}</span></div>` : ""}
+      <ul class="lw-list">${order.map(row).join("")}</ul>
+      ${canEdit() && !other ? `<form class="lw-add" data-add><input class="input" name="name" placeholder="להוסיף לרשימה…" autocomplete="off" aria-label="פריט חדש"><button type="submit" class="lw-plus" aria-label="הוספה">${icon("plus")}</button></form>` : ""}
+      ${mine ? `<p class="hint lw-hint">${its.some(i => !i.got) && got ? "מה שלא סומן יחכה ברשימה חדשה" : "מה שחסר יחכה ברשימה חדשה"}</p>
+        <div class="actions"><button type="button" class="secondary" data-drop>אני כבר לא לוקח</button><button class="primary" type="button" data-finish>סיימתי את הקנייה</button></div>`
+      : other ? `<p class="hint lw-hint">${esc(USERS[b.takenBy] ? USERS[b.takenBy].name : "מישהו")} לוקח את הרשימה</p>`
+      : canEdit() ? `<div class="actions"><button class="primary" type="button" data-take>${icon("hand")}אני לוקח את הרשימה</button></div>` : ""}`;
+    sh.querySelectorAll("[data-close]").forEach(x => x.onclick = closeSheet);
+    const q = s => sh.querySelector(s);
+    sh.querySelectorAll(".lw-it").forEach(li => { const it = DB.shop.find(i => i.id === li.dataset.it); if (!it) return;
+      const g = li.querySelector("[data-got]"); if (g) g.onclick = () => { if (it.got) delete it.got; else { it.got = true; delete it.missing; } save(); draw(); };
+      const m = li.querySelector("[data-miss]"); if (m) m.onclick = () => { it.missing = { at:Date.now(), by:me, where:b.cat, tell:false }; delete it.got; save(); draw(); };
+      li.querySelector("[data-edit]").onclick = () => { if (canEdit()) itemSheet(it, () => basketSheet(b)); }; });
+    const f = q("[data-add]"); if (f) f.onsubmit = e => { e.preventDefault(); const name = f.name.value.trim(); if (!name) return;
+      const t = bkTask(b), it = { id:uid(), name, qty:"", note:"", takenBy: b.takenBy || null, taskId: t ? t.id : null, list:b.cat, bk:b.id, by:me };
+      DB.shop.push(it); save(); draw(); sh.querySelector("[data-add] input")?.focus(); };
+    const tk = q("[data-take]"); if (tk) tk.onclick = () => { takeBasket(b); renderShop(); draw(); };
+    const dr = q("[data-drop]"); if (dr) dr.onclick = () => { dropBasket(b); renderShop(); draw(); };
+    const fi = q("[data-finish]"); if (fi) fi.onclick = () => { const t = bkTask(b); if (!t) return; closeSheet(); completeTask(t); render(); };
+    const rn = q("[data-rename]"); if (rn) rn.onclick = () => renameBasket(b, draw);
+  };
+  const sh = fullSheet(""); sh.classList.add("lw"); draw();
 }
+function renameBasket(b, after){
+  const v = prompt("שם לרשימה (ריק = בלי שם)", b.name || ""); if (v === null) return;
+  b.name = v.trim().slice(0, 40); const t = bkTask(b); if (t) t.title = bkTitle(b); save(); after && after(); renderShop();
+}
+/* ＋: what to add → into an open list, or a new list (category + optional name) */
+function addSheet(preCat){
+  const open = baskets().filter(b => bkItems(b).length && (!b.takenBy || b.takenBy === me)).sort((a, b) => (b.created || 0) - (a.created || 0));
+  let pick = open.length && !preCat ? open[0].id : "new", cat = preCat || S.shopCat || shopKey("super");
+  const sh = openSheet(`${head("מה להוסיף?")}<form id="adf" class="stack">
+    <input class="input" name="name" placeholder="למשל: חלב" autocomplete="off" aria-label="שם הפריט" required>
+    <div class="addmore"><input class="input" name="qty" placeholder="כמות (לא חובה)" autocomplete="off" aria-label="כמות"><input class="input" name="note" placeholder="הערה (לא חובה)" autocomplete="off" aria-label="הערה"></div>
+    <span class="lbl">לאיזו רשימה?</span><div class="ad-lists" id="adL"></div>
+    <div id="adN"></div>
+    <div class="actions"><button class="primary" type="submit" id="adGo">הוספה</button></div></form>`);
+  const f = sh.querySelector("#adf");
+  const draw = () => {
+    sh.querySelector("#adL").innerHTML = open.map(b => `<button type="button" class="ad-l ${pick === b.id ? "on" : ""}" data-pk="${b.id}" style="${shopStyle(b.cat)}" aria-pressed="${pick === b.id}"><img src="${catArt(b.cat)}" alt=""><span><b>${esc(bkTitle(b))}</b><small><i class="dTag">${esc(shopOf(b.cat)[1])}</i> ${bkItems(b).length} ${bkItems(b).length === 1 ? "פריט" : "פריטים"}${b.takenBy === me ? " · אצלך" : ""}</small></span><i class="rad"></i></button>`).join("")
+      + `<button type="button" class="ad-new ${pick === "new" ? "on" : ""}" data-pk="new" aria-pressed="${pick === "new"}">${icon("plus")}רשימה חדשה</button>`;
+    sh.querySelector("#adN").innerHTML = pick !== "new" ? "" : `<span class="lbl">קטגוריה</span>
+      <div class="ad-cats">${shops().map(([k, n]) => `<button type="button" class="ad-c ${cat === k ? "on" : ""}" data-ck="${k}" style="${shopStyle(k)}" aria-pressed="${cat === k}"><img src="${catArt(k)}" alt=""><span>${esc(n)}</span></button>`).join("")}</div>
+      <input class="input" name="lname" placeholder="שם לרשימה (לא חובה)" maxlength="40" autocomplete="off" aria-label="שם לרשימה">`;
+    const b = open.find(x => x.id === pick);
+    sh.querySelector("#adGo").textContent = b ? `הוספה ל${bkTitle(b)}` : `רשימה חדשה ב${shopOf(cat)[1].replace(/^ל/, "")}`;
+    sh.querySelectorAll("[data-pk]").forEach(x => x.onclick = () => { const keep = f.lname && f.lname.value; pick = x.dataset.pk; draw(); if (keep && f.lname) f.lname.value = keep; });
+    sh.querySelectorAll("[data-ck]").forEach(x => x.onclick = () => { const keep = f.lname ? f.lname.value : ""; cat = x.dataset.ck; draw(); f.lname.value = keep; });
+  };
+  draw(); setTimeout(() => f.name.focus(), 260);
+  f.onsubmit = e => { e.preventDefault(); const name = f.name.value.trim(); if (!name){ f.name.focus(); return; }
+    let b = open.find(x => x.id === pick); if (!b) b = newBasket(cat, f.lname ? f.lname.value : "");
+    const t = bkTask(b);
+    DB.shop.push({ id:uid(), name, qty:f.qty.value.trim(), note:f.note.value.trim(), takenBy: b.takenBy || null, taskId: t ? t.id : null, list:b.cat, bk:b.id, by:me });
+    save(); closeSheet(); renderShop(); toast(`נוסף ל${bkTitle(b)}`); };
+}
+
+const ShopUI = { open(){ return ""; }, set(){}, toggle(){} };
 function releaseItem(i){
   const tid = i.taskId; i.takenBy=null; i.taskId=null;
   if (tid && !DB.shop.some(x=>x.taskId===tid)) DB.tasks = DB.tasks.filter(t=>t.id!==tid);
 }
-function itemSheet(i){
+function itemSheet(i, back){
+  const done = () => { closeSheet(); renderShop(); if (back) setTimeout(back, 230); };
   const sh = fullSheet(`${head("פריט")}
     <form id="if" class="stack">
       <input class="input" name="name" value="${esc(i.name)}" aria-label="שם הפריט" required>
@@ -5353,8 +5473,6 @@ function itemSheet(i){
       <div class="imgpick"><span id="prev">${i.image ? `<button type="button" class="iprev" id="iview" aria-label="הגדלת התמונה"><img src="${esc(i.image)}" alt=""></button>` : ""}</span>
         <span class="secondary pick-wrap">${icon("image")}${i.image ? "החלפת תמונה" : "תמונה של המוצר"}<input type="file" accept="image/*" id="ifile" aria-label="בחירת תמונה"></span>
         ${i.image ? `<button type="button" class="danger" id="noimg">הסר</button>` : ""}</div>
-      <div><span class="lbl">ברשימה</span>${radios("list", shops().map(([k, n]) => [k, n]), shopKey(i.list))}</div>
-      ${i.takenBy===me ? `<button type="button" class="secondary" id="rel" style="width:100%;justify-content:center">אני כבר לא לוקח את זה</button>` : ""}
       ${!canEdit() ? "" : i.missing ? `<button type="button" class="secondary miss-btn" id="unmiss">${icon("tick")}נמצא — להוריד את הסימון "חסר"</button>`
         : `<button type="button" class="secondary miss-btn" id="miss">לא היה בחנות</button>`}
       <div class="actions"><button type="button" class="danger" id="del">${icon("trash")}הסרה מהרשימה</button><button class="primary" type="submit">שמירה</button></div>
@@ -5368,19 +5486,16 @@ function itemSheet(i){
   f.onsubmit = e => { e.preventDefault(); if(!f.name.value.trim()) return;
     const lk = f.link.value.trim(), url = lk ? normUrl(lk) : "";
     if (lk && !url){ toast("זה לא נראה כמו קישור"); return; }
-    const was = shopKey(i.list);
-    Object.assign(i,{ name:f.name.value.trim(), qty:f.qty.value.trim(), note:f.note.value.trim(), list:shopKey(f.list.value) });
-    if (i.takenBy === me && was !== i.list){ releaseItem(i); takeInto(i); }
+    Object.assign(i,{ name:f.name.value.trim(), qty:f.qty.value.trim(), note:f.note.value.trim() });
     if (url) i.link = url; else delete i.link;
     if (img) i.image = img; else delete i.image;
-    const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st && st.buy) st.buy = i.list;
-    save(); closeSheet(); renderShop(); };
-  const rel = sh.querySelector("#rel"); if (rel) rel.onclick = () => { releaseItem(i); save(); closeSheet(); renderShop(); };
-  const ms = sh.querySelector("#miss"); if (ms) ms.onclick = () => missSheet(i);
-  const um = sh.querySelector("#unmiss"); if (um) um.onclick = () => { delete i.missing; save(); closeSheet(); renderShop(); toast("הסימון ירד"); };
-  sh.querySelector("#del").onclick = () => { releaseItem(i); DB.shop = DB.shop.filter(x=>x.id!==i.id);
+    save(); done(); };
+  const ms = sh.querySelector("#miss"); if (ms) ms.onclick = () => { i.missing = { at:Date.now(), by:me, where:shopKey(i.list), tell:false }; delete i.got; save(); done(); toast("מסומן חסר · יחכה ברשימה"); };
+  const um = sh.querySelector("#unmiss"); if (um) um.onclick = () => { delete i.missing; save(); done(); toast("הסימון ירד"); };
+  sh.querySelector("#del").onclick = () => { const tid = i.taskId; DB.shop = DB.shop.filter(x=>x.id!==i.id);
+    if (tid && !DB.shop.some(x => x.taskId === tid)) DB.tasks = DB.tasks.filter(t => t.id !== tid);
     const st = i.fromTask && DB.tasks.find(x => x.id===i.fromTask); if (st){ st.buy = false; delete st.shopItemId; }
-    save(); closeSheet(); renderShop(); };
+    save(); done(); };
 }
 /* "לא היה בחנות": the item stays (or moves to another list), leaves my shopping task, and can tell the others */
 function missSheet(i){
@@ -6179,9 +6294,14 @@ const ideaTasks = i => DB.tasks.filter(t => t.ideaId===i.id);
 function syncBuy(t){
   const it = t.shopItemId && DB.shop.find(i => i.id===t.shopItemId);
   if (t.buy && !t.done){
-    if (it){ if (!it.takenBy){ it.name = buyName(t.title); it.list = shopKey(t.buy); } return; }
+    if (it){ if (!it.takenBy){ it.name = buyName(t.title); it.list = shopKey(t.buy);
+        const b = baskets().find(x => x.id === it.bk); if (b && bkItems(b).length === 1) b.cat = it.list; } return; }
     const idea = DB.ideas.find(x => x.id===t.ideaId);
-    const n = { id:uid(), name:buyName(t.title), qty:"", note: idea ? `ל${idea.title}` : "", takenBy:null, taskId:null, list: shopKey(t.buy), fromTask:t.id };
+    /* into the open list chosen in the task window, or a new list of one item */
+    let b = t.buyBk && baskets().find(x => x.id === t.buyBk && (!x.takenBy || x.takenBy === me)); delete t.buyBk;
+    if (!b) b = newBasket(t.buy, "");
+    const bt = b.takenBy ? bkTask(b) : null;
+    const n = { id:uid(), name:buyName(t.title), qty:"", note: idea ? `ל${idea.title}` : "", takenBy: bt ? me : null, taskId: bt ? bt.id : null, list: b.cat, bk:b.id, fromTask:t.id };
     DB.shop.push(n); t.shopItemId = n.id;
   } else {
     if (it && !it.takenBy) DB.shop = DB.shop.filter(x => x !== it);

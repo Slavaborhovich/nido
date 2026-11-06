@@ -22,7 +22,7 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   await p.fill("#tf input[name=title]", "לקנות סוללות לשלט");
   ok(await p.evaluate(() => { const x = document.querySelector("#tkBuy"); return !x.hidden && /נשמע כמו קנייה/.test(x.textContent) && x.querySelectorAll("[data-bl]").length >= 2; }), "suggestion card with the lists");
   await p.click("#tkBuy [data-bl=home]");
-  ok(await p.evaluate(() => document.querySelector("#tkBuy").classList.contains("done") && /רשימת לבית/.test(document.querySelector("#tkBuy").textContent)), "tapping a list adds it right away: one line 'ייכנס לרשימת לבית'");
+  ok(await p.evaluate(() => document.querySelector("#tkBuy").classList.contains("done") && /רשימה חדשה בבית/.test(document.querySelector("#tkBuy").textContent)), "tapping a category: one line 'רשימה חדשה בבית'");
   await p.click("#tf button[type=submit]"); await p.waitForTimeout(300);
   ok(await p.evaluate(() => !document.querySelector(".cfm-scrim")), "no extra popup on save");
   const tk = await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות סוללות לשלט"); const it = DB.shop.find(i => i.fromTask === t.id); return { buy:t.buy, it: it && it.name, list: it && it.list }; });
@@ -41,8 +41,8 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok(await p.evaluate(() => { const t = DB.tasks.find(x => x.title === "לקנות כרטיסים להופעה"); return t && !t.buy && !DB.shop.some(i => i.fromTask === t.id); }), "…and the task stays only a task");
 
   // 2. shopping list shows the link
-  await p.evaluate(() => { ShopUI.set("home"); go("shop"); }); await p.waitForTimeout(300);
-  ok(await p.evaluate(() => /מקושר למשימה/.test(document.querySelector("#screen .sh-card:not(.closed)").textContent)), "the item shows 'מקושר למשימה' in the list");
+  await p.evaluate(() => go("shop")); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => { const it = DB.shop.find(i => i.name === "סוללות לשלט"), b = DB.baskets.find(x => x.id === it.bk); return b && b.cat === "home" && bkItems(b).length === 1 && /פריט אחד · ממשימה/.test(document.querySelector(`.dCard[data-bk="${b.id}"]`).textContent); }), "the task opened a one-item list in לבית ('פריט אחד · ממשימה')");
 
   // 3. single purchase → "כמה עלה?"
   await p.evaluate(() => completeTask(DB.tasks.find(x => x.title === "לקנות סוללות לשלט"))); await p.waitForTimeout(700);
@@ -66,11 +66,11 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
   ok((await exps()).length === 1, "done again → asked again, saved once");
 
   // 4. shopping round → one total
-  await p.evaluate(() => { DB.shop = DB.shop.filter(i => shopKey(i.list) !== "super");
-    ["חלב", "לחם", "ביצים"].forEach(nm => DB.shop.push({ id:uid(), name:nm, qty:"", note:"", takenBy:null, taskId:null, list:"super" }));
-    DB.shop.filter(i => i.list === "super").forEach(i => takeInto(i));
-    const miss = DB.shop.find(i => i.name === "לחם"); releaseItem(miss); miss.missing = { at:Date.now() + 1, by:me, where:"super", tell:false };
-    save(); completeTask(myShopTask("super")); });
+  await p.evaluate(() => { DB.shop = DB.shop.filter(i => shopKey(i.list) !== "super"); tidyBaskets();
+    const b = newBasket("super", "קניות לשבת");
+    ["חלב", "לחם", "ביצים"].forEach(nm => DB.shop.push({ id:uid(), name:nm, qty:"", note:"", takenBy:null, taskId:null, list:"super", bk:b.id }));
+    takeBasket(b); const miss = DB.shop.find(i => i.name === "לחם"); miss.missing = { at:Date.now() + 1, by:me, where:"super", tell:false };
+    save(); completeTask(bkTask(b)); });
   await p.waitForTimeout(700);
   const s4 = await p.evaluate(() => { const w = document.querySelector(".bxp-scrim.show"); return w && { t: w.querySelector("#bxT").textContent, lb: w.querySelector("label.lb").textContent, st: [...w.querySelectorAll(".stats b")].map(x => x.textContent).join("/"), cat: w.querySelector("#bxC .on").textContent }; });
   ok(s4 && s4.lb === "כמה יצא בסך הכל?" && s4.st === "2/1", `round: total asked once, 2 bought / 1 missing (${s4 && s4.st})`);
@@ -87,7 +87,7 @@ let f = 0, n = 0; const ok = (c, m) => { console.log((c ? "  ✔ " : "  ✘ FAIL
 
   // 6. an item already in someone's round is not asked separately
   await p.evaluate(() => { const t = { id:uid(), kind:"task", title:"לקנות סבון", assignee:null, date:null, time:null, repeat:"none", done:false, buy:"super", created:Date.now() }; DB.tasks.push(t); syncBuy(t);
-    takeInto(DB.shop.find(i => i.id === t.shopItemId)); completeTask(t); });
+    takeBasket(DB.baskets.find(b => b.id === DB.shop.find(i => i.id === t.shopItemId).bk)); completeTask(t); });
   await p.waitForTimeout(700);
   ok(!(await p.evaluate(() => document.querySelector(".bxp-scrim"))), "item already taken into a round → no separate question");
 
