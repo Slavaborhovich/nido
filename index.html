@@ -1075,7 +1075,16 @@ button.ava{border:0;padding:0;cursor:pointer;font-family:inherit}
 /* ---------- Calendar: week board + rich month ---------- */
 .cv-top{margin-bottom:10px}
 .cv-top .month-nav strong{min-width:0;font-size:16px;padding:0 4px;white-space:nowrap}
-.cv-acts{display:flex;gap:6px;align-items:center}
+.cv-acts{display:flex;gap:6px;align-items:center;flex:none}
+.cv-top{min-width:0}
+.cv-top .month-nav{min-width:0;flex:0 1 auto}
+.cv-top .month-nav .icon-btn{flex:none}
+.cv-top .month-nav strong{overflow:hidden;text-overflow:ellipsis}
+.cv-top.tight{gap:8px}
+.cv-top.tight .add-btn{padding:0 11px}
+.cv-top.tight .add-btn span{display:none}
+.cv-top.tighter .month-nav strong{font-size:14px;padding:0 2px}
+.cv-top.tighter .cv-today{padding:0 9px}
 .cv-today{height:34px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,214,170,.16);background:rgba(30,20,12,.45);color:var(--text);font-size:13px}
 .cv-seg{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:14px;background:rgba(30,20,12,.5);border:1px solid rgba(255,214,170,.12);backdrop-filter:blur(14px)}
 .cv-seg button{flex:1;height:34px;border:0;border-radius:10px;background:none;color:#B9A48E;font-size:14px}
@@ -2303,6 +2312,7 @@ const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y
 const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 const DAYS = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const MONTHS_S = ["ינו׳","פבר׳","מרץ","אפר׳","מאי","יוני","יולי","אוג׳","ספט׳","אוק׳","נוב׳","דצמ׳"];
 const REPEAT = { none:"ללא", daily:"כל יום", weekly:"כל שבוע", monthly:"כל חודש" };
 const icon = (id, cls="i") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 
@@ -5871,18 +5881,30 @@ function renderCal(){
   if (!S.calView) S.calView = "week";                         // every visit opens on the week
   if (S.calView === "month") renderMonth(); else if (S.calView === "day") renderDay(); else renderWeek();
 }
-function calTop(title, prevLbl, nextLbl, showToday){
+function calTop(title, prevLbl, nextLbl, showToday, short, num){
   return `<header class="top cv-top">
       <div class="month-nav">
         <button class="icon-btn" id="cvPrev" aria-label="${prevLbl}">${icon("prev")}</button>
-        <strong>${title}</strong>
+        <strong id="cvTitle"${short ? ` data-short="${esc(short)}"` : ""}${num ? ` data-num="${esc(num)}"` : ""}>${title}</strong>
         <button class="icon-btn" id="cvNext" aria-label="${nextLbl}">${icon("next")}</button>
       </div>
-      <div class="cv-acts">${showToday ? `<button class="cv-today" id="cvToday">היום</button>` : ""}<button class="add-btn" id="addEv">${icon("plus")}אירוע</button></div>
+      <div class="cv-acts">${showToday ? `<button class="cv-today" id="cvToday">היום</button>` : ""}<button class="add-btn" id="addEv" aria-label="אירוע חדש">${icon("plus")}<span>אירוע</span></button></div>
     </header>
     <div class="cv-seg" role="tablist"><button role="tab" data-v="day" aria-selected="${S.calView==="day"}">יום</button><button role="tab" data-v="week" aria-selected="${S.calView==="week"}">שבוע</button><button role="tab" data-v="month" aria-selected="${S.calView==="month"}">חודש</button></div>`;
 }
+/* the calendar header must never be wider than the screen (a long week range + "היום" pushed the page sideways):
+   if it doesn't fit → short month names; still not → "+" without the word */
+function fitCalTop(){
+  const top = $("#screen .cv-top"); if (!top) return;
+  const t = $("#cvTitle");
+  const over = () => top.scrollWidth > top.clientWidth + 1 || (t && t.scrollWidth > t.clientWidth + 1) || [...top.children].some(c => c.getBoundingClientRect().left < top.getBoundingClientRect().left - 1);
+  if (over() && t && t.dataset.short) t.textContent = t.dataset.short;
+  if (over()) top.classList.add("tight");
+  if (over()) top.classList.add("tighter");
+  if (over() && t && t.dataset.num) t.textContent = t.dataset.num;
+}
 function bindCalCommon(onPrev, onNext, onToday){
+  fitCalTop();
   $("#cvPrev").onclick = onPrev; $("#cvNext").onclick = onNext;
   $("#cvToday")?.addEventListener("click", onToday);
   $("#addEv").onclick = () => eventSheet(null, { date:S.calSel });
@@ -5909,6 +5931,7 @@ function renderWeek(){
   const ws = parse(S.calWeek), days = [...Array(7)].map((_, i) => iso(addDays(ws, i))), we = parse(days[6]);
   const SLOTS = 3;                                               // three slots a day; they fill in order, more → another row
   const range = ws.getMonth() === we.getMonth() ? `${ws.getDate()}–${we.getDate()} ב${MONTHS[ws.getMonth()]}` : `${ws.getDate()} ב${MONTHS[ws.getMonth()]} – ${we.getDate()} ב${MONTHS[we.getMonth()]}`;
+  const rangeShort = ws.getMonth() === we.getMonth() ? `${ws.getDate()}–${we.getDate()} ${MONTHS_S[ws.getMonth()]}` : `${ws.getDate()} ${MONTHS_S[ws.getMonth()]} – ${we.getDate()} ${MONTHS_S[we.getMonth()]}`;
   let nEv = 0, nTk = 0; const shabbat = days.flatMap(d => Hol.of(d)).find(h => h.k === "candles");
   const rows = days.map(ds => {
     const d = parse(ds), all = dayItems(ds), hol = Hol.of(ds);
@@ -5934,7 +5957,7 @@ function renderWeek(){
       <button class="cv-dl" data-day="${ds}" style="grid-row:span ${Math.max(span, 1)}"><small>${"אבגדהוש"[d.getDay()]}׳</small><b>${d.getDate()}</b>${rc ? `<i>ר״ח</i>` : ""}</button>
       ${wideHTML}${quiet ? "" : cells}${strips}</div>`;
   }).join("");
-  $("#screen").innerHTML = `${calTop(range, "שבוע קודם", "שבוע הבא", !days.includes(today))}
+  $("#screen").innerHTML = `${calTop(range, "שבוע קודם", "שבוע הבא", !days.includes(today), rangeShort, `${ws.getDate()}.${ws.getMonth() + 1}–${we.getDate()}.${we.getMonth() + 1}`)}
     <div class="cv-sum">
       <div><b class="tabular">${nEv}</b><small>${nEv === 1 ? "אירוע" : "אירועים"}</small></div>
       <div><b class="tabular">${nTk}</b><small>${nTk === 1 ? "משימה פתוחה" : "משימות פתוחות"}</small></div>
@@ -6012,7 +6035,7 @@ function renderDay(){
   for (const gr of groups){ const lanes = []; for (const x of gr.items){ let l = lanes.findIndex(e => e <= x.s); if (l < 0){ l = lanes.length; lanes.push(0); } lanes[l] = x.e; x.lane = l; } gr.items.forEach(x => x.lanes = lanes.length); }
   const weekDays = [...Array(7)].map((_, i) => iso(addDays(startOfWeek(d), i)));
   const dayName = ds === today ? "היום" : ds === iso(addDays(new Date(), 1)) ? "מחר" : ds === iso(addDays(new Date(), -1)) ? "אתמול" : `יום ${DAYS[d.getDay()]}`;
-  $("#screen").innerHTML = `${calTop(`${dayName} · ${d.getDate()}/${d.getMonth() + 1}`, "יום קודם", "יום הבא", ds !== today)}
+  $("#screen").innerHTML = `${calTop(`${dayName} · ${d.getDate()}/${d.getMonth() + 1}`, "יום קודם", "יום הבא", ds !== today, `${dayName.startsWith("יום ") ? "אבגדהוש"[d.getDay()] + "׳" : dayName} · ${d.getDate()}/${d.getMonth() + 1}`)}
     <div class="cv-dsel">${weekDays.map(w => { const wd = parse(w), its = dayItems(w), c = its[0] ? colOf(its[0].who) : (Hol.of(w).some(h => h.k !== "rc") ? SHAB : "");
       return `<button class="${w === ds ? "on" : ""} ${w === today ? "is-today" : ""}" data-d="${w}"><small>${"אבגדהוש"[wd.getDay()]}׳</small><b>${wd.getDate()}</b><i style="background:${c || "transparent"}"></i></button>`; }).join("")}</div>
     ${untimed.length || hol.length ? `<div class="cv-allday"><small>ללא שעה</small>
